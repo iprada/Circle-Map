@@ -208,8 +208,8 @@ def sim_paired_end(insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_leng
     """Function that simulates perfect paired-end reads"""
     fastafile = ps.FastaFile(genome_fa)
     #left split read
-    insert = np.random.normal(insert_size,(insert_size/12),1)
-    start = np.random.randint(chr_pos_start, (chr_pos_end + 1))
+    insert = int(np.random.normal(insert_size,(insert_size/12),1))
+    start = int(np.random.randint(chr_pos_start, (chr_pos_end + 1)))
     left_end = start + read_length
     total_end = start + int(np.round(insert))
     right_start = total_end - read_length
