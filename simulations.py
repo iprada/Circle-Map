@@ -33,7 +33,7 @@ rd.seed(42)
 #   - FIx 271
 
 
-__author__ = 'Iñigo Prada Luengo xsh723@alumni.ku.dk'
+__author__ = 'Inigo Prada Luengo xsh723@alumni.ku.dk'
 
 __help__ = ['Script that simulates single end and paired-end eccDNA']
 
