@@ -126,6 +126,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
                     set_of_left_reads.append(new_reads[0])
                     set_of_right_reads.append(new_reads[1])
                 except:
+                    print(i)
                     pass
 
 
