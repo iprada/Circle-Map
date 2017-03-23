@@ -382,7 +382,7 @@ def sim_paired_end_with_errors(insert_size,genome_fa,chr,chr_pos_start,chr_pos_e
     #attemp to use art to simulate the quality scores and the error rate
 
     left_fasta = open("left_read.fa","w")
-    left_fasta.write(">" + left_id + "\n" +left_read + "\n")
+    left_fasta.write(">" + left_id + "\n" + str(left_read) + "\n")
     #sim the read with art
     left_fasta.close()
     os.system("art_illumina -ss HS25 -nf 0 -i left_read.fa -l %s -f 1 -o left > output" % read_length)
@@ -396,7 +396,7 @@ def sim_paired_end_with_errors(insert_size,genome_fa,chr,chr_pos_start,chr_pos_e
     right_read = right_read.reverse_complement()
 
     right_fasta = open("right_read.fa", "w")
-    right_fasta.write(">" + right_id + "\n" + right_read + "\n")
+    right_fasta.write(">" + right_id + "\n" + str(right_read) + "\n")
     right_fasta.close()
     # sim the read with art
     os.system("art_illumina -ss HS25  -nf 0 -i right_read.fa -l %s -f 1 -o right > output" % read_length)
