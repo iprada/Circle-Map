@@ -146,7 +146,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
         #sim single end
         else:
-            if ((i + 1) / 10000).is_integer() == False:
+            if ((i + 1) / 200000).is_integer() == False:
                 new_read = sim_single_end(path_to_genome_fasta, chr, chr_pos_start, chr_pos_end, read_length, read_id)
                 set_of_reads.append(new_read)
 
@@ -183,17 +183,17 @@ def sim_single_end(genome_fa,chr,chr_pos_start,chr_pos_end,read_length, unique_i
         left_split_read = fastafile.fetch(chr, left_nucleotides_start, chr_pos_end)
         #put all together
         total_read = left_split_read + right_split_read
-        unique_id = "split-" + unique_id
+        seq_id = "1|%s|%s:%s-%s:%s" % (chr,left_nucleotides_start,chr_pos_end,chr_pos_start,right_nucleotides)
 
 
     else:
         #sample normal read
         print("normal")
+        seq_id = "9|%s|%s:%s" % (chr,start,end)
         total_read = fastafile.fetch(chr, start,end)
 
 
     #get each entry of the fastq file
-    seq_id = "id:%s-%s|left_pos:%s-%s|right:%s-%s " % (unique_id,chr, int(chr_pos_end - (read_length / 2)), int(chr_pos_end), int(chr_pos_start),int(chr_pos_start + (read_length / 2)))
     #right now, the quality is maximum
     quality = "I" * read_length
     #put all together
@@ -302,7 +302,7 @@ def sim_paired_end(insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_leng
 
 
 def sim_paired_end_with_errors(insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_length):
-    """Function that simulates perfect paired-end reads"""
+    """Function that simulates perfect paired-end reads with ART like errors"""
     fastafile = ps.FastaFile(genome_fa)
     #left split read
     insert = int(np.random.normal(insert_size,(insert_size/12),1))
