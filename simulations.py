@@ -302,32 +302,36 @@ def sim_paired_end(insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_leng
 
 
 def sim_paired_end_with_errors(insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_length):
-    """Function that simulates paired-end reads, it uses art for generating the errors in the reads, it is slow 8 mins
-    per 20000x2 reads"""
+    """Function that simulates perfect paired-end reads"""
     fastafile = ps.FastaFile(genome_fa)
-    # left split read
-    insert = np.random.normal(insert_size, (insert_size / 12), 1)
-    start = np.random.randint(chr_pos_start, (chr_pos_end + 1))
+    #left split read
+    insert = int(np.random.normal(insert_size,(insert_size/12),1))
+    start = int(np.random.randint(chr_pos_start, (chr_pos_end + 1)))
     left_end = start + read_length
     total_end = start + int(np.round(insert))
     right_start = total_end - read_length
     if total_end > chr_pos_end:
-        # split read scenario or insert spanning split read scenario
+        #split read scenario or insert spanning split read scenario
         if left_end > chr_pos_end:
-            # left read spanning split read scenario
-            # left_read
+            print("left split read")
+            #left read spanning split read scenario
+            #left_read
             left_dntps = chr_pos_end - start
             right_dntps = read_length - left_dntps
-            left_split_read = fastafile.fetch(chr, start, chr_pos_end)
-            right_split_read = fastafile.fetch(chr, chr_pos_start, (chr_pos_start + right_dntps))
+
+
+            # the error could be here
+            left_split_read = fastafile.fetch(chr, start,chr_pos_end)
+            right_split_read = fastafile.fetch(chr, chr_pos_start,(chr_pos_start+right_dntps))
             left_read = left_split_read + right_split_read
 
-            # right_read
+            #right_read
             right_start = chr_pos_start + int(round(insert_size - left_dntps - read_length))
-            right_read = fastafile.fetch(chr, right_start, (right_start + read_length))
-            common_id = "1|%s|%s:%s-%s:%s|%s:%s" % (
-            chr, start, chr_pos_end, chr_pos_start, (chr_pos_start + right_dntps), right_start,
-            (right_start + read_length))
+            right_read = fastafile.fetch(chr, right_start,(right_start+ read_length))
+
+
+            # assertion to check the error here
+            common_id = "1|%s|%s:%s-%s:%s|%s:%s" % (chr,start,chr_pos_end,chr_pos_start,(chr_pos_start+right_dntps),right_start,(right_start+ read_length))
 
 
 
@@ -335,12 +339,11 @@ def sim_paired_end_with_errors(insert_size,genome_fa,chr,chr_pos_start,chr_pos_e
         else:
             if right_start > chr_pos_end:
                 print("split spanning")
-                # insert spanning split read scenario
-                left_read = fastafile.fetch(chr, start, (start + read_length))
+                #insert spanning split read scenario
+                left_read = fastafile.fetch(chr, start, (start+read_length))
                 right_start = right_start - chr_pos_start
-                right_read = fastafile.fetch(chr, right_start, (right_start + read_length))
-                common_id = "3|%s|%s:%s|%s:%s" % (
-                chr, start, (start + read_length), right_start, (right_start + read_length))
+                right_read = fastafile.fetch(chr, right_start, (right_start+read_length))
+                common_id = "3|%s|%s:%s|%s:%s" % (chr,start,(start+read_length),right_start,(right_start+read_length))
             else:
                 print("right split read")
                 # right split read scenario
@@ -363,8 +366,7 @@ def sim_paired_end_with_errors(insert_size,genome_fa,chr,chr_pos_start,chr_pos_e
         left_read = fastafile.fetch(chr, start, (start + read_length))
         # correct right read start
         right_read = fastafile.fetch(chr, right_start, (right_start + read_length))
-        common_id = "0|%s|%s:%s|%s:%s" % (chr, start, (start + read_length), right_start, (right_start + read_length))
-
+        common_id = "0|%s|%s:%s|%s:%s" % (chr,start,(start + read_length),right_start,(right_start + read_length))
 
 
 
