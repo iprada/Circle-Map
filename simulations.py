@@ -118,7 +118,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
         if paired_end == True:
 
-            if ((i + 1) / 100000).is_integer() == False:
+            if ((i + 1) / 1000000).is_integer() == False:
                 try:
                     #(insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_length, unique_id)
 
@@ -148,7 +148,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
         #sim single end
         else:
-            if ((i + 1) / 200000).is_integer() == False:
+            if ((i + 1) / 2000000).is_integer() == False:
                 new_read = sim_single_end(i,path_to_genome_fasta, chr, chr_pos_start, chr_pos_end, read_length, read_id)
                 set_of_reads.append(new_read)
 
