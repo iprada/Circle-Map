@@ -123,7 +123,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
                     #(insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_length, unique_id)
 
 
-                    new_reads = sim_paired_end_with_errors(i,insert_size,path_to_genome_fasta,chr,chr_pos_start,chr_pos_end,read_length)
+                    new_reads = sim_paired_end(i,insert_size,path_to_genome_fasta,chr,chr_pos_start,chr_pos_end,read_length)
                     set_of_left_reads.append(new_reads[0])
                     set_of_right_reads.append(new_reads[1])
                 except:
@@ -133,7 +133,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
             else:
                 try:
-                    new_reads = sim_paired_end_with_errors(i,insert_size, path_to_genome_fasta, chr, chr_pos_start, chr_pos_end,
+                    new_reads = sim_paired_end(i,insert_size, path_to_genome_fasta, chr, chr_pos_start, chr_pos_end,
                                                read_length)
                     set_of_left_reads.append(new_reads[0])
                     set_of_right_reads.append(new_reads[1])
