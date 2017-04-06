@@ -91,10 +91,9 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
     set_of_reads = []
     set_of_left_reads = []
     set_of_right_reads = []
-    i = 0
-    while i < spawn_reads:
+    i = spawn_reads[0] -1
+    while i < spawn_reads[-1] +1:
         read_id = i
-        print(i)
 
         #decide the chromosome
         chr = np.random.choice(contig_list, p=weights)
@@ -143,6 +142,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
                 if ((i + 1) / 100000).is_integer() == False:
                     try:
+                        print(i)
                         #(insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_length, unique_id)
 
 
@@ -157,6 +157,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
                 else:
                     try:
+                        print(i)
                         new_reads = sim_paired_end(i,insert_size, path_to_genome_fasta, chr, chr_pos_start, chr_pos_end,
                                                    read_length)
                         set_of_left_reads.append(new_reads[0])
@@ -176,6 +177,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
             else:
                 if ((i + 1) / 200000).is_integer() == False:
                     try:
+                        print(i)
                         new_read = sim_single_end(i,path_to_genome_fasta, chr, chr_pos_start, chr_pos_end, read_length, read_id)
                         set_of_reads.append(new_read)
                         i += 1
@@ -184,6 +186,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
                 else:
                     try:
+                        print(i)
                         new_read = sim_single_end(i,path_to_genome_fasta, chr, chr_pos_start, chr_pos_end, read_length, read_id)
                         SeqIO.write(set_of_reads,single_end_fastq,"fastq")
                         set_of_reads = [new_read]
@@ -205,7 +208,6 @@ def sim_single_end(read_number,genome_fa,chr,chr_pos_start,chr_pos_end,read_leng
     end = start + read_length
     #if the end position if bigger than the chr_end_position, that indicates a circle
     if end > chr_pos_end:
-        print("backspliced")
         #back spliced_read
 
 
@@ -226,7 +228,6 @@ def sim_single_end(read_number,genome_fa,chr,chr_pos_start,chr_pos_end,read_leng
 
     else:
         #sample normal read
-        print("normal")
         seq_id = "9|%s|%s:%s|%s" % (chr,start,end,read_number)
         total_read = fastafile.fetch(chr, start,end)
 
@@ -254,7 +255,6 @@ def sim_paired_end(read_number,insert_size,genome_fa,chr,chr_pos_start,chr_pos_e
     if total_end > chr_pos_end:
         #split read scenario or insert spanning split read scenario
         if left_end > chr_pos_end:
-            print("left split read")
             #left read spanning split read scenario
             #left_read
             left_dntps = chr_pos_end - start
@@ -281,14 +281,12 @@ def sim_paired_end(read_number,insert_size,genome_fa,chr,chr_pos_start,chr_pos_e
 
         else:
             if right_start > chr_pos_end:
-                print("split spanning")
                 #insert spanning split read scenario
                 left_read = fastafile.fetch(chr, start, (start+read_length))
                 right_start = right_start - chr_pos_start
                 right_read = fastafile.fetch(chr, right_start, (right_start+read_length))
                 common_id = "3|%s|%s:%s|%s:%s|%s" % (chr,start,(start+read_length),right_start,(right_start+read_length),read_number)
             else:
-                print("right split read")
                 # right split read scenario
                 assert right_start <= chr_pos_end
                 assert (right_start + read_length) > chr_pos_end
@@ -345,7 +343,6 @@ def sim_paired_end_with_errors(read_number,insert_size,genome_fa,chr,chr_pos_sta
     if total_end > chr_pos_end:
         # split read scenario or insert spanning split read scenario
         if left_end > chr_pos_end:
-            print("left split read")
             # left read spanning split read scenario
             # left_read
             left_dntps = chr_pos_end - start
@@ -371,7 +368,6 @@ def sim_paired_end_with_errors(read_number,insert_size,genome_fa,chr,chr_pos_sta
 
         else:
             if right_start > chr_pos_end:
-                print("split spanning")
                 # insert spanning split read scenario
                 left_read = fastafile.fetch(chr, start, (start + read_length))
                 right_start = right_start - chr_pos_start
@@ -379,7 +375,6 @@ def sim_paired_end_with_errors(read_number,insert_size,genome_fa,chr,chr_pos_sta
                 common_id = "3|%s|%s:%s|%s:%s|%s" % (
                 chr, start, (start + read_length), right_start, (right_start + read_length), read_number)
             else:
-                print("right split read")
                 # right split read scenario
                 assert right_start <= chr_pos_end
                 assert (right_start + read_length) > chr_pos_end
