@@ -138,26 +138,12 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
         for each_sim in range(0,round(int(rounds_of_sim))):
 
-<<<<<<< HEAD
             if paired_end == True:
-=======
-            if ((i + 1) / 1000000).is_integer() == False:
-                try:
-                    #(insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_length, unique_id)
->>>>>>> b0c5da822fbcc747b23f2c274aa4650c65647e41
 
                 if ((i + 1) / 100000).is_integer() == False:
                     try:
                         #(insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_length, unique_id)
 
-<<<<<<< HEAD
-=======
-                    new_reads = sim_paired_end_with_errors(i,insert_size,path_to_genome_fasta,chr,chr_pos_start,chr_pos_end,read_length)
-                    set_of_left_reads.append(new_reads[0])
-                    set_of_right_reads.append(new_reads[1])
-                except:
-                    pass
->>>>>>> b0c5da822fbcc747b23f2c274aa4650c65647e41
 
                         new_reads = sim_paired_end(i,insert_size,path_to_genome_fasta,chr,chr_pos_start,chr_pos_end,read_length)
                         set_of_left_reads.append(new_reads[0])
@@ -167,20 +153,6 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
                         pass
 
 
-<<<<<<< HEAD
-=======
-            else:
-                try:
-                    new_reads = sim_paired_end_with_errors(i,insert_size, path_to_genome_fasta, chr, chr_pos_start, chr_pos_end,read_length)
-                    set_of_left_reads.append(new_reads[0])
-                    set_of_right_reads.append(new_reads[1])
-                    SeqIO.write(set_of_left_reads,paired_end_fastq_1 , "fastq")
-                    SeqIO.write(set_of_right_reads, paired_end_fastq_2, "fastq")
-                    set_of_left_reads = [new_reads[0]]
-                    set_of_right_reads = [new_reads[1]]
-                except:
-                    pass
->>>>>>> b0c5da822fbcc747b23f2c274aa4650c65647e41
 
                 else:
                     try:
@@ -198,14 +170,6 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
 
 
-<<<<<<< HEAD
-=======
-        #sim single end
-        else:
-            if ((i + 1) / 2000000).is_integer() == False:
-                new_read = sim_single_end(i,path_to_genome_fasta, chr, chr_pos_start, chr_pos_end, read_length, read_id)
-                set_of_reads.append(new_read)
->>>>>>> b0c5da822fbcc747b23f2c274aa4650c65647e41
 
             #sim single end
             else:
@@ -475,5 +439,3 @@ def sim_paired_end_with_errors(read_number,insert_size,genome_fa,chr,chr_pos_sta
     right_record = SeqIO.read(StringIO(right_read), "fastq")
 
     return(left_record,right_record)
-
-
