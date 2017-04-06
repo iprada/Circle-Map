@@ -37,7 +37,8 @@ __author__ = 'Inigo Prada Luengo xsh723@alumni.ku.dk'
 
 __help__ = ['Script that simulates single end and paired-end eccDNA']
 
-__external_packages__ = 'this program uses pysam version: %s, Biopython version: %s and numpy version %s' % (ps.__version__, bio.__version__ , np.__version__)
+__external_packages__ = 'this program uses pysam version: %s, Biopython version: %s and numpy version %s' % (ps.__version__, 
+bio.__version__ , np.__version__)
 __external_packages_used__ = 'this program was develop with pysam version: 0.10.0, Biopython version: 1.68 and numpy version 1.12.0'
 
 
@@ -153,20 +154,6 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
                         pass
 
 
-<<<<<<< HEAD
-            else:
-                try:
-                    new_reads = sim_paired_end_with_errors(i,insert_size, path_to_genome_fasta, chr, chr_pos_start,chr_pos_end,read_length)
-                    set_of_left_reads.append(new_reads[0])
-                    set_of_right_reads.append(new_reads[1])
-                    SeqIO.write(set_of_left_reads,paired_end_fastq_1 , "fastq")
-                    SeqIO.write(set_of_right_reads, paired_end_fastq_2, "fastq")
-                    set_of_left_reads = [new_reads[0]]
-                    set_of_right_reads = [new_reads[1]]
-                except:
-                    pass
-=======
->>>>>>> ad72ccd2ebed0d8e900a2a58927bf4bb08633785
 
                 else:
                     try:
@@ -286,7 +273,8 @@ def sim_paired_end(read_number,insert_size,genome_fa,chr,chr_pos_start,chr_pos_e
 
             # assertion to check the error here
 
-            common_id = "1|%s|%s:%s-%s:%s|%s:%s|%s" % (chr,start,chr_pos_end,chr_pos_start,(chr_pos_start+right_dntps),right_start,(right_start+ read_length),read_number)
+            common_id = "1|%s|%s:%s-%s:%s|%s:%s|%s" % 
+(chr,start,chr_pos_end,chr_pos_start,(chr_pos_start+right_dntps),right_start,(right_start+ read_length),read_number)
 
 
 
@@ -313,7 +301,8 @@ def sim_paired_end(read_number,insert_size,genome_fa,chr,chr_pos_start,chr_pos_e
                 right_split_read = fastafile.fetch(chr, chr_pos_start, (chr_pos_start + right_dntps))
                 right_read = left_split_read + right_split_read
                 common_id = "2|%s|%s:%s|%s:%s-%s:%s|%s" % (
-                    chr, start, (start + read_length), right_start, chr_pos_end, chr_pos_start, (chr_pos_start + right_dntps),read_number)
+                    chr, start, (start + read_length), right_start, chr_pos_end, chr_pos_start, (chr_pos_start + 
+right_dntps),read_number)
 
 
     else:
