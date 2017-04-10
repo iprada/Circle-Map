@@ -410,7 +410,7 @@ def sim_paired_end_with_errors(read_number,insert_size,genome_fa,chr,chr_pos_sta
             if right_start > chr_pos_end:
                 # insert spanning split read scenario
                 left_read = fastafile.fetch(chr, start, (start + read_length))
-                right_start = right_start - chr_pos_start
+                right_start = chr_pos_start + (right_start - chr_pos_end)
                 right_read = fastafile.fetch(chr, right_start, (right_start + read_length))
                 common_id = "%s|%s|%s:%s|%s:%s|3|%s" % (
                 read_number, chr, start, (start + read_length), right_start, (right_start + read_length), circle_id)
