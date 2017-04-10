@@ -278,12 +278,12 @@ def sim_single_end(read_number,genome_fa,chr,chr_pos_start,chr_pos_end,read_leng
         left_split_read = fastafile.fetch(chr, left_nucleotides_start, chr_pos_end)
         #put all together
         total_read = left_split_read + right_split_read
-        seq_id = "1|%s|%s:%s-%s:%s|%s|%s" % (chr,left_nucleotides_start,chr_pos_end,chr_pos_start,right_nucleotides,read_number,circle_id)
+        seq_id = "%s|%s|%s:%s-%s:%s|1|%s" % (read_number,chr,left_nucleotides_start,chr_pos_end,chr_pos_start,right_nucleotides,circle_id)
 
 
     else:
         #sample normal read
-        seq_id = "9|%s|%s:%s|%s|%s" % (chr,start,end,read_number,circle_id)
+        seq_id = "%s|%s|%s:%s|0|%s" % (read_number,chr,start,end,circle_id)
         total_read = fastafile.fetch(chr, start,end)
 
 
@@ -328,7 +328,7 @@ def sim_paired_end(read_number,insert_size,genome_fa,chr,chr_pos_start,chr_pos_e
 
             # assertion to check the error here
 
-            common_id = "1|%s|%s:%s-%s:%s|%s:%s|%s|%s" % (chr,start,chr_pos_end,chr_pos_start,(chr_pos_start+right_dntps),right_start,(right_start+ read_length),read_number,circle_id)
+            common_id = "%s|%s|%s:%s-%s:%s|%s:%s|1|%s" % (read_number,chr,start,chr_pos_end,chr_pos_start,(chr_pos_start+right_dntps),right_start,(right_start+ read_length),circle_id)
 
 
 
@@ -339,7 +339,7 @@ def sim_paired_end(read_number,insert_size,genome_fa,chr,chr_pos_start,chr_pos_e
                 left_read = fastafile.fetch(chr, start, (start+read_length))
                 right_start = right_start - chr_pos_start
                 right_read = fastafile.fetch(chr, right_start, (right_start+read_length))
-                common_id = "3|%s|%s:%s|%s:%s|%s|%s" % (chr,start,(start+read_length),right_start,(right_start+read_length),read_number,circle_id)
+                common_id = "%s|%s|%s:%s|%s:%s|3|%s" % (read_number,chr,start,(start+read_length),right_start,(right_start+read_length),circle_id)
             else:
                 # right split read scenario
                 assert right_start <= chr_pos_end
@@ -352,9 +352,9 @@ def sim_paired_end(read_number,insert_size,genome_fa,chr,chr_pos_start,chr_pos_e
                 left_split_read = fastafile.fetch(chr, right_start, chr_pos_end)
                 right_split_read = fastafile.fetch(chr, chr_pos_start, (chr_pos_start + right_dntps))
                 right_read = left_split_read + right_split_read
-                common_id = "2|%s|%s:%s|%s:%s-%s:%s|%s|%s" % (
-                    chr, start, (start + read_length), right_start, chr_pos_end, chr_pos_start, (chr_pos_start + 
-right_dntps),read_number,circle_id)
+                common_id = "%s|%s|%s:%s|%s:%s-%s:%s|2|%s" % (
+                    read_number,chr, start, (start + read_length), right_start, chr_pos_end, chr_pos_start, (chr_pos_start +
+right_dntps),circle_id)
 
 
     else:
@@ -362,7 +362,7 @@ right_dntps),read_number,circle_id)
         left_read = fastafile.fetch(chr, start, (start + read_length))
         # correct right read start
         right_read = fastafile.fetch(chr, right_start, (right_start + read_length))
-        common_id = "0|%s|%s:%s|%s:%s|%s|%s" % (chr,start,(start + read_length),right_start,(right_start + read_length),read_number,circle_id)
+        common_id = "%s|%s|%s:%s|%s:%s|0|%s" % (read_number,chr,start,(start + read_length),right_start,(right_start + read_length),circle_id)
 
     # put all together
     #unique identifiers for right and left reads
@@ -413,9 +413,9 @@ def sim_paired_end_with_errors(read_number,insert_size,genome_fa,chr,chr_pos_sta
 
             # assertion to check the error here
 
-            common_id = "1|%s|%s:%s-%s:%s|%s:%s|%s|%s" % (
-            chr, start, chr_pos_end, chr_pos_start, (chr_pos_start + right_dntps), right_start,
-            (right_start + read_length), read_number, circle_id)
+            common_id = "%s|%s|%s:%s-%s:%s|%s:%s|1|%s" % (
+            read_number, chr, start, chr_pos_end, chr_pos_start, (chr_pos_start + right_dntps), right_start,
+            (right_start + read_length), circle_id)
 
 
 
@@ -426,8 +426,8 @@ def sim_paired_end_with_errors(read_number,insert_size,genome_fa,chr,chr_pos_sta
                 left_read = fastafile.fetch(chr, start, (start + read_length))
                 right_start = right_start - chr_pos_start
                 right_read = fastafile.fetch(chr, right_start, (right_start + read_length))
-                common_id = "3|%s|%s:%s|%s:%s|%s|%s" % (
-                chr, start, (start + read_length), right_start, (right_start + read_length), read_number, circle_id)
+                common_id = "%s|%s|%s:%s|%s:%s|3|%s" % (
+                read_number, chr, start, (start + read_length), right_start, (right_start + read_length), circle_id)
             else:
                 # right split read scenario
                 assert right_start <= chr_pos_end
@@ -440,10 +440,10 @@ def sim_paired_end_with_errors(read_number,insert_size,genome_fa,chr,chr_pos_sta
                 left_split_read = fastafile.fetch(chr, right_start, chr_pos_end)
                 right_split_read = fastafile.fetch(chr, chr_pos_start, (chr_pos_start + right_dntps))
                 right_read = left_split_read + right_split_read
-                common_id = "2|%s|%s:%s|%s:%s-%s:%s|%s|%s" % (
-                    chr, start, (start + read_length), right_start, chr_pos_end, chr_pos_start, (chr_pos_start +
-                                                                                                 right_dntps),
-                    read_number, circle_id)
+                common_id = "%s|%s|%s:%s|%s:%s-%s:%s|2|%s" % (
+                    read_number, chr, start, (start + read_length), right_start, chr_pos_end, chr_pos_start,
+                    (chr_pos_start +
+                     right_dntps), circle_id)
 
 
     else:
@@ -451,11 +451,8 @@ def sim_paired_end_with_errors(read_number,insert_size,genome_fa,chr,chr_pos_sta
         left_read = fastafile.fetch(chr, start, (start + read_length))
         # correct right read start
         right_read = fastafile.fetch(chr, right_start, (right_start + read_length))
-        common_id = "0|%s|%s:%s|%s:%s|%s|%s" % (
-        chr, start, (start + read_length), right_start, (right_start + read_length), read_number, circle_id)
-
-
-
+        common_id = "%s|%s|%s:%s|%s:%s|0|%s" % (
+        read_number, chr, start, (start + read_length), right_start, (right_start + read_length), circle_id)
 
 
     # put all together
