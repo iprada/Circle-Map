@@ -94,8 +94,6 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
     i = spawn_reads[0] -1
     circle_number = 0
     while i < spawn_reads[-1] +1:
-        read_id = i
-
         #decide the chromosome
         chr = np.random.choice(contig_list, p=weights)
 
@@ -221,7 +219,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
                 if ((i + 1) / 2000000).is_integer() == False:
                     try:
                         print(i)
-                        new_read = sim_single_end(i,path_to_genome_fasta, chr, chr_pos_start, chr_pos_end, read_length, read_id,circle_number)
+                        new_read = sim_single_end(i,path_to_genome_fasta, chr, chr_pos_start, chr_pos_end, read_length, circle_number)
                         set_of_reads.append(new_read)
                         i += 1
                     except:
@@ -230,7 +228,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
                 else:
                     try:
                         print(i)
-                        new_read = sim_single_end(i,path_to_genome_fasta, chr, chr_pos_start, chr_pos_end, read_length, read_id,circle_number)
+                        new_read = sim_single_end(i,path_to_genome_fasta, chr, chr_pos_start, chr_pos_end, read_length, circle_number)
                         SeqIO.write(set_of_reads,single_end_fastq,"fastq")
                         set_of_reads = [new_read]
                         i += 1
@@ -243,7 +241,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
     return("process finished")
 
 
-def sim_single_end(read_number,genome_fa,chr,chr_pos_start,chr_pos_end,read_length, circle_id):
+def sim_single_end(read_number,genome_fa,chr,chr_pos_start,chr_pos_end,read_length,circle):
     # create fastafile object
     fastafile = ps.FastaFile(genome_fa)
     #pick a random position in the circle
@@ -266,12 +264,12 @@ def sim_single_end(read_number,genome_fa,chr,chr_pos_start,chr_pos_end,read_leng
         left_split_read = fastafile.fetch(chr, left_nucleotides_start, chr_pos_end)
         #put all together
         total_read = left_split_read + right_split_read
-        seq_id = "%s|%s|%s:%s-%s:%s|1|%s" % (read_number,chr,left_nucleotides_start,chr_pos_end,chr_pos_start,right_nucleotides,circle_id)
+        seq_id = "%s|%s|%s:%s-%s:%s|1|%s" % (read_number,chr,left_nucleotides_start,chr_pos_end,chr_pos_start,right_nucleotides,circle)
 
 
     else:
         #sample normal read
-        seq_id = "%s|%s|%s:%s|0|%s" % (read_number,chr,start,end,circle_id)
+        seq_id = "%s|%s|%s:%s|0|%s" % (read_number,chr,start,end,circle)
         total_read = fastafile.fetch(chr, start,end)
 
 
