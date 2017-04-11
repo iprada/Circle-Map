@@ -2,6 +2,7 @@
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
+__pycache__/simulations.cpython-36.pyc
 __pycache__/
 __pycache__/*pyc
 *.py[cod]
