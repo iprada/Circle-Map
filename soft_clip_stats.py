@@ -3,8 +3,8 @@ import os
 import matplotlib.pyplot as plt
 os.chdir("/home/inigo/msc_thesis/mapping_stats/")
 
-
-
+number_of_circles = os.popen("samtools view sorted_paired_end_sim_aln.bam.sv.bam | awk '{print $1}' | tr '|' ' ' | awk '{print $6}' | sort | uniq | wc -l").readlines()[0].strip()
+print("number of circles=",number_of_circles)
 #sort the bam file by query name, the reads will be sorted in the order they were generated
 os.system("samtools sort -n -o query_name_sorted_paired_end_sim_aln.bam.sv.bam sorted_paired_end_sim_aln.bam.sv.bam")
 
