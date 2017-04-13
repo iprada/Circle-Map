@@ -9,5 +9,7 @@ os.chdir("/home/inigo/msc_thesis/mapping_stats/")
 samfile = ps.Samfile("query_name_sorted_paired_end_sim_aln.bam.sv.bam", "rb")
 
 for read in samfile:
-    print(read.query_name)
+    query = read.query_name
+    query_info = query.split('|')
+
     break
