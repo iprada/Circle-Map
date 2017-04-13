@@ -146,17 +146,20 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
                     if ((i + 1) / 1000000).is_integer() == False:
                         try:
+                            # simulate reads and save them to ram
                             print(i)
-                            #(insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_length, unique_id)
-
-
-                            new_read = sim_paired_end(i,insert_size,path_to_genome_fasta,chr,chr_pos_start,chr_pos_end,read_length,circle_number)
-                            get_seq = sim_paired_end.simulate_read(new_read)
-                            simulated_reads = sim_paired_end.simulate_perfect_read(get_seq)
-
+                            # create object
+                            new_read = sim_paired_end(i, insert_size, path_to_genome_fasta, chr, chr_pos_start,
+                                                      chr_pos_end, read_length, circle_number)
+                            # sim the read
+                            get_seq = new_read.simulate_read()
+                            # put it in fastq format
+                            simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
+                                                                                   get_seq[2])
+                            # save the read
                             set_of_left_reads.append(simulated_reads[0])
                             set_of_right_reads.append(simulated_reads[1])
-                            i +=1
+                            i += 1
                         except:
                             pass
 
@@ -164,56 +167,82 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
                     else:
                         try:
+                            # simulate reads and save to disk
                             print(i)
+
                             new_read = sim_paired_end(i, insert_size, path_to_genome_fasta, chr, chr_pos_start,
                                                       chr_pos_end, read_length, circle_number)
-                            get_seq = sim_paired_end.simulate_read(new_read)
-                            simulated_reads = sim_paired_end.simulate_perfect_read(get_seq)
-
+                            get_seq = new_read.simulate_read()
+                            simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
+                                                                                   get_seq[2])
                             set_of_left_reads.append(simulated_reads[0])
                             set_of_right_reads.append(simulated_reads[1])
-                            SeqIO.write(set_of_left_reads,paired_end_fastq_1 , "fastq")
+
+                            # save to disk
+                            SeqIO.write(set_of_left_reads, paired_end_fastq_1, "fastq")
                             SeqIO.write(set_of_right_reads, paired_end_fastq_2, "fastq")
-                            set_of_left_reads = [new_reads[0]]
-                            set_of_right_reads = [new_reads[1]]
-                            i +=1
+
+                            i += 1
+                            # sim the first read of the list
+                            new_read = sim_paired_end(i, insert_size, path_to_genome_fasta, chr, chr_pos_start,
+                                                      chr_pos_end, read_length, circle_number)
+                            get_seq = new_read.simulate_read()
+                            simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
+                                                                                   get_seq[2])
+
+                            set_of_left_reads = [simulated_reads[0]]
+                            set_of_right_reads = [simulated_reads[1]]
+                            i += 1
                         except:
                             pass
 
                 else:
 
                     if ((i + 1) / 1000000).is_integer() == False:
-
                         try:
-
+                            #simulate reads and save them to ram
                             print(i)
-
-                            #(insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_length, unique_id)
-
-
-                            new_reads = sim_paired_end(i,insert_size,path_to_genome_fasta,chr,chr_pos_start,chr_pos_end,read_length,circle_number)
-                            set_of_left_reads.append(new_reads[0])
-                            set_of_right_reads.append(new_reads[1])
+                            #create object
+                            new_read = sim_paired_end(i, insert_size, path_to_genome_fasta, chr, chr_pos_start,
+                                                      chr_pos_end, read_length, circle_number)
+                            #sim the read
+                            get_seq = new_read.simulate_read()
+                            #put it in fastq format
+                            simulated_reads = sim_paired_end.simulate_perfect_read(new_read,get_seq[0], get_seq[1], get_seq[2])
+                            #save the read
+                            set_of_left_reads.append(simulated_reads[0])
+                            set_of_right_reads.append(simulated_reads[1])
                             i +=1
-
                         except:
                             pass
 
-
-
-
-
                     else:
                         try:
+                            #simulate reads and save to disk
                             print(i)
-                            new_reads = sim_paired_end(i,insert_size, path_to_genome_fasta, chr, chr_pos_start, chr_pos_end,
-                                                       read_length,circle_number)
-                            set_of_left_reads.append(new_reads[0])
-                            set_of_right_reads.append(new_reads[1])
+
+                            new_read = sim_paired_end(i, insert_size, path_to_genome_fasta, chr, chr_pos_start,
+                                                      chr_pos_end, read_length, circle_number)
+                            get_seq = new_read.simulate_read()
+                            simulated_reads = sim_paired_end.simulate_perfect_read(new_read, get_seq[0], get_seq[1],
+                                                                                   get_seq[2])
+                            set_of_left_reads.append(simulated_reads[0])
+                            set_of_right_reads.append(simulated_reads[1])
+
+                            #save to disk
                             SeqIO.write(set_of_left_reads,paired_end_fastq_1 , "fastq")
                             SeqIO.write(set_of_right_reads, paired_end_fastq_2, "fastq")
-                            set_of_left_reads = [new_reads[0]]
-                            set_of_right_reads = [new_reads[1]]
+
+                            i += 1
+                            #sim the first read of the list
+                            new_read = sim_paired_end(i, insert_size, path_to_genome_fasta, chr, chr_pos_start,
+                                                      chr_pos_end, read_length, circle_number)
+                            get_seq = new_read.simulate_read()
+                            simulated_reads = sim_paired_end.simulate_perfect_read(new_read, get_seq[0], get_seq[1],
+                                                                                   get_seq[2])
+
+                            set_of_left_reads = [simulated_reads[0]]
+                            set_of_right_reads = [simulated_reads[1]]
                             i +=1
                         except:
                             pass
@@ -236,6 +265,9 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
                         print(i)
                         new_read = sim_single_end(i,path_to_genome_fasta, chr, chr_pos_start, chr_pos_end, read_length, circle_number)
                         SeqIO.write(set_of_reads,single_end_fastq,"fastq")
+                        i +=1
+                        new_read = sim_single_end(i, path_to_genome_fasta, chr, chr_pos_start, chr_pos_end, read_length,
+                                                  circle_number)
                         set_of_reads = [new_read]
                         i += 1
                     except:
@@ -294,6 +326,8 @@ def sim_single_end(read_number,genome_fa,chr,chr_pos_start,chr_pos_end,read_leng
 
 
 class sim_paired_end:
+
+    #init the class
     def __init__(self,read_number,insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_length,circle_id):
         self.read_number = read_number
         self.insert_size = insert_size
@@ -328,7 +362,7 @@ class sim_paired_end:
 
                 # right_read
                 right_start = self.chr_pos_start + int(round(self.insert_size - left_dntps - self.read_length))
-                right_read = fastafile.fetch(chr, right_start, (right_start + self.read_length))
+                right_read = fastafile.fetch(self.chr, right_start, (right_start + self.read_length))
 
                 # assertion to check the error here
 
@@ -376,15 +410,15 @@ class sim_paired_end:
         return(right_read,left_read,common_id)
 
 
-    @staticmethod
-    def simulate_perfect_read(right_read,left_read,common_id):
+
+    def simulate_perfect_read(self,right_read,left_read,common_id):
         # put all together
         # unique identifiers for right and left reads
         right_read_id = "2:N:0:CGCTGTG"
         right_id = common_id + "  " + right_read_id
         left_read_id = "1:N:0:CGCTGTG"
         left_id = common_id + "  " + left_read_id
-        quality = "I" * read_length
+        quality = "I" * self.read_length
         # get the reverse complement of the right read
         right_read = Seq(right_read, generic_dna)
         right_read = right_read.reverse_complement()
@@ -395,8 +429,8 @@ class sim_paired_end:
         left_record = SeqIO.read(StringIO(fastq_left), "fastq")
         return (left_record, right_record)
 
-    @staticmethod
-    def simulate_read_with_errors(right_read, left_read, common_id):
+
+    def simulate_read_with_errors(self,right_read, left_read, common_id):
         # put all together
         # unique identifiers for right and left reads
         right_read_id = "2:N:0:CGCTGTG"
@@ -410,7 +444,7 @@ class sim_paired_end:
         left_fasta.write(">" + left_id + "\n" + str(left_read) + "\n")
         # sim the read with art
         left_fasta.close()
-        os.system("art_illumina -ss HS25 -nf 0 -i left_read.fa -l %s -f 1 -o left > output" % read_length)
+        os.system("art_illumina -ss HS25 -nf 0 -i left_read.fa -l %s -f 1 -o left > output" % self.read_length)
         with open("left.fq", 'r') as left:
             left_read = left.read().replace('space', '   ').replace('1:N:0:CGCTGTG-1', '1:N:0:CGCTGTG')
 
@@ -423,7 +457,7 @@ class sim_paired_end:
         right_fasta.write(">" + right_id + "\n" + str(right_read) + "\n")
         right_fasta.close()
         # sim the read with art
-        os.system("art_illumina -ss HS25  -nf 0 -i right_read.fa -l %s -f 1 -o right > output" % read_length)
+        os.system("art_illumina -ss HS25  -nf 0 -i right_read.fa -l %s -f 1 -o right > output" % self.read_length)
         with open("right.fq", 'r') as right:
             right_read = right.read().replace('space', '   ').replace('1:N:0:CGCTGTG-1', '2:N:0:CGCTGTG')
 
