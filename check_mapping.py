@@ -4,10 +4,13 @@ import os
 
 
 
-os.chdir("/home/inigo/msc_thesis/mapping_stats/")
-#os.system("samtools sort -n -o query_name_sorted_paired_end_sim_aln.bam.sv.bam sorted_paired_end_sim_aln.bam.sv.bam")
-samfile = ps.Samfile("query_name_sorted_paired_end_sim_aln.bam.sv.bam", "rb")
+os.chdir("/home/jarvis/inigo/circDNA/")
+os.system("samtools view -b -h -F 3 sorted_paired_end_sim_aln.bam.sv.bam > circ_structural_variants.bam")
+os.system("samtools sort -n -o sorted_circ_structural_variants.bam circ_structural_variants.bam")
+exit()
+samfile = ps.Samfile("sorted_paired_end_sim_aln.bam.sv.bam", "rb")
 
 for read in samfile:
     print(read.query_name)
+    print(read.flags)
     break

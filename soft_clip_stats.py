@@ -1,16 +1,18 @@
 import pysam as ps
 import os
 import matplotlib.pyplot as plt
-os.chdir("/home/inigo/msc_thesis/mapping_stats/")
+os.chdir("/home/jarvis/inigo/circDNA")
 
-number_of_circles = os.popen("samtools view sorted_paired_end_sim_aln.bam.sv.bam | awk '{print $1}' | tr '|' ' ' | awk '{print $6}' | sort | uniq | wc -l").readlines()[0].strip()
-print("number of circles=",number_of_circles)
+#number_of_circles = os.popen("samtools view sorted_paired_end_sim_aln.bam.sv.bam | awk '{print $1}' | tr '|' ' ' | awk '{print $6}' | sort | uniq | wc -l").readlines()[0].strip()
+#print("number of circles=",number_of_circles)
 #sort the bam file by query name, the reads will be sorted in the order they were generated
-os.system("samtools sort -n -o query_name_sorted_paired_end_sim_aln.bam.sv.bam sorted_paired_end_sim_aln.bam.sv.bam")
+
+
+os.system("samtools sort -n -@ 10 -o query_name_sorted_paired_end_sim_aln.bam sorted_paired_end_sim_aln.bam")
 
 
 #open the bam file
-samfile = ps.Samfile("query_name_sorted_paired_end_sim_aln.bam.sv.bam", "rb")
+samfile = ps.Samfile("query_name_sorted_paired_end_sim_aln.bam", "rb")
 
 
 #file name of all soft-clipped reads
@@ -33,7 +35,11 @@ for read in samfile:
         pass
 
 
+print("parsing big file done")
+
 soft_cliped_bam.close()
+
+
 
 #open the soft-clipped bam to iterate
 soft_clipped = ps.Samfile("soft_clipped.bam", "rb")
@@ -42,7 +48,7 @@ soft_clipped = ps.Samfile("soft_clipped.bam", "rb")
 uniq_soft_cliped_bam = ps.AlignmentFile("unique_soft_clipped.bam","wb",template=samfile)
 
 
-#build an index so that one can find the how many times in each read present
+#build an index so that one can find the how many times is each read present
 
 index = ps.IndexedReads(soft_clipped)
 index.build()
@@ -52,7 +58,7 @@ index.build()
 
 
 #get query names of the reads that are unique
-os.system("samtools view soft_clipped.bam | awk '{print $1}' | uniq -c | awk '{if ($1==1) {print $2}}' > uniq_soft_clip.txt")
+os.system("samtools view soft_clipped.bam | awk '{print $1}' | sort |uniq -c | awk '{if ($1==1) {print $2}}' > uniq_soft_clip.txt")
 
 soft_clip_queries = open("uniq_soft_clip.txt","r")
 soft_clip_queries = soft_clip_queries.readlines()
