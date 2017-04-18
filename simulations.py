@@ -99,7 +99,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
         # decide ecDNA length
 
-        circle_length = rd.randint(150,100000)
+        circle_length = rd.randint(150,200)
 
 
         # linear decrease in coverage based on circle length
@@ -161,8 +161,10 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
                             set_of_left_reads.append(simulated_reads[0])
                             set_of_right_reads.append(simulated_reads[1])
                             i += 1
+
                         except:
                             pass
+
 
 
 

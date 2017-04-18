@@ -1,14 +1,12 @@
 import pysam as ps
 import os
 import matplotlib.pyplot as plt
-os.chdir("/home/jarvis/inigo/circDNA")
+os.chdir("/home/inigo/msc_thesis/mapping_stats")
 
-#number_of_circles = os.popen("samtools view sorted_paired_end_sim_aln.bam.sv.bam | awk '{print $1}' | tr '|' ' ' | awk '{print $6}' | sort | uniq | wc -l").readlines()[0].strip()
-#print("number of circles=",number_of_circles)
 #sort the bam file by query name, the reads will be sorted in the order they were generated
 
 
-os.system("samtools sort -n -@ 10 -o query_name_sorted_paired_end_sim_aln.bam sorted_paired_end_sim_aln.bam")
+os.system("samtools sort -n -o query_name_sorted_paired_end_sim_aln.bam circ_calls.bam")
 
 
 #open the bam file
@@ -38,7 +36,7 @@ for read in samfile:
 print("parsing big file done")
 
 soft_cliped_bam.close()
-
+soft_cliped_bam = ps.AlignmentFile("soft_clipped.bam","rb")
 
 
 #open the soft-clipped bam to iterate
@@ -80,12 +78,12 @@ os.system("rm soft_clipped.bam")
 
 
 
-uniq_soft_cliped_bam = ps.AlignmentFile("unique_soft_clipped.bam","rb")
+#uniq_soft_cliped_bam = ps.AlignmentFile("unique_soft_clipped.bam","rb")
 
 
 soft_clip_len = []
 
-for read in uniq_soft_cliped_bam:
+for read in soft_cliped_bam:
     if ("N" in read.seq) == True:
         continue
     else:
@@ -98,7 +96,7 @@ for read in uniq_soft_cliped_bam:
                 continue
 
 
-uniq_soft_cliped_bam.close()
+#uniq_soft_cliped_bam.close()
 
 
 plt.hist(soft_clip_len,bins=30)
