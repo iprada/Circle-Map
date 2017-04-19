@@ -1,6 +1,7 @@
 import pysam as ps
 import os
 import pandas as pd
+import pybedtools as bt
 import multiprocessing as mp
 
 
@@ -26,6 +27,7 @@ class alignment:
 
 
 
+
     def get_circ_dna_boundaries(self):
         """function that computes circDNA boundaries from a bamfile with soft-clipped and split reads"""
         print("computing bedGraph")
@@ -33,10 +35,22 @@ class alignment:
         alignment.remove_concordant_pairs(self)
         os.system("bedtools genomecov -ibam %s -bg  > %s" % (self.circ_bam,self.circ_bedgraph))
         print("Removing lonely reads")
-        os.system("cat %s | awk -v OFS='\t' '{ if ($4 > 2) { print $1,$2,$3} }' | mergeBed > %s" % (self.circ_bedgraph,self.circ_boundaries))
-        circ_boundaries = pd.read_table("%s" % self.circ_boundaries,sep='\t')
-
+        os.system("cat %s | awk -v OFS='\t' '{ if ($4 > 5) { print $1,$2,$3} }' | mergeBed | awk -v OFS='\t' '{ print $1,$2,$3,'0'}' > %s" % (self.circ_bedgraph,self.circ_boundaries))
+        circ_boundaries= bt.BedTool(self.circ_boundaries)
         return(circ_boundaries)
+
+    def query_name_sorted_circs(self):
+        os.system("samtools sort -n -o query_name_sorted_circs.bam circ_calls.bam")
+        os.system("samtools index circ_calls.bam ")
+        sorted_circs = ps.AlignmentFile("query_name_sorted_circs.bam","rb")
+        return(sorted_circs)
+
+    def is_soft_clipped(self,read):
+        for cigar in read.cigar:
+            if cigar[0] == 4:
+                return(True)
+            else:
+                return(False)
 
 
 
@@ -48,7 +62,7 @@ class alignment:
         circ_boundaries = alignment.get_circ_dna_boundaries(self)
         circ_boundaries.columns = ['chr','start','end']
         #parameters to run in parallel
-        number_of_rows = len(circ_boundaries.index)
+        number_of_rows = len(circ_boundaries)
         l = range(1,number_of_rows)
         medium_process = number_of_rows / self.number_of_cores
         medium_process = (int(medium_process))
@@ -63,37 +77,119 @@ class alignment:
 
         # iterate trough each entry in the bed file
 
-        for index, row in circ_boundaries.iterrows():
 
-            chromosome = row['chr']
-            start = row['start']
+        sorted_circs = alignment.query_name_sorted_circs(self)
+        #index by read name
 
-            end = row['end']
+        index = ps.IndexedReads(sorted_circs)
+        index.build()
+        os.system("samtools index circ_calls.bam")
+        circs = ps.AlignmentFile("circ_calls.bam","rb")
 
+        i = 0
 
-            os.system("samtools index %s" % self.circ_bam)
-            circ_file = ps.AlignmentFile(self.circ_bam,"rb")
-            boundary_file = ps.AlignmentFile("boundary_file.bam", "wb", template=circ_file)
-
-            mate_file = ps.AlignmentFile("mates.bam", "wb", template=circ_file)
-
-            # loop trough reads in the boundary
-            for read in circ_file.fetch('chr1',95047748,95135811):
-                try:
-                    print("pair")
-                    print(circ_file.mate(read))
-                    print(read)
-                except:
-                    print("alone")
-                    print(read)
+        for interval in circ_boundaries:
+            print(i)
+            i += 1
+            if int(interval.name) == 0:
 
 
+                mate_file = ps.AlignmentFile("mates.bam", "wb", template=circs)
+
+                soft_clipped = ps.AlignmentFile("soft_clipped.bam","wb",template=circs)
+
+                soft_clipped_mates = ps.AlignmentFile("soft_clipped_mates.bam","wb",template=circs)
+
+                # loop trough reads in the boundary
+                for read in circs.fetch(interval.chrom,interval.start,interval.end):
+
+                    # check if it is soft-clipped
+                    if alignment.is_soft_clipped(self,read) == True:
+                        soft_clipped.write(read)
+                        try:
+
+                            mates = index.find(read.query_name)
+
+                            for mate in mates:
+
+                                if mate == read:
+                                    continue
+                                else:
+                                    if alignment.is_soft_clipped(self, mate) == True:
+                                        soft_clipped_mates.write(mate)
+
+                                    mate_file.write(mate)
+
+
+                        except:
+                            continue
+                    else:
+
+                        try:
+                            mates = index.find(read.query_name)
+
+                            for mate in mates:
+                                if mate == read:
+                                    continue
+                                else:
+                                    if alignment.is_soft_clipped(self, mate) == True:
+                                        soft_clipped_mates.write(mate)
+
+                                    mate_file.write(mate)
+                        except:
+                            continue
+
+
+
+
+                mate_file.close()
+                soft_clipped.close()
+                soft_clipped_mates.close()
+
+                # get the mate boundaries
+                mate_bam = bt.BedTool('mates.bam')
+                os.system("samtools view mates.bam | awk '{print $1,$6}'")
+                mate_bam.bam_to_bed(output='mate.bed')
+
+                #os.system("cat mate.bed | uniq > mate.bed")
+
+                mate_bed = bt.BedTool('mate.bed')
+                mate_bed = mate_bed.sort()
+                mate_bed = mate_bed.merge()
+
+                exit()
+
+
+
+                print(mate_bed)
 
 
 
 
 
-            break
+
+            else:
+                continue
+
+
+
+
+
+            os.system("rm mates.bam")
+            os.system("rm soft_clipped.bam")
+            os.system("rm soft_clipped_mates.bam")
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -69,6 +69,7 @@ for query in soft_clip_queries:
         uniq_soft_cliped_bam.write(read)
 
 
+
 uniq_soft_cliped_bam.close()
 
 #remove intermediate files
