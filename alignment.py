@@ -1,9 +1,8 @@
 import pysam as ps
 import os
-import pandas as pd
 import numpy as np
 import pybedtools as bt
-import multiprocessing as mp
+
 
 
 class alignment:
