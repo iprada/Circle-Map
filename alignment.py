@@ -56,6 +56,7 @@ class alignment:
     def realignment(self,circ_boundaries,list):
 
         filtered_intervals = bt.BedTool("filtered_cutoff.bed")
+        print(list)
 
 
         for i in range(list[0],list[-1]):
