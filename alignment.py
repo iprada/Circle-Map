@@ -46,24 +46,38 @@ class alignment:
         # bedtools genomecov -bg -ibam circ_calls.bam | mergeBed > circ_support_calls.bed
         return (None)
 
+    def split_to_cores(self,len):
+        list = np.arange(len)
+        cores_split = np.array_split(list,self.number_of_cores)
+
+
+
+        return(cores_split)
+
+    def realignment(self,circ_boundaries,list):
+
+        filtered_intervals = bt.BedTool("filtered_cutoff.bed")
+
+
+        for i in range(list[0],list[-1]):
+            interval = filtered_intervals[i]
+            boundaries = circ_boundaries.count_hits(interval)
+            each_overlapping_interval = circ_boundaries.all_hits(interval)
+            i += 1
+            print(i)
+
+
+
+        return("a")
+
+
+
     def call_circles(self):
-        """Function that aims to call circles based on the boundaries identified using the discordant reads and soft clipped reads"""
-        print("Hunting circles")
-        # parameters to run in parallel
-        number_of_rows = len(self.circ_boundaries)
-        l = range(1, number_of_rows)
-        medium_process = number_of_rows / self.number_of_cores
-        medium_process = (int(medium_process))
-        n = medium_process
+        """Function that aims to call circles based on the boundaries identified
+        using the discordant reads and soft clipped reads"""
 
-        temp_file_names = []
-        for i in range(0, self.number_of_cores):
-            temp_file = "circles_" + str(i) + ".bed"
-            temp_file_names.append(temp_file)
 
-        spawn_reads = [l[i:i + n] for i in [0, len(l), n]]
 
-        # iterate trough each entry in the bed file
 
         # file of the sorted circles
         os.system("samtools index circ_calls.bam")
@@ -117,18 +131,11 @@ class alignment:
 
         circ_boundaries = bt.BedTool("circ_support_calls.bed")
 
-        i = 0
-        for interval in filtered_intervals:
-            boundaries = circ_boundaries.count_hits(interval)
-            each_overlapping_interval = circ_boundaries.all_hits(interval)
-            i += 1
-            print(i)
-
-        # parallel the interval part
-
-
+        length_filtered_intervals = len(filtered_intervals)
 
 
 
         # save the first file
         filtered_intervals.saveas("filtered_cutoff.bed")
+
+        return(filtered_intervals)
