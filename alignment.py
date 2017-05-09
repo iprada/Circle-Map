@@ -63,11 +63,17 @@ class alignment:
             boundaries = circ_boundaries.count_hits(interval)
             each_overlapping_interval = circ_boundaries.all_hits(interval)
             i += 1
-            print(i)
+            f = open('test.txt', 'a')
+            each_line = [i, "\n"]
+            join_lines = ' '.join(map(str, each_line))
+            f.write(join_lines)
+            f.close()
 
 
 
-        return("a")
+
+
+        return(None)
 
 
 
