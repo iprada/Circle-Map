@@ -2,6 +2,9 @@ import pysam as ps
 import os
 import numpy as np
 import pybedtools as bt
+import pyfasta as pf
+from Bio import pairwise2
+
 
 
 
@@ -13,7 +16,8 @@ class alignment:
         self.working_dir = working_dir
         self.all_bam = "sorted_paired_end_sim_aln.bam"
         self.number_of_cores = 3
-        self.circ_boundaries = bt.BedTool("read_coverage_merged.bed")
+        self.circ_boundaries = bt.BedTool("circ_support_calls.bed")
+        self.coverage = bt.BedTool("read_coverage_merged.bed")
 
     def remove_concordant_pairs(self):
         """Function that removes concordant pairs"""
@@ -55,27 +59,98 @@ class alignment:
 
     def realignment(self,circ_boundaries,list):
 
-        filtered_intervals = bt.BedTool("filtered_cutoff.bed")
-        print(list)
+        circ_bam = ps.AlignmentFile(self.circ_bam, "rb")
 
+        filtered_intervals = bt.BedTool("filtered_cutoff.bed")
 
         for i in range(list[0],list[-1]):
+            # each interval to realign/analyze
             interval = filtered_intervals[i]
+            # number of boundaries in the interval
             boundaries = circ_boundaries.count_hits(interval)
+
+            # get the intervals of the boundaries
             each_overlapping_interval = circ_boundaries.all_hits(interval)
-            i += 1
-            f = open('test.txt', 'a')
-            each_line = [i, "\n"]
-            join_lines = ' '.join(map(str, each_line))
-            f.write(join_lines)
-            f.close()
+
+            intervals = bt.BedTool(each_overlapping_interval)
 
 
+            # analize the intervals that have only one overlapping boundary
+            if boundaries == 1:
+                #scores
+                split_read = 0
+                discordant = 0
+                print("startttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt")
+                print(interval)
+                for circ_interval in intervals:
+                    print(circ_interval)
+                    #loop trough the interval in the circ_boundaries
+
+                    # count reads in the interval
+                    count_reads = circ_bam.count(circ_interval.chrom, circ_interval.start, circ_interval.end)
+
+
+                    for read in circ_bam.fetch(circ_interval.chrom, circ_interval.start, circ_interval.end):
+                        #loop trough read
+                        if read.mapq > 10:
+                            #filter by mapq
+
+                            if alignment.is_soft_clipped(self,read) == True:
+                                try:
+                                    # if there is SA (split alignment) we do not need to realign
+                                    suplementary = read.get_tag('SA')
+                                    # split the list to get the info
+                                    supl_info = [x.strip() for x in suplementary.split(',')]
+                                    # this list will have the following information [chr,left_most start,"strand,CIGAR,mapq, edit_distance]
+
+                                    #supplementary data
+
+
+
+                                    if supl_info[0] == interval.chrom:
+                                        #check the same chrosome
+                                        if read.reference_start == interval.start and  interval.end - read.query_length  <= supl_info[1] <= interval.end:
+                                            split_read +=1
+
+                                        elif read.reference_end == interval.end and  interval.start <= supl_info[1] <=  interval.start + read.query_length:
+                                            split_read +=1
+
+
+
+                                except:
+                                    #realignment
+
+                                    cigar = read.cigar
+                                    print(cigar)
+                                    print(read.query_name,read.mapq)
+                                    # check map pos of the read
+                                    print(read)
+
+                                    pairwise_al = pairwise2.align.localxx(read.seq,read.seq)
+                                    print(pairwise_al[0][2])
+                                    #print(read)
+
+                            else:
+                                #check the discordant reads
+                                a = 1
+
+                print("endddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
+
+
+
+
+
+
+
+
+
+
+
+            # if hits == 2 c
 
 
 
         return(None)
-
 
 
     def call_circles(self):
@@ -95,7 +170,7 @@ class alignment:
         # mapq_filter
         mapq_filtered = []
         each_one = 0
-        for interval in self.circ_boundaries:
+        for interval in self.coverage:
             if interval.end - interval.start < 1000:
                 interval_mapq = []
                 for read in all_bam.fetch(interval.chrom, interval.start, interval.end):
@@ -123,12 +198,12 @@ class alignment:
         for interval in mapq_filtered:
             suports = circs.count(interval.chrom, interval.start, interval.end)
             if (interval.end - interval.start) < 300:
-                if suports > 0:
+                if suports > 4:
                     filtered_intervals.append(interval)
                     second_filters += 1
                     print(second_filters)
             else:
-                if suports > 0:
+                if suports > 2:
                     filtered_intervals.append(interval)
                     second_filters += 1
                     print(second_filters)
