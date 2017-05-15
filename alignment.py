@@ -468,6 +468,9 @@ class alignment:
 
             intervals = bt.BedTool(each_overlapping_interval)
 
+            results = []
+
+            f = open('test_status.txt', 'a')
 
             # analize the intervals that have only one overlapping boundary
             if boundaries == 1:
@@ -479,7 +482,10 @@ class alignment:
                     if realigned_interval[0] + realigned_interval[1] >= 4:
 
                         circles +=1
-                        print(circles,"one boundary")
+                        results.append(realigned_interval[2])
+                        each_line = ["a", "\n"]
+                        join_lines = ' '.join(map(str, each_line))
+                        f.write(join_lines)
                 except:
                     continue
 
@@ -489,7 +495,10 @@ class alignment:
                 try:
                     if realigned_boundaries[0] + realigned_boundaries[1] >= 4:
                         circles +=1
-                        print(circles,"two boundaries")
+                        results.append(realigned_boundaries[2])
+                        each_line = ["a", "\n"]
+                        join_lines = ' '.join(map(str, each_line))
+                        f.write(join_lines)
 
                 except:
                     continue
