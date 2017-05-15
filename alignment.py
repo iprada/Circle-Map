@@ -500,8 +500,12 @@ class alignment:
                         join_lines = ' '.join(map(str, each_line))
                         f.write(join_lines)
 
+
                 except:
                     continue
+
+
+            f.close()
 
 
 
