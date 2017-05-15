@@ -442,14 +442,18 @@ class alignment:
         return(split_read,discordant,interval)
 
 
+
     def realignment(self,circ_boundaries,list):
 
-        circles = 0
+
+
 
 
         circ_bam = ps.AlignmentFile(self.circ_bam, "rb")
 
         filtered_intervals = bt.BedTool("filtered_cutoff.bed")
+
+
 
         os.chdir(self.genome_dir)
 
@@ -470,42 +474,131 @@ class alignment:
 
             results = []
 
-            f = open('test_status.txt', 'a')
+
+
+
+
 
             # analize the intervals that have only one overlapping boundary
             if boundaries == 1:
+
+                continue
                 #realign_one_interval(self,interval,circ_intervals,circ_bam,fastafile):
-                realigned_interval = alignment.realign_with_one_boundary(self,interval,intervals,circ_bam,fastafile)
+                #realigned_interval = alignment.realign_with_one_boundary(self,interval,intervals,circ_bam,fastafile)
 
-                try:
+                #try:
 
-                    if realigned_interval[0] + realigned_interval[1] >= 4:
+                #    if realigned_interval[0] + realigned_interval[1] >= 4:
 
-                        circles +=1
-                        results.append(realigned_interval[2])
-                        each_line = ["a", "\n"]
-                        join_lines = ' '.join(map(str, each_line))
-                        f.write(join_lines)
-                except:
-                    continue
+                #        circles +=1
+                #        results.append(realigned_interval[2])
+                #        each_line = ["a", "\n"]
+                #        join_lines = ' '.join(map(str, each_line))
+                #        f.write(join_lines)
+                #except:
+                #    continue
 
             elif boundaries ==2:
-                realigned_boundaries = alignment.realign_with_two_boundaries(self,interval,intervals,circ_bam,fastafile)
+                continue
+                #realigned_boundaries = alignment.realign_with_two_boundaries(self,interval,intervals,circ_bam,fastafile)
 
-                try:
-                    if realigned_boundaries[0] + realigned_boundaries[1] >= 4:
-                        circles +=1
-                        results.append(realigned_boundaries[2])
-                        each_line = ["a", "\n"]
-                        join_lines = ' '.join(map(str, each_line))
-                        f.write(join_lines)
+                #try:
+                #    if realigned_boundaries[0] + realigned_boundaries[1] >= 4:
+                #        circles +=1
+                #        results.append(realigned_boundaries[2])
+                #        each_line = ["a", "\n"]
+                #        join_lines = ' '.join(map(str, each_line))
+                #        f.write(join_lines)
 
 
-                except:
+                #except:
+                #    continue
+
+            else:
+                continue
+
+                while len(intervals) > 1:
+
+
+
+                    for interval in intervals:
+
+                        #create scoring list
+
+                        interval_list = []
+                        scoring_list = []
+                        for each_interval in intervals:
+                            interval_list.append(each_interval)
+                            scoring_list.append(0)
+
+
+
+
+
+
+                        for read in circ_bam.fetch(interval.chrom, interval.start, interval.end):
+
+                            next_read = read.next_reference_id
+
+                            if next_read == -1:
+                                continue
+
+                            else:
+                                mate_map_chr = circ_bam.get_reference_name(next_read)
+                                mate_map_pos = read.next_reference_start
+
+                                for element in range(0,len(interval_list)):
+                                    if mate_map_chr == interval_list[element].chrom:
+                                        if interval_list[element].start < mate_map_pos < interval_list[element].end:
+                                            scoring_list[element] +=1
+
+
+
+
+
+
+                    print(scoring_list)
+                    index_number = scoring_list.index(max(scoring_list))
+                    index = [0,index_number]
+                    pair = [ interval_list[i] for i in index]
+                    print("aaaa")
+                    print(pair)
+
+                    interval_list = [i for j, i in enumerate(interval_list) if j not in index]
+                    intervals = bt.BedTool(interval_list)
+                    print(interval_list)
+                    print(intervals)
+
+                else:
                     continue
 
 
-            f.close()
+
+
+
+
+
+
+                break
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
