@@ -132,9 +132,319 @@ class alignment:
         return(filtered_intervals)
 
 
+    def realign_with_one_boundary(self,interval,circ_intervals,circ_bam,fastafile):
+        split_read = 0
+        discordant = 0
+
+        for circ_interval in circ_intervals:
+
+
+            # count reads in the interval
+            count_reads = circ_bam.count(circ_interval.chrom, circ_interval.start, circ_interval.end)
+
+            for read in circ_bam.fetch(circ_interval.chrom, circ_interval.start, circ_interval.end):
+
+                # loop trough read
+                if read.mapq > 10:
+                    # filter by mapq
+
+                    if alignment.is_soft_clipped(self, read) == True:
+                        try:
+                            # if there is SA (split alignment) we do not need to realign
+                            suplementary = read.get_tag('SA')
+                            # split the list to get the info
+                            # this list will have the following information [chr,left_most start,"strand,CIGAR,mapq, edit_distance]
+                            supl_info = [x.strip() for x in suplementary.split(',')]
+
+                            # check the chromosome
+                            if supl_info[0] == interval.chrom:
+                                # aligned in the left boundary, supplementary on right
+                                if read.reference_start == interval.start and interval.end - read.query_length <= supl_info[
+                                    1] <= interval.end:
+                                    split_read += 1
+                                # aligned on the right boundary, supplementary alignment in the left
+                                elif read.reference_end == interval.end and interval.start <= supl_info[
+                                    1] <= interval.start + read.query_length:
+                                    split_read += 1
+
+
+
+                        except:
+                            # realignment
+
+                            if read.cigar[0][0] == 4:
+                                # get the nucleotides of the beginning
+                                nucleotides = read.cigar[0][1]
+                                soft_clip_seq = read.seq[0:nucleotides]
+
+                                if 'N' in soft_clip_seq:
+                                    continue
+                                else:
+
+                                    if read.is_reverse == True:
+                                        # get support interval seq
+                                        seq = fastafile.fetch(circ_interval.chrom, circ_interval.start, circ_interval.end)
+                                        # reverse it
+                                        seq = Seq(seq, generic_dna)
+                                        seq = seq.reverse_complement()
+
+                                        # smith watermann
+                                        pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq, 1, -1, -.5, -.1)
+
+
+                                        #if the score is equal to read length
+
+                                        if int(pairwise_al[0][2]) == len(soft_clip_seq):
+                                            split_read += 1
+
+
+                                    else:
+                                        #read mapped to + strand
+                                        seq = fastafile.fetch(circ_interval.chrom, circ_interval.start, circ_interval.end)
+                                        #smith watermann
+                                        pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq, 1, -1, -.5, -.1)
+
+                                        if int(pairwise_al[0][2]) == len(soft_clip_seq):
+                                            split_read += 1
+
+
+                            elif read.cigar[-1][0] == 4:
+                                # get nucleotides in the end
+                                nucleotides = read.cigar[-1][1]
+                                soft_clip_seq = read.seq[nucleotides:]
+
+                                if 'N' in soft_clip_seq:
+                                    continue
+
+                                else:
+
+                                    if read.is_reverse == True:
+                                        # get support interval seq
+                                        seq = fastafile.fetch(circ_interval.chrom, circ_interval.start,
+                                                              circ_interval.end)
+                                        # reverse it
+                                        seq = Seq(seq, generic_dna)
+                                        seq = seq.reverse_complement()
+                                        #smith watermann
+                                        pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq, 1, -1, -.5, -.1)
+                                        if int(pairwise_al[0][2]) == len(soft_clip_seq):
+                                            split_read += 1
+
+
+                                    else:
+                                        #get seq
+                                        seq = fastafile.fetch(circ_interval.chrom, circ_interval.start,
+                                                              circ_interval.end)
+
+                                        #smith watermann
+                                        pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq, 1, -1, -.5, -.1)
+
+                                        if int(pairwise_al[0][2]) == len(soft_clip_seq):
+                                            split_read += 1
+
+
+                    else:
+                        # check the mapping of the discordants
+                        discordant += 1
+
+                    return(split_read,discordant,circ_interval)
+
+
+    def realign_with_two_boundaries(self,interval,circ_intervals,circ_bam,fastafile):
+        """Function that realigns the reads of a pair of intervals"""
+        split_read = 0
+        discordant = 0
+        print(circ_intervals[0])
+
+        for read in circ_bam.fetch(circ_intervals[0].chrom, circ_intervals[0].start, circ_intervals[0].end):
+            # loop trough read
+            if read.mapq > 10:
+            # filter by mapq
+
+                if alignment.is_soft_clipped(self, read) == True:
+                    try:
+                        # if there is SA (split alignment) we do not need to realign
+                        suplementary = read.get_tag('SA')
+                        # split the list to get the info
+                        # this list will have the following information [chr,left_most start,"strand,CIGAR,mapq, edit_distance]
+                        supl_info = [x.strip() for x in suplementary.split(',')]
+
+                        # check the chromosome
+                        if supl_info[0] == circ_intervals[1].chrom:
+                            # aligned in the left boundary, supplementary on right
+                            if  circ_intervals[1].start<= supl_info[1] <= circ_intervals[1].end:
+                                split_read += 1
+
+                    except:
+                        #realignment
+                        if read.cigar[0][0] == 4:
+                            # get the nucleotides of the beginning
+                            nucleotides = read.cigar[0][1]
+                            soft_clip_seq = read.seq[0:nucleotides]
+
+                            if 'N' in soft_clip_seq:
+                                continue
+                            else:
+
+                                if read.is_reverse == True:
+                                    # get support interval seq
+                                    seq = fastafile.fetch(circ_intervals[1].chrom, circ_intervals[1].start, circ_intervals[1].end)
+                                    # reverse it
+                                    seq = Seq(seq, generic_dna)
+                                    seq = seq.reverse_complement()
+                                    pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq, 1, -1, -.5, -.1)
+
+                                    if int(pairwise_al[0][2]) == len(soft_clip_seq):
+                                        split_read += 1
+
+
+                                else:
+                                    seq = fastafile.fetch(circ_intervals[1].chrom, circ_intervals[1].start, circ_intervals[1].end)
+                                    pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq, 1, -1, -.5, -.1)
+
+                                    if int(pairwise_al[0][2]) == len(soft_clip_seq):
+                                        split_read += 1
+
+
+                        elif read.cigar[-1][0] == 4:
+                            # get nucleotides in the end
+                            nucleotides = read.cigar[-1][1]
+                            soft_clip_seq = read.seq[nucleotides:]
+
+                            if 'N' in soft_clip_seq:
+                                continue
+
+                            else:
+
+                                if read.is_reverse == True:
+                                    # get support interval seq
+                                    seq = fastafile.fetch(circ_intervals[1].chrom, circ_intervals[1].start,
+                                                          circ_intervals[1].end)
+                                    # reverse it
+                                    seq = Seq(seq, generic_dna)
+                                    seq = seq.reverse_complement()
+                                    pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq, 1, -1, -.5, -.1)
+                                    if int(pairwise_al[0][2]) == len(soft_clip_seq):
+                                        split_read += 1
+
+
+                                else:
+                                    seq = fastafile.fetch(circ_intervals[1].chrom, circ_intervals[1].start,
+                                                          circ_intervals[1].end)
+
+                                    pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq, 1, -1, -.5, -.1)
+
+                                    if int(pairwise_al[0][2]) == len(soft_clip_seq):
+                                        split_read += 1
+
+
+                else:
+                    discordant +=1
+
+            split_read = 0
+            discordant = 0
+
+
+        for read in circ_bam.fetch(circ_intervals[1].chrom, circ_intervals[1].start, circ_intervals[1].end):
+            # loop trough read
+            if read.mapq > 10:
+                # filter by mapq
+
+                if alignment.is_soft_clipped(self, read) == True:
+                    try:
+                        # if there is SA (split alignment) we do not need to realign
+                        suplementary = read.get_tag('SA')
+                        # split the list to get the info
+                        # this list will have the following information [chr,left_most start,"strand,CIGAR,mapq, edit_distance]
+                        supl_info = [x.strip() for x in suplementary.split(',')]
+
+                        # check the chromosome
+                        if supl_info[0] == circ_intervals[0].chrom:
+                            # aligned in the left boundary, supplementary on right
+                            if circ_intervals[0].start <= supl_info[0] <= circ_intervals[0].end:
+                                split_read += 1
+
+                    except:
+                        # realignment
+                        if read.cigar[0][0] == 4:
+                            # get the nucleotides of the beginning
+                            nucleotides = read.cigar[0][1]
+                            soft_clip_seq = read.seq[0:nucleotides]
+
+                            if 'N' in soft_clip_seq:
+                                continue
+                            else:
+
+                                if read.is_reverse == True:
+                                    # get support interval seq
+                                    seq = fastafile.fetch(circ_intervals[0].chrom, circ_intervals[0].start,
+                                                          circ_intervals[0].end)
+                                    # reverse it
+                                    seq = Seq(seq, generic_dna)
+                                    seq = seq.reverse_complement()
+                                    pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq, 1, -1, -.5,
+                                                                          -.1)
+
+                                    if int(pairwise_al[0][2]) == len(soft_clip_seq):
+                                        split_read += 1
+
+
+                                else:
+
+                                    seq = fastafile.fetch(circ_intervals[0].chrom, circ_intervals[0].start,
+                                                          circ_intervals[0].end)
+
+                                    pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq, 1, -1, -.5,
+                                                                          -.1)
+
+
+                                    if int(pairwise_al[0][2]) == len(soft_clip_seq):
+                                        split_read += 1
+
+
+                        elif read.cigar[-1][0] == 4:
+                            # get nucleotides in the end
+                            nucleotides = read.cigar[-1][1]
+                            soft_clip_seq = read.seq[nucleotides:]
+
+                            if 'N' in soft_clip_seq:
+                                continue
+
+                            else:
+
+                                if read.is_reverse == True:
+                                    # get support interval seq
+                                    seq = fastafile.fetch(circ_intervals[0].chrom, circ_intervals[0].start,
+                                                          circ_intervals[0].end)
+                                    # reverse it
+                                    seq = Seq(seq, generic_dna)
+                                    seq = seq.reverse_complement()
+                                    pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq, 1, -1, -.5,
+                                                                          -.1)
+                                    if int(pairwise_al[0][2]) == len(soft_clip_seq):
+                                        split_read += 1
+
+
+                                else:
+                                    seq = fastafile.fetch(circ_intervals[0].chrom, circ_intervals[0].start,
+                                                          circ_intervals[0].end)
+
+                                    pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq, 1, -1, -.5,
+                                                                          -.1)
+
+                                    if int(pairwise_al[0][2]) == len(soft_clip_seq):
+                                        split_read += 1
+
+
+                else:
+                    discordant += 1
+
+        return(split_read,discordant,interval)
 
 
     def realignment(self,circ_boundaries,list):
+
+        circles = 0
 
 
         circ_bam = ps.AlignmentFile(self.circ_bam, "rb")
@@ -161,133 +471,33 @@ class alignment:
 
             # analize the intervals that have only one overlapping boundary
             if boundaries == 1:
-                #scores
-                split_read = 0
-                discordant = 0
-                print(interval)
-                for circ_interval in intervals:
-                    print(circ_interval)
-                    #loop trough the interval in the circ_boundaries
+                #realign_one_interval(self,interval,circ_intervals,circ_bam,fastafile):
+                realigned_interval = alignment.realign_with_one_boundary(self,interval,intervals,circ_bam,fastafile)
 
-                    # count reads in the interval
-                    count_reads = circ_bam.count(circ_interval.chrom, circ_interval.start, circ_interval.end)
+                try:
 
+                    if realigned_interval[0] + realigned_interval[1] >= 4:
 
-                    for read in circ_bam.fetch(circ_interval.chrom, circ_interval.start, circ_interval.end):
+                        circles +=1
+                        print(circles,"one boundary")
+                except:
+                    continue
 
-                        #loop trough read
-                        if read.mapq > 10:
-                            #filter by mapq
+            elif boundaries ==2:
+                realigned_boundaries = alignment.realign_with_two_boundaries(self,interval,intervals,circ_bam,fastafile)
 
-                            if alignment.is_soft_clipped(self,read) == True:
-                                try:
-                                    # if there is SA (split alignment) we do not need to realign
-                                    suplementary = read.get_tag('SA')
-                                    # split the list to get the info
-                                    # this list will have the following information [chr,left_most start,"strand,CIGAR,mapq, edit_distance]
-                                    supl_info = [x.strip() for x in suplementary.split(',')]
+                try:
+                    if realigned_boundaries[0] + realigned_boundaries[1] >= 4:
+                        circles +=1
+                        print(circles,"two boundaries")
 
-                                    #check the chromosome
-                                    if supl_info[0] == interval.chrom:
-                                        # aligned in the left boundary, supplementary on right
-                                        if read.reference_start == interval.start and  interval.end - read.query_length  <= supl_info[1] <= interval.end:
-                                            split_read +=1
-                                        # aligned on the right boundary, supplementary alignment in the left
-                                        elif read.reference_end == interval.end and  interval.start <= supl_info[1] <=  interval.start + read.query_length:
-                                            split_read +=1
-
-
-
-                                except:
-                                    #realignment
-
-                                    if read.cigar[0][0] == 4:
-                                        #get the nucleotides of the beginning
-                                        nucleotides = read.cigar[0][1]
-                                        soft_clip_seq = read.seq[0:nucleotides]
-
-                                        if 'N' in soft_clip_seq:
-                                            continue
-                                        else:
-
-                                            if read.is_reverse == True:
-                                                # get support interval seq
-                                                seq = fastafile.fetch(circ_interval.chrom,circ_interval.start,circ_interval.end)
-                                                #reverse it
-                                                seq = Seq(seq, generic_dna)
-                                                seq = seq.reverse_complement()
-                                                pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq,1,-1,-.5, -.1)
-
-                                                if int(pairwise_al[0][2]) == len(soft_clip_seq):
-                                                    split_read +=1
-                                                    print("Realigned in reverse and init !!!!!!!!!!!!!!!!!!")
-
-                                            else:
-                                                seq = fastafile.fetch(circ_interval.chrom, circ_interval.start,circ_interval.end)
-                                                pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq,1,-1,-.5, -.1)
-
-                                                if int(pairwise_al[0][2]) == len(soft_clip_seq):
-                                                    split_read += 1
-                                                    print("Realigned in init!!!!!!!!!!!!!!!!!!")
-
-                                    elif read.cigar[-1][0] == 4:
-                                        #get nucleotides in the end
-                                        nucleotides = read.cigar[-1][1]
-                                        soft_clip_seq = read.seq[nucleotides:]
-
-                                        if 'N' in soft_clip_seq:
-                                           continue
-
-                                        else:
-
-                                            if read.is_reverse == True:
-                                                # get support interval seq
-                                                seq = fastafile.fetch(circ_interval.chrom, circ_interval.start,
-                                                                      circ_interval.end)
-                                                # reverse it
-                                                seq = Seq(seq, generic_dna)
-                                                seq = seq.reverse_complement()
-                                                pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq,1,-1,-.5, -.1)
-                                                if int(pairwise_al[0][2]) == len(soft_clip_seq):
-                                                    split_read += 1
-                                                    print("Realigned in reverse and end!!!!!!!!!!!!!!!!!!")
-
-                                            else:
-                                                seq = fastafile.fetch(circ_interval.chrom, circ_interval.start,
-                                                                      circ_interval.end)
-
-                                                pairwise_al = pairwise2.align.localms(seq.upper(), soft_clip_seq,1,-1,-.5, -.1)
-
-                                                if int(pairwise_al[0][2]) == len(soft_clip_seq):
-                                                    split_read += 1
-                                                    print("Realigned in end!!!!!!!!!!!!!!!!!!")
-
-
-
-                                    #genome_seq = fastafile.fetch(chr1, start, end)
-
-
-                                    #print(read)
-
-                            else:
-                                # check the mapping of the discordants
-                                discordant +=1
-
-                print(split_read)
-
-                print("endddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
+                except:
+                    continue
 
 
 
 
 
-
-
-
-
-
-
-            # if hits == 2 c
 
 
 
