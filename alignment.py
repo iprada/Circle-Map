@@ -445,9 +445,7 @@ class alignment:
 
     def realignment(self,circ_boundaries,list):
 
-
-
-
+        f = open("test_status.txt","a")
 
         circ_bam = ps.AlignmentFile(self.circ_bam, "rb")
 
@@ -482,46 +480,49 @@ class alignment:
             # analize the intervals that have only one overlapping boundary
             if boundaries == 1:
 
-                continue
                 #realign_one_interval(self,interval,circ_intervals,circ_bam,fastafile):
-                #realigned_interval = alignment.realign_with_one_boundary(self,interval,intervals,circ_bam,fastafile)
+                realigned_interval = alignment.realign_with_one_boundary(self,interval,intervals,circ_bam,fastafile)
 
-                #try:
+                try:
 
-                #    if realigned_interval[0] + realigned_interval[1] >= 4:
+                    if realigned_interval[0] + realigned_interval[1] >= 4:
 
-                #        circles +=1
-                #        results.append(realigned_interval[2])
-                #        each_line = ["a", "\n"]
-                #        join_lines = ' '.join(map(str, each_line))
-                #        f.write(join_lines)
-                #except:
-                #    continue
+
+                        results.append(realigned_interval[2])
+                        each_line = ["a", "\n"]
+                        join_lines = ' '.join(map(str, each_line))
+                        f.write(join_lines)
+                        print("one boundary correct")
+                except:
+                    print("error in one boundary")
+                    continue
 
             elif boundaries ==2:
-                continue
-                #realigned_boundaries = alignment.realign_with_two_boundaries(self,interval,intervals,circ_bam,fastafile)
 
-                #try:
-                #    if realigned_boundaries[0] + realigned_boundaries[1] >= 4:
-                #        circles +=1
-                #        results.append(realigned_boundaries[2])
-                #        each_line = ["a", "\n"]
-                #        join_lines = ' '.join(map(str, each_line))
-                #        f.write(join_lines)
+                realigned_boundaries = alignment.realign_with_two_boundaries(self,interval,intervals,circ_bam,fastafile)
+
+                try:
+                    if realigned_boundaries[0] + realigned_boundaries[1] >= 4:
+                        results.append(realigned_boundaries[2])
+                        each_line = ["a", "\n"]
+                        join_lines = ' '.join(map(str, each_line))
+                        f.write(join_lines)
+                        print("two boundaries correct")
 
 
-                #except:
-                #    continue
+                except:
+                    print("error in two boundaries")
+                    continue
 
             else:
-                continue
+
 
                 while len(intervals) > 1:
 
 
 
-                    for interval in intervals:
+
+                    for each_interval in intervals:
 
                         #create scoring list
 
@@ -536,7 +537,7 @@ class alignment:
 
 
 
-                        for read in circ_bam.fetch(interval.chrom, interval.start, interval.end):
+                        for read in circ_bam.fetch(each_interval.chrom, each_interval.start, each_interval.end):
 
                             next_read = read.next_reference_id
 
@@ -557,29 +558,48 @@ class alignment:
 
 
 
-                    print(scoring_list)
+                    #print(scoring_list)
                     index_number = scoring_list.index(max(scoring_list))
                     index = [0,index_number]
                     pair = [ interval_list[i] for i in index]
-                    print("aaaa")
-                    print(pair)
-
                     interval_list = [i for j, i in enumerate(interval_list) if j not in index]
                     intervals = bt.BedTool(interval_list)
-                    print(interval_list)
-                    print(intervals)
+                    pair = bt.BedTool(pair)
+                    realigned_boundaries = alignment.realign_with_two_boundaries(self,interval,pair,circ_bam,fastafile)
+
+                    try:
+                        if realigned_boundaries[0] + realigned_boundaries[1] >= 4:
+                            results.append(realigned_boundaries[2])
+                            each_line = ["a", "\n"]
+                            join_lines = ' '.join(map(str, each_line))
+                            f.write(join_lines)
+                            print("multiple boundaries correct")
+
+
+                    except:
+                       continue
+
 
                 else:
-                    continue
+                    realigned_interval = alignment.realign_with_one_boundary(self, interval, intervals, circ_bam,
+                                                                             fastafile)
+
+                    try:
+
+                        if realigned_interval[0] + realigned_interval[1] >= 4:
+
+                            results.append(realigned_interval[2])
+                            each_line = ["a", "\n"]
+                            join_lines = ' '.join(map(str, each_line))
+                            f.write(join_lines)
+                            print("1 boundary correct")
+                    except:
+                        print("one boundary not correct")
+                        continue
 
 
+        f.close()
 
-
-
-
-
-
-                break
 
 
 
