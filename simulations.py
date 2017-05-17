@@ -42,7 +42,7 @@ bio.__version__ , np.__version__)
 __external_packages_used__ = 'this program was develop with pysam version: 0.10.0, Biopython version: 1.68 and numpy version 1.12.0'
 
 
-def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,directory,spawn_reads,temp_fastq,insert_size,errors):
+def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,directory,reads,temp_fastq,insert_size,errors):
     """Function that takes as arguments a genome fasta file, weights each chromosome based on the length
     and simulates single end eccDNA reads
      """
@@ -91,15 +91,17 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
     set_of_reads = []
     set_of_left_reads = []
     set_of_right_reads = []
-    i = spawn_reads[0] -1
+
     circle_number = 0
-    while i < spawn_reads[-1] +1:
+    i = 0
+
+    while i < reads + 1:
         #decide the chromosome
         chr = np.random.choice(contig_list, p=weights)
 
         # decide ecDNA length
 
-        circle_length = rd.randint(150,200)
+        circle_length = rd.randint(150,100000)
 
 
         # linear decrease in coverage based on circle length
@@ -133,11 +135,13 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
             chr_pos_end = chr_pos_start + circle_length
 
         #save each circle positions, so that then I can check true circles
-        circle_bed = open('true_circles.bed', 'a')
-        each_circle = [chr,chr_pos_start,chr_pos_end,"\n"]
-        join_lines = ' '.join(map(str, each_circle))
-        circle_bed.write(join_lines)
-        
+
+        circle_bed = open('true_circles.bed','a')
+        first_line = [chr, chr_pos_start, chr_pos_end, "\n"]
+        joined_first_line = ' '.join(map(str, first_line))
+
+
+
 
         #account for paired end or single end data
 
@@ -281,6 +285,9 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
                         i += 1
                     except:
                         pass
+
+        circle_bed.write(joined_first_line)
+
 
 
     circle_bed.close()
