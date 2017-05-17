@@ -132,6 +132,12 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
         else:
             chr_pos_end = chr_pos_start + circle_length
 
+        #save each circle positions, so that then I can check true circles
+        circle_bed = open('true_circles.bed', 'a')
+        each_circle = [chr,chr_pos_start,chr_pos_end,"\n"]
+        join_lines = ' '.join(map(str, each_circle))
+        circle_bed.write(join_lines)
+        
 
         #account for paired end or single end data
 
@@ -277,7 +283,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
                         pass
 
 
-
+    circle_bed.close()
 
     return("process finished")
 
