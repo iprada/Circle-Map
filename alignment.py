@@ -7,6 +7,7 @@ from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
 
 
+
 #TO-DO
 # remove loop that checks for N reads in realignment step
 
@@ -15,35 +16,19 @@ from Bio.Alphabet import generic_dna
 
 class alignment:
     def __init__(self, bam, working_dir,genome_fa_dir,genome_name):
-        self.bam = bam
-        self.circ_bam = "circ_calls.bam"
-        self.circ_bedgraph = "circ_dna_boundaries.bedGraph"
+        self.circ_bam = "circ_supports.bam"
         self.working_dir = working_dir
         self.all_bam = "sorted_paired_end_sim_aln.bam"
         self.number_of_cores = 3
-        self.circ_boundaries = bt.BedTool("circ_support_calls.bed")
+        self.circ_boundaries = bt.BedTool("circ_supports.bed")
         self.coverage = bt.BedTool("read_coverage_merged.bed")
         self.genome_dir = genome_fa_dir
         self.genome = genome_name
 
-    def remove_concordant_pairs(self):
-        """Function that removes concordant pairs"""
-        os.system("samtools view -hb -F 2 %s > %s" % (self.bam, self.circ_bam))
+    def get_circ_reads(self):
+        """Function that extracts circular DNA supporting reads from a bam file (Split read, soft clip, discordants)"""
+        os.system("java -cp /home/hirizar/bin/gridss/gridss-1.3.4-jar-with-dependencies.jar gridss.ExtractSVReads INPUT=%s OUTPUT=%s SPLIT=true CLIPPED=true DISCORDANT_READ_PAIRS=true INDELS=false SINGLE_MAPPED_PAIRED=false UNMAPPED_READS=false"  % (self.bam, self.circ_bam))
 
-    def query_name_sorted_circs(self):
-        os.system("samtools sort -n -o query_name_sorted_circs.bam circ_calls.bam")
-        os.system("samtools index circ_calls.bam ")
-        sorted_circs = ps.AlignmentFile("query_name_sorted_circs.bam", "rb")
-        return (sorted_circs)
-
-    def check_mapping_range(self, interval, read):
-        if read.reference_start >= (interval.start - 50):
-            if read.reference_start <= (interval.end + 50):
-                return (True)
-
-        else:
-
-            return (False)
 
     def is_soft_clipped(self, read):
         for cigar in read.cigar:
@@ -52,8 +37,9 @@ class alignment:
             else:
                 return (False)
 
-    def generate_bed_from_circ_calls(self):
-        # bedtools genomecov -bg -ibam circ_calls.bam | mergeBed > circ_support_calls.bed
+    def generate_bed_from_bams(self):
+        os.system("bedtools genomecov -bg -ibam %s | mergeBed > %s" % (self.circ_bam,self.circ_bed))
+        os.system("bedtools genomecov -bg -ibam %s | mergeBed > %s" % (self.all_bam, self.genome_cov_bed))
         return (None)
 
     def split_to_cores(self,len):
@@ -69,10 +55,8 @@ class alignment:
 
 
 
-
         # file of the sorted circles
-        os.system("samtools index circ_calls.bam")
-        circs = ps.AlignmentFile("circ_calls.bam", "rb")
+        circs = ps.AlignmentFile(self.circ_bam, "rb")
 
         # bam file of all reads
         all_bam = ps.AlignmentFile(self.all_bam, "rb")
@@ -102,34 +86,10 @@ class alignment:
         mapq_filtered = bt.BedTool(mapq_filtered)
         mapq_filtered.saveas("mapq_filter.bed")
 
-        filtered_intervals = []
-        # soft_clip_filtering
-        second_filters = 0
-        for interval in mapq_filtered:
-            suports = circs.count(interval.chrom, interval.start, interval.end)
-            if (interval.end - interval.start) < 300:
-                if suports > 4:
-                    filtered_intervals.append(interval)
-                    second_filters += 1
-                    print(second_filters)
-            else:
-                if suports > 2:
-                    filtered_intervals.append(interval)
-                    second_filters += 1
-                    print(second_filters)
-
-        filtered_intervals = bt.BedTool(filtered_intervals)
-
-        circ_boundaries = bt.BedTool("circ_support_calls.bed")
-
-        length_filtered_intervals = len(filtered_intervals)
-
-
-
         # save the first file
-        filtered_intervals.saveas("filtered_cutoff.bed")
 
-        return(filtered_intervals)
+
+        return(mapq_filtered)
 
 
     def realign_with_one_boundary(self,interval,circ_intervals,circ_bam,fastafile):
@@ -449,7 +409,7 @@ class alignment:
 
         circ_bam = ps.AlignmentFile(self.circ_bam, "rb")
 
-        filtered_intervals = bt.BedTool("filtered_cutoff.bed")
+        filtered_intervals = bt.BedTool("mapq_filter.bed")
 
 
 
