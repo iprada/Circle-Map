@@ -15,11 +15,11 @@ from Bio.Alphabet import generic_dna
 
 
 class alignment:
-    def __init__(self, bam, working_dir,genome_fa_dir,genome_name):
+    def __init__(self, bam, working_dir,genome_fa_dir,genome_name,number_of_cores):
         self.circ_bam = "circ_supports.bam"
         self.working_dir = working_dir
         self.all_bam = "sorted_paired_end_sim_aln.bam"
-        self.number_of_cores = 3
+        self.number_of_cores = number_of_cores
         self.circ_boundaries = bt.BedTool("circ_supports.bed")
         self.coverage = bt.BedTool("read_coverage_merged.bed")
         self.genome_dir = genome_fa_dir
