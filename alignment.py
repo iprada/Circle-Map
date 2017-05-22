@@ -403,7 +403,7 @@ class alignment:
 
 
 
-    def realignment(self,circ_boundaries,list):
+    def realignment(self,circ_boundaries,list,temp_bed):
 
         f = open("test_status.txt","a")
 
@@ -558,7 +558,12 @@ class alignment:
                         continue
 
 
+
         f.close()
+
+        results = bt.BedTool(results)
+
+        results.saveas(str(temp_bed))
 
 
 
