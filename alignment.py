@@ -417,6 +417,8 @@ class alignment:
 
         fastafile = ps.FastaFile("%s" % self.genome)
 
+        results = []
+
         os.chdir(self.working_dir)
 
         for i in range(list[0],list[-1]):
@@ -429,8 +431,6 @@ class alignment:
             each_overlapping_interval = circ_boundaries.all_hits(interval)
 
             intervals = bt.BedTool(each_overlapping_interval)
-
-            results = []
 
 
 
@@ -564,30 +564,6 @@ class alignment:
         results = bt.BedTool(results)
 
         results.saveas(str(temp_bed))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
