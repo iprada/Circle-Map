@@ -403,6 +403,7 @@ class alignment:
 
 
 
+
     def realignment(self,circ_boundaries,list,temp_bed):
 
         f = open("test_status.txt","a")
