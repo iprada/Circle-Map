@@ -15,11 +15,12 @@ from Bio.Alphabet import generic_dna
 
 
 class alignment:
-    def __init__(self, bam, working_dir,genome_fa_dir,genome_name,number_of_cores):
-        self.circ_bam = "circ_supports.bam"
+    def __init__(self, bam,circ_bam, working_dir,genome_fa_dir,genome_name,number_of_cores):
+        self.circ_bam = circ_bam
         self.working_dir = working_dir
-        self.all_bam = "sorted_paired_end_sim_aln.bam"
+        self.all_bam = bam
         self.number_of_cores = number_of_cores
+        self.generate_bed_from_bams()
         self.circ_boundaries = bt.BedTool("circ_supports.bed")
         self.coverage = bt.BedTool("read_coverage_merged.bed")
         self.genome_dir = genome_fa_dir
@@ -38,8 +39,8 @@ class alignment:
                 return (False)
 
     def generate_bed_from_bams(self):
-        os.system("bedtools genomecov -bg -ibam %s | mergeBed > %s" % (self.circ_bam,self.circ_bed))
-        os.system("bedtools genomecov -bg -ibam %s | mergeBed > %s" % (self.all_bam, self.genome_cov_bed))
+        os.system("bedtools genomecov -bg -ibam %s | mergeBed > %s" % (self.circ_bam,"circ_supports.bed"))
+        os.system("bedtools genomecov -bg -ibam %s | mergeBed > %s" % (self.all_bam, "read_coverage_merged.bed"))
         return (None)
 
     def split_to_cores(self,len):
