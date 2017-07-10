@@ -16,9 +16,12 @@ from Bio.Alphabet import generic_dna
 
 class alignment:
     def __init__(self, bam,circ_bam, working_dir,genome_fa_dir,genome_name,number_of_cores):
-        self.circ_bam = circ_bam
+        self.init_bam = circ_bam
+        self.circ_bam = "sorted_" + circ_bam
         self.working_dir = working_dir
+        self.sort_circ_reads()
         self.all_bam = bam
+        self.index_bams()
         self.number_of_cores = number_of_cores
         self.generate_bed_from_bams()
         self.circ_boundaries = bt.BedTool("circ_supports.bed")
@@ -26,9 +29,11 @@ class alignment:
         self.genome_dir = genome_fa_dir
         self.genome = genome_name
 
-    def get_circ_reads(self):
-        """Function that extracts circular DNA supporting reads from a bam file (Split read, soft clip, discordants)"""
-        os.system("java -cp /home/hirizar/bin/gridss/gridss-1.3.4-jar-with-dependencies.jar gridss.ExtractSVReads INPUT=%s OUTPUT=%s SPLIT=true CLIPPED=true DISCORDANT_READ_PAIRS=true INDELS=false SINGLE_MAPPED_PAIRED=false UNMAPPED_READS=false"  % (self.bam, self.circ_bam))
+    def sort_circ_reads(self):
+        os.system("samtools sort %s > %s" % (self.init_bam,self.circ_bam))
+
+    def index_bams(self):
+        os.system("samtools index %s ; samtools index %s" % (self.circ_bam, self.all_bam))
 
 
     def is_soft_clipped(self, read):

@@ -12,6 +12,7 @@ class readExtractor:
 
 
 
+
     def extract_sv_circles(self):
         """Function that extracts Structural Variant reads that indicate circular DNA,
         The programme with extract soft-clipped reads and R2F1 (<- ->) oriented reads"""
