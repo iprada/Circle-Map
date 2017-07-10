@@ -39,8 +39,8 @@ class alignment:
                 return (False)
 
     def generate_bed_from_bams(self):
-        os.system("bedtools genomecov -bg -ibam %s | mergeBed > %s" % (self.circ_bam,"circ_supports.bed"))
-        os.system("bedtools genomecov -bg -ibam %s | mergeBed > %s" % (self.all_bam, "read_coverage_merged.bed"))
+        os.system("bedtools genomecov -bg -ibam %s | mergeBed | sortBed > %s" % (self.circ_bam,"circ_supports.bed"))
+        os.system("bedtools genomecov -bg -ibam %s | mergeBed | sortBed > %s" % (self.all_bam, "read_coverage_merged.bed"))
         return (None)
 
     def split_to_cores(self,len):
