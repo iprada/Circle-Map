@@ -1,6 +1,6 @@
 import pysam
 import os
-import time
+
 class readExtractor:
     def __init__(self,sorted_bam,output_bam,working_dir):
         self.sorted_bam = sorted_bam
@@ -87,13 +87,7 @@ class readExtractor:
 
 
 
-
-
-
-        end = time.time()
         circle_reads.close()
-        elapsed_time = end-begin
-        print(elapsed_time)
         print("finished extracting reads")
 
 
