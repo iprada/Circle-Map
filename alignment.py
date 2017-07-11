@@ -111,7 +111,7 @@ class alignment:
             for read in circ_bam.fetch(circ_interval.chrom, circ_interval.start, circ_interval.end):
 
                 # loop trough read
-                if read.mapq > 10:
+                if read.mapq > 0:
                     # filter by mapq
 
                     if alignment.is_soft_clipped(self, read) == True:
