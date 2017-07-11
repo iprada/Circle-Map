@@ -76,7 +76,7 @@ class alignment:
                 for read in all_bam.fetch(interval.chrom, interval.start, interval.end):
                     interval_mapq.append(read.mapq)
 
-                if np.mean(interval_mapq) < 0:
+                if np.mean(interval_mapq) < 1:
                     continue
                 else:
                     mapq_filtered.append(interval)
@@ -111,7 +111,7 @@ class alignment:
             for read in circ_bam.fetch(circ_interval.chrom, circ_interval.start, circ_interval.end):
 
                 # loop trough read
-                if read.mapq > 0:
+                if read.mapq > 20:
                     # filter by mapq
 
                     if alignment.is_soft_clipped(self, read) == True:
@@ -224,7 +224,7 @@ class alignment:
 
         for read in circ_bam.fetch(circ_intervals[0].chrom, circ_intervals[0].start, circ_intervals[0].end):
             # loop trough read
-            if read.mapq > 0:
+            if read.mapq > 20:
             # filter by mapq
 
                 if alignment.is_soft_clipped(self, read) == True:
@@ -313,7 +313,7 @@ class alignment:
 
         for read in circ_bam.fetch(circ_intervals[1].chrom, circ_intervals[1].start, circ_intervals[1].end):
             # loop trough read
-            if read.mapq > 0:
+            if read.mapq > 20:
                 # filter by mapq
 
                 if alignment.is_soft_clipped(self, read) == True:
