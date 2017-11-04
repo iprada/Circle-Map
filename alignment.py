@@ -1,3 +1,4 @@
+#!/data/xsh723/anaconda/bin/python3.6
 import os
 import pysam as ps
 import pybedtools as bt

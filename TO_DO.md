@@ -10,3 +10,20 @@
 - Remove os.system
 - Use pybedtools
 - Warnings in the loops of alignment.py
+
+## To publish
+
+- Tests
+- Check that read extractor is doing well
+- Check the orientation of everything
+- Check 0-1 based indexes
+- Make friendly command line interface with argparse
+- Implement coverage
+
+## ReadExtractor
+- When I am extracting the discordant reads. Could there be discordant reads aligned to the breakpoint?
+
+## alignment
+- During the realignment step check that that the soft-clipped reads have their mate inside the putative eccDNA bounda-
+ries
+
