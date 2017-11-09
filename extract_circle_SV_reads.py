@@ -29,6 +29,7 @@ class readExtractor:
         #verbose level
         self.verbose = int(verbose)
         #parser options
+        self.parser = parser
 
     def extract_sv_circleReads(self):
 
