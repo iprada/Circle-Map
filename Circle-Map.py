@@ -25,12 +25,22 @@ def main():
 def readextractor():
     from extract_circle_SV_reads import readExtractor
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', help="Query name sorted bam file")
-    parser.add_argument('-o', '--output', help="Output bam file with the reads that indicate circular DNA",default=parser.output_name)
-    parser.add_argument('-dir', '--directory', help="Working directory, default is the working directory",default=os.getcwd())
+    parser._action_groups.pop()
+    required = parser.add_argument_group('required arguments')
+    optional = parser.add_argument_group('optional arguments')
+
+
+
+
+    required.add_argument('-i', '--input', help="Query name sorted bam file",default="aaaaaaaaa")
     args = parser.parse_args()
-    object = readExtractor(args.input,args.output,args.directory)
-    object.extract_sv_circleReads()
+
+    optional.add_argument('-o', '--output', help="Output bam file with the reads that indicate circular DNA",default="circle_reads%s" % args.input )
+    optional.add_argument('-dir', '--directory', help="Working directory, default is the working directory",default=os.getcwd())
+    args = parser.parse_args()
+    parser.print_help()
+    #object = readExtractor(args.input,args.output,args.directory)
+    #object.extract_sv_circleReads()
 
 
 def map_circles():
@@ -42,3 +52,4 @@ def annotate():
 # this is done to know if this file is been run directly by python or imported
 if __name__ == '__main__':
     main()
+    readextractor()
