@@ -1,4 +1,7 @@
 #!/data/xsh723/anaconda/bin/python3.6
+from __future__ import division
+#Author Inigo Prada Luengo
+#email: inigo.luengo@bio.ku.dk
 
 
 import argparse
