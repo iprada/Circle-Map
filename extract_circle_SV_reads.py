@@ -212,9 +212,15 @@ class readExtractor:
 
         end = time.time()
 
+        circle_sv_reads.close()
+
+
+
         if self.verbose >=3:
 
-            print("finished extracting reads. Elapsed time:",(end-begin)/60,"mins")
+
+            print("finished extracting reads. Elapsed time:", (end - begin) / 60, "mins")
+
             print("Thanks for using Circle-Map")
 
 

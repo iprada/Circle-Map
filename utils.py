@@ -13,7 +13,7 @@ def is_soft_clipped(read):
 def is_hard_clipped(read):
     """Function that checks the CIGAR string of the sam file and returns true if the read is hard-clipped"""
     for cigar in read.cigar:
-        if cigar[0] == 4:
+        if cigar[0] == 5:
             return (True)
         else:
             return (False)
