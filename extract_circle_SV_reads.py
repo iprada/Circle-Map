@@ -22,10 +22,12 @@ class readExtractor:
         self.output_bam = output_bam
         #working place
         self.working_dir = working_dir
+
         #read options
         self.no_discordants = extract_discordant
         self.no_soft_clipped = extract_soft_clipped
         self.no_hard_clipped = extract_hard_clipped
+
         #verbose level
         self.verbose = int(verbose)
         #parser options
@@ -38,16 +40,13 @@ class readExtractor:
 
         os.chdir(self.working_dir)
 
-        #open input bam and create output bam
+        #input
         raw_bam = ps.AlignmentFile(self.working_dir + self.sorted_bam, "rb")
 
-        #check that the tag is present
+        #HD the tag for the header line. SO indicates sorting order of the alignements
         if 'HD' in raw_bam.header:
 
-            #check if bam is qname sorted
             if raw_bam.header['HD']['SO'] != 'queryname':
-
-                #give some errors if not
                 sys.stderr.write(
                     "The input bam header says that bam is not sorted by queryname. It is sorted by %s\n\n" % (raw_bam.header['HD']['SO']))
                 sys.stderr.write(
@@ -67,7 +66,7 @@ class readExtractor:
 
 
         circle_sv_reads = ps.AlignmentFile(self.working_dir + self.output_bam, "wb", template=raw_bam)
-        #change the SO tag of the header to unsorted
+
 
         #modify the tag to unsorted
         if 'HD' in raw_bam.header == True:
@@ -75,14 +74,18 @@ class readExtractor:
 
         if self.verbose >=3:
             print("Extracting circular structural variants")
+
         #timing
         begin = time.time()
 
 
-        #cache read1. this speed-ups the search
+        #cache read1. operate in read2. this speed-ups the search
         read1 = ''
 
+        #counter for processed reads
         processed_reads = 0
+
+
         for read in raw_bam:
 
             if self.verbose >=3:
@@ -98,14 +101,14 @@ class readExtractor:
                 read1 = read
             else:
                 if read.is_read2 and read.qname == read1.qname:
-                    # both reads in memory. Now operate
+                    # both reads in memory
                     read2 = read
-                    #check that both are mapped
+
 
                     #both reads need to be mapped
                     if read1.is_unmapped == False and read2.is_unmapped == False:
 
-                        # Check read 2 aligned to the reverse strand, read1 aligned to the forward strand
+
                         if read2.is_reverse and read1.is_reverse == False:
 
                             # read2 leftmost mapping position smaller than read1 leftmost mapping position
@@ -114,7 +117,7 @@ class readExtractor:
                                 #aligned to the same chromosome
                                 if read1.reference_id == read2.reference_id:
 
-                                    #check that extraction is not turn off
+                                    #is discordant extraction turn off?
                                     if self.no_discordants == False:
                                         circle_sv_reads.write(read1)
                                         circle_sv_reads.write(read2)
@@ -125,7 +128,7 @@ class readExtractor:
                                 if is_soft_clipped(read1) == True:
 
 
-                                    # check that extraction is not turn off
+
                                     if self.no_soft_clipped == False:
 
                                         circle_sv_reads.write(read1)
@@ -134,10 +137,10 @@ class readExtractor:
                                         continue
 
                                 else:
-                                    #check hard-clipped
+
                                     if is_hard_clipped(read1) == True:
 
-                                        # check that extraction is not turn off
+
                                         if self.no_hard_clipped == False:
 
                                             circle_sv_reads.write(read1)
@@ -147,7 +150,7 @@ class readExtractor:
 
                                 if is_soft_clipped(read2) == True:
 
-                                    # check that extraction is not turn off
+
                                     if self.no_soft_clipped == False:
 
                                         circle_sv_reads.write(read2)
@@ -157,10 +160,10 @@ class readExtractor:
 
                                 else:
 
-                                    #check hard-clipped
+
                                     if is_hard_clipped(read2) == True:
 
-                                        # check that extraction is not turn off
+
                                         if self.no_hard_clipped == False:
 
                                             circle_sv_reads.write(read2)
@@ -174,7 +177,7 @@ class readExtractor:
                             #check soft-clipped if R2F1 orientation is not met
                             if is_soft_clipped(read1) == True:
 
-                                # check that extraction is not turn off
+
                                 if self.no_soft_clipped == False:
 
                                     circle_sv_reads.write(read1)
@@ -185,11 +188,11 @@ class readExtractor:
                                     continue
 
                             else:
-                                #check hard-clipped
+
                                 if is_hard_clipped(read1) == True:
 
 
-                                    # check that extraction is not turn off
+
                                     if self.no_hard_clipped == False:
                                         circle_sv_reads.write(read1)
 
@@ -200,7 +203,7 @@ class readExtractor:
 
                             if is_soft_clipped(read2) == True:
 
-                                # check that extraction is not turn off
+
                                 if self.no_soft_clipped == False:
 
                                     circle_sv_reads.write(read2)
