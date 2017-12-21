@@ -6,9 +6,10 @@ import pysam as ps
 import pybedtools as bt
 import warnings
 from itertools import groupby
-import numpy as np
+
 
 def is_soft_clipped(read):
+
     """Function that checks the CIGAR string of the sam file and returns true if the read is soft-clipped"""
 
     # cigar 4 equals to S in pysam sam representation
@@ -26,6 +27,7 @@ def is_soft_clipped(read):
         return(False)
 
 def is_hard_clipped(read):
+
     """Function that checks the CIGAR string of the sam file and returns true if the read is hard-clipped"""
 
     # cigar 5 equals to H in pysam sam representation
@@ -43,6 +45,7 @@ def is_hard_clipped(read):
         return (False)
 
 def aligned_bases(read):
+
     """Function that counts the number of aligned bases from the CIGAR string and returns and integer"""
 
     aligned = 0
@@ -56,7 +59,8 @@ def aligned_bases(read):
     return(aligned)
 
 def aligned_bases_from_sa(sa_cigar):
-    """Function that gets as input the SA tag and reports the number of bases that where matched to the genome"""
+
+    """Function that gets as input the SA tag CIGAR and reports the number of bases that where matched to the genome"""
 
     cigar = [''.join(g) for _, g in groupby(sa_cigar, str.isalpha)]
 
@@ -64,14 +68,61 @@ def aligned_bases_from_sa(sa_cigar):
     match_index = cigar.index('M')
 
     aligned = 0
+    #if only one hit
     if type(match_index) == int:
         aligned += int(cigar[match_index -1])
 
+    #when there are more than 1 hits
     else:
         assert type(match_index) == list
 
         for index in match_index:
             aligned += int(cigar[index - 1])
+
+    return(aligned)
+
+
+def genome_alignment_from_cigar(sa_cigar):
+
+    """Function that gets as input the SA tag CIGAR and returns the length of the alignment interval in the genome it
+    will look at the number of matches and deletions in the CIGAR, as they are the elements that will explain the genome
+    alignment
+    """
+    aligned = 0
+
+    cigar = [''.join(g) for _, g in groupby(sa_cigar, str.isalpha)]
+
+    #do it for the matches
+    match_index = cigar.index('M')
+
+
+    # if only one hit
+    if type(match_index) == int:
+        aligned += int(cigar[match_index - 1])
+
+    # when there are more than 1 hits
+    else:
+        assert type(match_index) == list
+
+        for index in match_index:
+            aligned += int(cigar[index - 1])
+
+
+    if 'D' in cigar == True:
+
+        deletion_index = cigar.index('D')
+
+        # if only one hit
+        if type(deletion_index) == int:
+            aligned += int(cigar[deletion_index - 1])
+
+        # when there are more than 1 hits
+        else:
+            assert type(deletion_index) == list
+
+            for index in deletion_index:
+                aligned += int(cigar[index - 1])
+
 
     return(aligned)
 

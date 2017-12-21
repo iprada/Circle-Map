@@ -1,5 +1,7 @@
 #!/data/xsh723/anaconda/bin/python3.6
 from __future__ import division
+
+
 import subprocess as sb
 import os
 import pysam as ps
@@ -59,58 +61,97 @@ class realignment:
                         # [chr, left_most start, "strand,CIGAR,mapq, edit_distance]
                         supl_info = [x.strip() for x in suplementary.split(',')]
 
-                        print(read)
-                        print(supl_info,"aaaaa")
-                        sys.exit(1)
 
-                        if read_chr == supl_info[0] and supl_info[4] >= self.mapq_cutoff:
+
+
+                        if read_chr == supl_info[0] and int(supl_info[4]) >= self.mapq_cutoff:
 
                             #split read with the same orientation
                             if (read.is_reverse == True and supl_info[2] == '-') or (read.is_reverse == False and supl_info[2] == '+'):
-                                #create candidate interval here for the SA
-                                a = 0
 
 
+                                #SA is downstream, the interval is start, start+read length
+                                if read.reference_start > int(supl_info[1]):
 
-                        else:
+                                    ref_alignment_length = genome_alignment_from_cigar(supl_info[3])
 
-                            #check discordant reads (R2F1 orientation)
+                                    #ref_alignment_length * 2 is done for extending the realignment region
 
-                            if read.is_unmapped  == False and read.mate_is_unmapped == False:
+                                    mate_interval = [interval.chrom,supl_info[1],(supl_info[1] + (ref_alignment_length*2)),"SA"]
 
-                                #check R2F1 orientation,when the R2 read
-                                if read.is_reverse == True and read.mate_is_reverse == False:
-
-                                    #R2F1 order
-                                    if read.reference_start < read.next_reference_start:
-
-                                        if read.reference_id == read.next_reference_id:
-
-                                            #create mate interval
-
-                                            mate_interval = [interval.chrom, read.next_reference_start - read_length,
-                                                             read.next_reference_start + read_length]
-                                            candidate_mates.append(bt.create_interval_from_list(mate_interval))
+                                    candidate_mates.append(bt.create_interval_from_list(mate_interval))
 
 
+                                #SA is upstream, the interval is end - read length, end
+                                elif read.reference_start < int(supl_info[1]):
+
+                                    ref_alignment_length = genome_alignment_from_cigar(supl_info[3])
+
+                                    # ref_alignment_length * 2 is done for extending the realignment region
+
+                                    mate_interval = [interval.chrom,(supl_info[1]-(ref_alignment_length*2)),supl_info[1],"SA"]
+
+                                    candidate_mates.append(bt.create_interval_from_list(mate_interval))
 
 
 
 
-
-                                #F1 read
-                                elif read.is_reverse == False and read.mate_is_reverse == False:
-                                    a = 0
-                            #no prior
-                            a = 0
+                                print(read)
+                                print("supplementary hit")
+                                print(supl_info)
 
 
-                    #create mate interval based on the mate/discordant alignments
+
+
+
+
+
+
+                                sys.exit(1)
+
+
+                    # check discordant reads (R2F1 orientation)
+                    elif read.is_unmapped  == False and read.mate_is_unmapped == False:
+
+                        #check R2F1 orientation,when the R2 read
+                        if read.is_reverse == True and read.mate_is_reverse == False:
+
+                            #R2F1 order
+                            if read.reference_start < read.next_reference_start:
+
+                                if read.reference_id == read.next_reference_id:
+
+                                    continue
+
+                                    #create mate interval
+
+                                    #print("R2F1 hit, for the R2")
+                                    #print(read)
+
+                                    #sys.exit(1)
+
+                                    #mate_interval = [interval.chrom, read.next_reference_start - read_length,read.next_reference_start + read_length]
+                                    #candidate_mates.append(bt.create_interval_from_list(mate_interval))
+
+
+                        #R2F1 when iterating trough F1 read
+                        elif read.is_reverse == False and read.mate_is_reverse == False:
+                            if read.next_reference_start < read.reference_start:
+                                if read.reference_id == read.next_reference_id:
+                                    continue
+                                    #a = 0
+                                    #print("R2F1 hit, for the F1")
+                                    #print(read)
+                                    #sys.exit(1)
+                                    # create mate interval
+
+
                     else:
+                        #hard clips, soft clipped without SA
                         a = 0
-
-
-
+                else:
+                    #low mapping quality, do nothing
+                    a=0
 
 
 

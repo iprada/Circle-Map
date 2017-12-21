@@ -6,6 +6,8 @@ pattern = 'ATCG'
 
 result = edlib.align('ATCGA','ATCGATCAGAAATCATCTATCTCGATCGTAGCTAGCTAGCTAGCTAGCTAGCT',mode='HW',task='path')
 print(result)
+result = edlib.align('ATCGA','XXXXXTCAGAAATCATCTATCTCGATCGTAGCTAGCTAGCTAGCTAGCTAGCT',mode='HW',task='path')
+print(result)
 #import edlib
 
 #begin_edlib = time.time()
