@@ -30,8 +30,9 @@ remember to remove this when the pipeline is finished.
 - During the realignment step check that that the soft-clipped reads have their mate inside the putative eccDNA bounda-
 ries
 
-- I am doing the fetch of the bam with until_eof= True. Which does not require file indexing. If the code is to slow,
-remember that it could be due to that. If it is slow, check and change accordingly
+- If there are only discordant readsin the realignment prior interval, sample 100 F1R2 reads and compute the standard deviation of the insert size. Then, create a realignment interval of 4 standard deviations of the insert size
+
+
 
 
 

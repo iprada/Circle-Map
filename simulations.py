@@ -9,11 +9,10 @@ from io import StringIO
 import random as rd
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
+import sys
 
 #set seeds
 
-np.random.seed(42)
-rd.seed(42)
 
 #versions used
 #pysam 0.10.0
@@ -86,7 +85,7 @@ def sim_ecc_reads(genome_fasta,path_to_genome_fasta,read_length,paired_end,direc
 
         single_end_fastq = open(temp_fastq, "w")
 
-    genome_fasta.close()
+
 
     set_of_reads = []
     set_of_left_reads = []
@@ -318,6 +317,7 @@ def sim_single_end(read_number,genome_fa,chr,chr_pos_start,chr_pos_end,read_leng
         left_split_read = fastafile.fetch(chr, left_nucleotides_start, chr_pos_end)
         #put all together
         total_read = left_split_read + right_split_read
+
         seq_id = "%s|%s|%s:%s-%s:%s|1|%s" % (read_number,chr,left_nucleotides_start,chr_pos_end,chr_pos_start,right_nucleotides,circle)
 
 
@@ -325,6 +325,7 @@ def sim_single_end(read_number,genome_fa,chr,chr_pos_start,chr_pos_end,read_leng
         #sample normal read
         seq_id = "%s|%s|%s:%s|0|%s" % (read_number,chr,start,end,circle)
         total_read = fastafile.fetch(chr, start,end)
+
 
 
     #get each entry of the fastq file
@@ -438,6 +439,12 @@ class sim_paired_end:
         # get the reverse complement of the right read
         right_read = Seq(right_read, generic_dna)
         right_read = right_read.reverse_complement()
+
+        left_read = left_read.upper()
+
+        right_read = right_read.upper()
+
+
         fastq_left = "@%s\n%s\n+\n%s\n" % (left_id, left_read, quality)
         fastq_right = "@%s\n%s\n+\n%s\n" % (right_id, right_read, quality)
 

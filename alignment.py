@@ -9,13 +9,15 @@ import time
 
 
 begin = time.time()
-fastafile = ps.FastaFile("/home/inigo/msc_thesis/genome_data/hg38.fa")
+#fastafile = ps.FastaFile("/home/inigo/msc_thesis/genome_data/hg38.fa")
 
-os.chdir("/home/inigo/new_alignment")
+os.chdir("/isdata/kroghgrp/xsh723/circle_map/test_data/aligner")
 read_length = 100
 
-os.system("bedtools genomecov -bg -ibam sorted_simulated_circle_reads.bam | mergeBed > circ_read_coverage.bed")
-os.system("samtools index sorted_simulated_circle_reads.bam")
+
+os.system("samtools index coordinate_circle_qname_sorted_paired_end_sim_aln.bam")
+os.system("bedtools genomecov -bg -ibam coordinate_circle_qname_sorted_paired_end_sim_aln.bam | mergeBed > circ_read_coverage.bed")
+
 
 def is_soft_clipped(read):
     for cigar in read.cigar:
@@ -24,10 +26,12 @@ def is_soft_clipped(read):
         else:
             return (False)
 
-circ_bam = ps.AlignmentFile("sorted_simulated_circle_reads.bam", "rb")
+circ_bam = ps.AlignmentFile("coordinate_circle_qname_sorted_paired_end_sim_aln.bam", "rb")
 
 circ_intervals = bt.BedTool("circ_read_coverage.bed")
 mapq_filtered = []
+
+
 
 number = 0
 for interval in circ_intervals:
@@ -53,6 +57,10 @@ mapq_filtered.saveas("mapq_filter.bed")
 
 
 mapq_filtered = bt.BedTool("mapq_filter.bed")
+
+print(len(mapq_filtered))
+print("I am here in the code")
+exit()
 
 results = []
 i = 0
