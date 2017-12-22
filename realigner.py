@@ -71,15 +71,18 @@ class realignment:
 
 
                                 #SA is downstream, the interval is start, start+read length
+
+                                #Future Inigo, this part of the code is over complicated. you can create a function of this
                                 if read.reference_start > int(supl_info[1]):
 
                                     ref_alignment_length = genome_alignment_from_cigar(supl_info[3])
 
+
                                     #ref_alignment_length * 2 is done for extending the realignment region
 
-                                    mate_interval = [interval.chrom,supl_info[1],(supl_info[1] + (ref_alignment_length*2)),"SA"]
+                                    mate_interval = [interval.chrom,int(supl_info[1])-(ref_alignment_length*2),(int(supl_info[1]) + (ref_alignment_length*2)),"SA"]
 
-                                    candidate_mates.append(bt.create_interval_from_list(mate_interval))
+                                    candidate_mates.append(mate_interval)
 
 
                                 #SA is upstream, the interval is end - read length, end
@@ -87,27 +90,18 @@ class realignment:
 
                                     ref_alignment_length = genome_alignment_from_cigar(supl_info[3])
 
+
                                     # ref_alignment_length * 2 is done for extending the realignment region
 
-                                    mate_interval = [interval.chrom,(supl_info[1]-(ref_alignment_length*2)),supl_info[1],"SA"]
+                                    mate_interval = [interval.chrom,(int(supl_info[1])-(ref_alignment_length*2)),int(supl_info[1])+(ref_alignment_length*2),"SA"]
 
-                                    candidate_mates.append(bt.create_interval_from_list(mate_interval))
-
-
-
-
-                                print(read)
-                                print("supplementary hit")
-                                print(supl_info)
+                                    candidate_mates.append(mate_interval)
 
 
 
 
 
 
-
-
-                                sys.exit(1)
 
 
                     # check discordant reads (R2F1 orientation)
@@ -153,6 +147,8 @@ class realignment:
                     #low mapping quality, do nothing
                     a=0
 
+
+            print(candidate_mates)
 
 
 

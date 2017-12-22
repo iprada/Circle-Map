@@ -196,11 +196,22 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores):
 
     #from bam to BedGraph
 
-    peak_coverage = bam.genome_coverage(bg=True)
+    ####################################################################################################################
+    ####################################################################################################################
+    ####################################################################################################################
+    ################################### CHANGE THIS PART OF THE CODE ONCE DEVELOPMENT IS FINISHED ######################
+    ####################################################################################################################
+    ####################################################################################################################
+    ####################################################################################################################
+
+    #peak_coverage = bam.genome_coverage(bg=True)
 
     #sort (sanity) and merge, BedGraph to bed
-    sorted_peak_coverage = peak_coverage.sort()
-    merged_peak_coverage = sorted_peak_coverage.merge()
+    #sorted_peak_coverage = peak_coverage.sort()
+    #merged_peak_coverage = sorted_peak_coverage.merge()
+    #merged_peak_coverage.saveas("peak_coverage.bed")
+
+    merged_peak_coverage = bt.BedTool("peak_coverage.bed")
 
     return(merged_peak_coverage,sorted_bam)
 

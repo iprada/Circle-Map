@@ -24,10 +24,15 @@
 - When I am extracting the discordant reads. Could there be discordant reads aligned to the breakpoint?
 
 ## alignment
+- I am going to create the coverage file that serves as input for generating the realignment priors. This helps in the development,
+remember to remove this when the pipeline is finished.
+
 - During the realignment step check that that the soft-clipped reads have their mate inside the putative eccDNA bounda-
 ries
 
 - I am doing the fetch of the bam with until_eof= True. Which does not require file indexing. If the code is to slow,
 remember that it could be due to that. If it is slow, check and change accordingly
+
+
 
 
