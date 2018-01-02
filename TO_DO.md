@@ -32,7 +32,7 @@ ries
 
 - If there are only discordant readsin the realignment prior interval, sample 100 F1R2 reads and compute the standard deviation of the insert size. Then, create a realignment interval of 4 standard deviations of the insert size
 
-
+- When programming the insert size distribution estimation code warnings if the input bam is not queryname sorted
 
 
 

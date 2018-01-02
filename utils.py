@@ -5,7 +5,11 @@
 import pysam as ps
 import pybedtools as bt
 import warnings
+import numpy as np
 from itertools import groupby
+import matplotlib.pyplot as plt
+#remove this afterwards
+
 
 
 def is_soft_clipped(read):
@@ -217,7 +221,49 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores):
 
 
 
+def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
+    """Function that takes as input a queryname sorted bam and computes the mean insert a size and
+    the standard deviation from. This number is computed from the F1R2 read with a user defined sample size,
+     using a user defined mapping quality cutoff in both reads"""
 
+    #TO-DO Warning if the bam file is not query name sorted
+
+    whole_bam = ps.AlignmentFile(qname_bam, "rb")
+
+    counter = 0
+    insert_length = []
+    read1 = ''
+
+    # this is similar to the code of read extractor. I save the first read in memory and then I operate
+    # in both reads together
+    for read in whole_bam:
+
+        if read.is_read1:
+            read1 = read
+        else:
+            if read.is_read2 and read.qname == read1.qname:
+                read2 = read
+                # both reads in memory
+                if read1.mapq >= mapq_cutoff and read2.mapq >= mapq_cutoff:
+
+                    if read1.is_reverse == False and read2.is_reverse == True:
+
+                        if (read2.tlen + read1.infer_query_length()) < 0 and (read1.tlen - read2.infer_query_length()) > 0:
+
+
+
+                            insert_length.append(read1.tlen)
+                            counter += 1
+
+        if counter >= sample_size:
+            break
+        else:
+            continue
+
+    mean = np.mean(insert_length)
+    std = np.std(insert_length)
+
+    return(mean, std)
 
 
 

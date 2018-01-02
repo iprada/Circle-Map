@@ -12,7 +12,6 @@ insert_size = []
 read1 = ''
 for read in raw_bam:
 
-
     if read.is_read1:
         read1 = read
     else:
@@ -20,10 +19,10 @@ for read in raw_bam:
             read2 = read
             #both reads in memory
             if read1.mapq >= 60 and read2.mapq >= 60:
-                if read2.tlen < 0 and read1.tlen > 0:
-                    insert_size.append(read1.tlen)
-                    print(counter)
-                    counter +=1
+                if read2.is_reverse == True and read1.is_reverse == False:
+                    if (read2.tlen + read1.infer_query_length())< 0   and (read1.tlen - read2.infer_query_length()) > 0:
+                        insert_size.append(read1.tlen)
+                        counter +=1
 
     if counter >= 100000:
         break

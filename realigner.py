@@ -18,11 +18,15 @@ from utils import *
 class realignment:
     """Class for managing the realignment and eccDNA indetification of circle-map"""
 
-    def __init__(self, input_bam,genome_fasta,directory,mapq_cutoff,ncores):
+    def __init__(self, input_bam,qname_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,insert_size_sample_size
+                 ,ncores):
         self.input_bam = input_bam
+        self.qname_bam = qname_bam
         self.genome_fa = genome_fasta
         self.directory = directory
         self.mapq_cutoff = mapq_cutoff
+        self.insert_size_mapq = insert_size_mapq
+        self.insert_sample_size = insert_size_sample_size
         self.cores = ncores
 
 
@@ -40,7 +44,12 @@ class realignment:
 
         circ_peaks,sorted_bam = bam_circ_sv_peaks(eccdna_bam,self.input_bam,self.cores)
 
+        print("Computing insert size and standard deviation from %s F1R2 reads with a mapping quality of %s" %
+              (self.insert_sample_size,self.insert_size_mapq))
 
+        insert_metrics = insert_size_dist(self.insert_sample_size,self.insert_size_mapq,self.qname_bam)
+
+        print("The computed insert size is %f with a standard deviation of %s" % (insert_metrics[0],insert_metrics[1]))
 
 
 
@@ -251,7 +260,7 @@ class realignment:
                     grouped = pd.read_table(grouped.fn, names=['read_type','chrom', 'start', 'stop'])
                     grouped = grouped[['chrom','start','stop','read_type']]
                     grouped = bt.BedTool.from_dataframe(grouped)
-                    print(grouped)
+                    #continue coding here
 
 
             else:
