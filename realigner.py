@@ -12,6 +12,7 @@ from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
 import time
 import sys
+import pandas as pd
 from utils import *
 
 class realignment:
@@ -46,6 +47,8 @@ class realignment:
         #Find a mate interval for every interval
         empty_intervals = 0
         prior_intervals = 0
+
+        interval_counter_remove = 0
 
         for interval in circ_peaks:
 
@@ -139,7 +142,7 @@ class realignment:
                                     read_length = read.infer_query_length()
 
                                     mate_interval = [interval.chrom, read.next_reference_start,(read.next_reference_start + read_length), "DR"]
-
+                                    candidate_mates.append(mate_interval)
                         else:
                             #soft clipped without and SA and hard clipped reads (secondary)
 
@@ -212,27 +215,6 @@ class realignment:
 
                                                 candidate_mates.append(mate_interval)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                     else:
                         a=0
 
@@ -252,6 +234,31 @@ class realignment:
 
             else:
                 prior_intervals +=1
+
+            if interval_counter_remove < 10:
+
+                if len(candidate_mates) > 0:
+
+                    interval_counter_remove +=1
+
+
+                    #sort by column 4
+                    sorted_candidate_mates = sorted(candidate_mates,key=lambda x : x[3])
+                    candidate_mates = bt.BedTool(sorted_candidate_mates)
+                    grouped = candidate_mates.groupby(g=4,c=[1,2,3],o=['distinct','min','max'])
+
+                    #reformat to fit pybedtools requirements
+                    grouped = pd.read_table(grouped.fn, names=['read_type','chrom', 'start', 'stop'])
+                    grouped = grouped[['chrom','start','stop','read_type']]
+                    grouped = bt.BedTool.from_dataframe(grouped)
+                    print(grouped)
+
+
+            else:
+                continue
+
+
+
 
 
 
