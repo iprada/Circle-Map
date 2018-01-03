@@ -39,3 +39,6 @@ ries
 - Check why some realignment intervals are extremenly big
 
 - Load contig fasta in memory
+- Make a rescue round once Circle-Map has finished with the intervals were there are only soft-clipped reads. For read in
+the sc interval check that they do not have supplementary alignments and align them with bwa mem to the whole chromosome?
+or skip
