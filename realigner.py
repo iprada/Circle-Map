@@ -54,12 +54,14 @@ class realignment:
 
 
         #Find a mate interval for every interval
-        empty_intervals = 0
-        prior_intervals = 0
+        iteration = 0
 
-        interval_counter_remove = 0
+
+
 
         for interval in circ_peaks:
+            iteration +=1
+            print(iteration)
 
             #this holds the intervals where the discordant and SA mates have mapped
             candidate_mates = []
@@ -139,7 +141,7 @@ class realignment:
 
 
                         #R2F1 when iterating trough F1 read
-                        elif read.is_reverse == False and read.mate_is_reverse == False:
+                        elif read.is_reverse == False and read.mate_is_reverse == True:
 
                             if read.next_reference_start < read.reference_start:
 
@@ -233,38 +235,18 @@ class realignment:
                     #low mapping quality reads, do nothing
                     continue
 
+            if len(candidate_mates) > 0:
+                #sort by column 4
+                sorted_candidate_mates = sorted(candidate_mates,key=lambda x : x[3])
+                candidate_mates = bt.BedTool(sorted_candidate_mates)
+                #group by column 4. and get the minimum start point and the maximum end point
+                grouped = candidate_mates.groupby(g=4,c=[1,2,3],o=['distinct','min','max'])
 
-
-            #here I have to code the realignment!
-
-
-            if not candidate_mates:
-                empty_intervals +=1
-
-            else:
-                prior_intervals +=1
-
-            if interval_counter_remove < 10:
-
-                if len(candidate_mates) > 0:
-
-                    interval_counter_remove +=1
-
-
-                    #sort by column 4
-                    sorted_candidate_mates = sorted(candidate_mates,key=lambda x : x[3])
-                    candidate_mates = bt.BedTool(sorted_candidate_mates)
-                    grouped = candidate_mates.groupby(g=4,c=[1,2,3],o=['distinct','min','max'])
-
-                    #reformat to fit pybedtools requirements
-                    grouped = pd.read_table(grouped.fn, names=['read_type','chrom', 'start', 'stop'])
-                    grouped = grouped[['chrom','start','stop','read_type']]
-                    grouped = bt.BedTool.from_dataframe(grouped)
-                    #continue coding here
-
-
-            else:
-                continue
+                #reformat to fit pybedtools requirements
+                grouped = pd.read_table(grouped.fn, names=['read_type','chrom', 'start', 'stop'])
+                grouped = grouped[['chrom','start','stop','read_type']]
+                grouped = bt.BedTool.from_dataframe(grouped)
+                #continue coding here
 
 
 
@@ -272,8 +254,10 @@ class realignment:
 
 
 
-        print("empty intervals:",empty_intervals)
-        print("realignment priors",prior_intervals)
+
+
+
+
 
 
 
