@@ -265,6 +265,64 @@ def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
 
     return(mean, std)
 
+def get_realignment_interval(grouped,grouped_pd,insert_metrics):
+    """Function that takes as input the insert metricsa grouped realignment interval and a pandas grouped one and will
+    return the interval to perform the probabilistic realignment"""
+
+    #interval definition
+
+    read_types = grouped_pd.read_type.unique()
+
+    print(grouped)
+
+    if np.any(read_types == 'SC') == False:
+        #print(grouped)
+        grouped = grouped.sort()
+
+        #complete realignment interval
+        grouped = grouped.merge()
+
+    elif (np.any(read_types == 'SC') == True) and (np.any(read_types == 'DR')== True or np.any(read_types == 'SA')== True):
+
+        #remove the 'SC'
+        no_sc_grouped = []
+        for interval in grouped:
+            if interval[3] != 'SC':
+                no_sc_grouped.append(interval)
+
+        grouped = bt.BedTool(no_sc_grouped)
+        grouped = grouped.sort()
+        grouped = grouped.merge()
+
+
+
+    print(grouped)
+
+
+
+
+
+
+    #orientation extension
+
+
+    #only one extension
+
+    extension_orientation = grouped_pd.orientation.unique()
+
+    # check if the interval should be left extended
+    if np.any(extension_orientation == 'L') == True:
+
+        a = 0
+
+    #Check if the interval should be left extended
+    if np.any(extension_orientation == 'R') == True:
+
+        a = 0
+
+
+
+
 
 
 
