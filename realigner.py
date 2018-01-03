@@ -18,14 +18,15 @@ from utils import *
 class realignment:
     """Class for managing the realignment and eccDNA indetification of circle-map"""
 
-    def __init__(self, input_bam,qname_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,insert_size_sample_size
-                 ,ncores):
+    def __init__(self, input_bam,qname_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
+                 insert_size_sample_size,ncores):
         self.input_bam = input_bam
         self.qname_bam = qname_bam
         self.genome_fa = genome_fasta
         self.directory = directory
         self.mapq_cutoff = mapq_cutoff
         self.insert_size_mapq = insert_size_mapq
+        self.std_extenstion = std_extension
         self.insert_sample_size = insert_size_sample_size
         self.cores = ncores
 
@@ -49,9 +50,13 @@ class realignment:
 
         insert_metrics = insert_size_dist(self.insert_sample_size,self.insert_size_mapq,self.qname_bam)
 
+
+
         print("The computed insert size is %f with a standard deviation of %s" % (insert_metrics[0],insert_metrics[1]))
 
+        #define extension.
 
+        extension = insert_metrics[0] + self.std_extenstion*insert_metrics[1]
 
         #Find a mate interval for every interval
         iteration = 0
@@ -256,7 +261,7 @@ class realignment:
                 grouped = grouped_pandas[['chrom', 'start', 'stop', 'read_type','orientation']]
                 grouped = bt.BedTool.from_dataframe(grouped)
 
-                realignment_interval = get_realignment_interval(grouped,grouped_pandas,insert_metrics)
+                realignment_interval = get_realignment_interval(grouped,grouped_pandas,extension)
 
 
                 #print(grouped)

@@ -265,15 +265,16 @@ def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
 
     return(mean, std)
 
-def get_realignment_interval(grouped,grouped_pd,insert_metrics):
+def get_realignment_interval(grouped,grouped_pd,interval_extension):
     """Function that takes as input the insert metricsa grouped realignment interval and a pandas grouped one and will
     return the interval to perform the probabilistic realignment"""
 
     #interval definition
 
+
     read_types = grouped_pd.read_type.unique()
 
-    print(grouped)
+
 
     if np.any(read_types == 'SC') == False:
         #print(grouped)
@@ -295,14 +296,6 @@ def get_realignment_interval(grouped,grouped_pd,insert_metrics):
         grouped = grouped.merge()
 
 
-
-    print(grouped)
-
-
-
-
-
-
     #orientation extension
 
 
@@ -310,15 +303,47 @@ def get_realignment_interval(grouped,grouped_pd,insert_metrics):
 
     extension_orientation = grouped_pd.orientation.unique()
 
+
+    extended_grouped_L = []
+
+
     # check if the interval should be left extended
     if np.any(extension_orientation == 'L') == True:
 
-        a = 0
+        for interval in grouped:
+            start = interval.start - interval_extension
+
+            # in case that start is smaller than chromosome length
+            if start < 0:
+                extended_grouped_L.append([interval.chrom,str(0),interval.end])
+
+            else:
+                extended_grouped_L.append([interval.chrom, int(round(start)), interval.end])
+
+        grouped = bt.BedTool(extended_grouped_L)
+
+
+
+    extended_grouped = []
 
     #Check if the interval should be left extended
     if np.any(extension_orientation == 'R') == True:
 
-        a = 0
+        for interval in grouped:
+            end = interval.end + interval_extension
+
+            # in case that start is smaller than chromosome length
+            #check chromosome length
+            if end < 250000000:
+                extended_grouped.append([interval.chrom,interval.start,int(round(end))])
+
+            else:
+                extended_grouped.append([interval.chrom, interval.start,int(round(end))])
+
+        grouped = bt.BedTool(extended_grouped_L)
+
+    return(grouped)
+
 
 
 

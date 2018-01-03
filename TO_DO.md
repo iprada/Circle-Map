@@ -34,6 +34,8 @@ ries
 
 - When programming the insert size distribution estimation code warnings if the input bam is not queryname sorted
 
+- Take out some calculations from the down loops. The interval extension with the insert size for example.
 
+- Check why some realignment intervals are extremenly big
 
-
+- Load contig fasta in memory
