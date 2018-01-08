@@ -30,15 +30,14 @@ remember to remove this when the pipeline is finished.
 - During the realignment step check that that the soft-clipped reads have their mate inside the putative eccDNA bounda-
 ries
 
-- If there are only discordant readsin the realignment prior interval, sample 100 F1R2 reads and compute the standard deviation of the insert size. Then, create a realignment interval of 4 standard deviations of the insert size
-
 - When programming the insert size distribution estimation code warnings if the input bam is not queryname sorted
 
-- Take out some calculations from the down loops. The interval extension with the insert size for example.
+- To check out: Take out all possible calculations from the down loops. The interval extension with the insert size for example.
 
 - Check why some realignment intervals are extremenly big
 
-- Load contig fasta in memory
+
+
 - Make a rescue round once Circle-Map has finished with the intervals were there are only soft-clipped reads. For read in
 the sc interval check that they do not have supplementary alignments and align them with bwa mem to the whole chromosome?
-or skip
+or skip lonely soft-clipped reads
