@@ -70,7 +70,7 @@ class realignment:
         for interval in circ_peaks:
 
             #clean temp files
-            bt.helpers.cleanup()
+            #bt.helpers.cleanup()
 
             #
             candidate_mates = get_mate_intervals(sorted_bam,interval,self.mapq_cutoff)
@@ -90,7 +90,40 @@ class realignment:
                 grouped = grouped_pandas[['chrom', 'start', 'stop', 'read_type','orientation']]
                 grouped = bt.BedTool.from_dataframe(grouped)
 
-                realignment_intervals = get_realignment_interval(grouped,grouped_pandas,extension)
+                realignment_intervals = get_realignment_interval(grouped,grouped_pandas,extension,sorted_bam)
+
+                # now we have the intervals to realign
+
+                print(realignment_intervals)
+
+                for mate_interval in realignment_intervals:
+
+                    #note that I am getting the reads of the interval. Not the reads of the mates
+                    for read in sorted_bam.fetch(interval.chrom,interval.start,interval.end):
+
+                        if is_soft_clipped(read):
+                            if read.mapq >= self.mapq_cutoff:
+
+                                # no need to realignment
+                                if read.has_tag('SA'):
+                #                    a = 0
+
+                            else:
+                                #Nothing! no more loops
+                        else:
+                            #Nothing no more loops!
+                            a = 0
+
+
+
+
+
+
+
+
+
+
+
 
         end = time.time()
 

@@ -1,4 +1,3 @@
-#/
 from realigner import realignment
 
 create_object = realignment("coordinate_circle_qname_sorted_paired_end_sim_aln.bam","qname_sorted_paired_end_sim_aln.bam",

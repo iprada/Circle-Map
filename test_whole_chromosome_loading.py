@@ -10,7 +10,9 @@ genome_fa = "/data/xsh723/scratch/hg38/canonical_hg38/hg38.fa"
 
 fastafile = ps.FastaFile(genome_fa)
    # get the sequence
-fasta = fastafile.fetch("chr1", 0,248956422)
+fasta = fastafile.fetch("chr1", 0,258956422)
+
+print(len(fasta))
 
 
 

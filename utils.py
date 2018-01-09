@@ -7,8 +7,8 @@ import pybedtools as bt
 import warnings
 import numpy as np
 from itertools import groupby
-import matplotlib.pyplot as plt
-#remove this afterwards
+
+
 
 
 
@@ -226,7 +226,7 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff):
     (the realignment prior) intervals"""
 
     candidate_mates = []
-    for read in sorted_bam.fetch(interval.chrom, interval.start, interval.end, multiple_iterators=True):
+    for read in sorted_bam.fetch(interval.chrom, interval.start, interval.end):
 
         if read.mapq >= mapq_cutoff:
 
@@ -444,7 +444,7 @@ def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
 
     return(mean, std)
 
-def get_realignment_interval(grouped,grouped_pd,interval_extension):
+def get_realignment_interval(grouped,grouped_pd,interval_extension,bam):
     """Function that takes as input the insert metricsa grouped realignment interval and a pandas grouped one and will
     return the interval to perform the probabilistic realignment"""
 
@@ -455,12 +455,15 @@ def get_realignment_interval(grouped,grouped_pd,interval_extension):
 
 
 
+
+
     if np.any(read_types == 'SC') == False:
-        #print(grouped)
+
         grouped = grouped.sort()
 
         #complete realignment interval
         grouped = grouped.merge()
+
 
     elif (np.any(read_types == 'SC') == True) and (np.any(read_types == 'DR')== True or np.any(read_types == 'SA')== True):
 
@@ -474,6 +477,17 @@ def get_realignment_interval(grouped,grouped_pd,interval_extension):
         grouped = grouped.sort()
         grouped = grouped.merge()
 
+    else:
+
+        # save the intervals with lonely soft-clips, and try to realign then with ultra sensitive bwa-mem parameters
+        a = 0
+
+
+
+
+
+
+
 
     #orientation extension
 
@@ -481,6 +495,7 @@ def get_realignment_interval(grouped,grouped_pd,interval_extension):
     #only one extension
 
     extension_orientation = grouped_pd.orientation.unique()
+
 
 
     extended_grouped_L = []
@@ -505,23 +520,27 @@ def get_realignment_interval(grouped,grouped_pd,interval_extension):
 
     extended_grouped = []
 
-    #Check if the interval should be left extended
+    #Check if the interval should be right extended
     if np.any(extension_orientation == 'R') == True:
 
         for interval in grouped:
+
             end = interval.end + interval_extension
 
-            # in case that start is smaller than chromosome length
-            #check chromosome length
-            if end < 250000000:
-                extended_grouped.append([interval.chrom,interval.start,int(round(end))])
+            extended_grouped.append([interval.chrom,interval.start,int(round(end))])
 
-            else:
-                extended_grouped.append([interval.chrom, interval.start,int(round(end))])
 
-        grouped = bt.BedTool(extended_grouped_L)
+        grouped = bt.BedTool(extended_grouped)
 
     return(grouped)
+
+def circle_from_SA(read,mapq_cutoff,mate_interval):
+
+    """Function that takes as input a read (soft-clipped) with a Suplementary alignment the mapping quality cut-off
+    and the mate intervals and attemps the realignment"""
+
+
+
 
 
 

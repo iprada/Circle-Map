@@ -41,3 +41,6 @@ ries
 - Make a rescue round once Circle-Map has finished with the intervals were there are only soft-clipped reads. For read in
 the sc interval check that they do not have supplementary alignments and align them with bwa mem to the whole chromosome?
 or skip lonely soft-clipped reads
+
+- Regarding the above comment. In the function get_realignment_interval there is a if-elif-else loop. In the else part of the
+loop there should be a saved bed file for the rescue of the lonely soft-clips
