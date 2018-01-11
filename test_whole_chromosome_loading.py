@@ -10,9 +10,15 @@ genome_fa = "/data/xsh723/scratch/hg38/canonical_hg38/hg38.fa"
 
 fastafile = ps.FastaFile(genome_fa)
    # get the sequence
-fasta = fastafile.fetch("chr1", 0,258956422)
+fasta = fastafile.fetch("chr1", 1320037,1320087)
+fasta2 = fastafile.fetch("chr1", 1406347,1406397)
 
-print(len(fasta))
+#CGGGGTAAGAAAAAAAAACCGGGGTACGTTAGATGCTAGGTTCATGAGGCAGGGAAGGGCAGGGGGCCAGCAGGAGTGCTGTGGCCGTCCAGACGAGGCC
+print(fasta2.upper() + fasta.upper())
+print("TCGGGGTAAGAAAAAAAAACCGGGGTACGTTAGATGCTAGGTTCATGAGGAGGGAAGGGCAGGGGGCCAGCAGGAGTGCTGTGGCCGTCCAGACGAGGCC")
+
+
+exit()
 
 
 

@@ -44,3 +44,5 @@ or skip lonely soft-clipped reads
 
 - Regarding the above comment. In the function get_realignment_interval there is a if-elif-else loop. In the else part of the
 loop there should be a saved bed file for the rescue of the lonely soft-clips
+
+- When doing the realignment for every interval. Circle-Map needs to keep track of the realignment nucleotide positions

@@ -534,11 +534,66 @@ def get_realignment_interval(grouped,grouped_pd,interval_extension,bam):
 
     return(grouped)
 
+def realignment_intervals_with_counter(bed):
+    """Function that takes as input a bed with the realignment intervals and add two columns with 0 that will indicate
+    the counts of discordant reads and soft-clipped reads for that interval"""
+
+    intervals_w_counter = []
+
+    for interval in bed:
+        interval.append(0)
+        interval.append(0)
+        intervals_w_counter.append(interval)
+
+
+    return(bt.BedTool(intervals_w_counter))
+
 def circle_from_SA(read,mapq_cutoff,mate_interval):
 
     """Function that takes as input a read (soft-clipped) with a Suplementary alignment the mapping quality cut-off
-    and the mate intervals and attemps the realignment"""
+    and the mate intervals and attemps the realignment. Will return True if the supplementary alignment matches the
+    interval"""
 
+    suplementary = read.get_tag('SA')
+
+    #this list will have the following information [chr,left_most start,"strand,CIGAR,mapq, edit_distance]
+
+    supl_info = [x.strip() for x in suplementary.split(',')]
+
+    #mapq filter
+    if int(supl_info[4]) > mapq_cutoff:
+        #chromosome filter
+        if supl_info[0] == mate_interval.chrom:
+            #aligned to the mate interval
+            if mate_interval.start < int(supl_info[1]) < mate_interval.end:
+
+                #orientation
+                if read.is_reverse == True and supl_info[2] == '-':
+                    print(read)
+                    print(supl_info)
+                    exit()
+                    return(True)
+
+                elif read.is_reverse == False and supl_info[2] == '+':
+
+                    return(True)
+
+            else:
+
+                return(False)
+
+        else:
+
+            return(False)
+
+    else:
+        return(False)
+
+def phred_to_prob(array):
+    """Function that takes as input a numpy array with phred base quality scores and returns an array with base probabi-
+    lity scores"""
+
+    return(1 - (10**((array*-1)/10)))
 
 
 

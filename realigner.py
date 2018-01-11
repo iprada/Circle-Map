@@ -12,6 +12,7 @@ from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
 import time
 import sys
+import numpy as np
 import pandas as pd
 from utils import *
 
@@ -22,13 +23,16 @@ class realignment:
                  insert_size_sample_size,ncores):
         self.input_bam = input_bam
         self.qname_bam = qname_bam
-        self.genome_fa = genome_fasta
+        self.genome_fa = ps.FastaFile(genome_fasta)
         self.directory = directory
         self.mapq_cutoff = mapq_cutoff
         self.insert_size_mapq = insert_size_mapq
         self.std_extenstion = std_extension
         self.insert_sample_size = insert_size_sample_size
         self.cores = ncores
+        self.phred_to_prob = np.vectorize(phred_to_prob)
+
+
 
 
 
@@ -92,11 +96,15 @@ class realignment:
 
                 realignment_intervals = get_realignment_interval(grouped,grouped_pandas,extension,sorted_bam)
 
-                # now we have the intervals to realign
-
-                print(realignment_intervals)
+                # add counter for discordanst and soft-clipped to realign
+                realignment_intervals = realignment_intervals_with_counter(realignment_intervals)
 
                 for mate_interval in realignment_intervals:
+
+                    #sample realignment intervals
+                    plus_coding_interval = self.genome_fa.fetch(mate_interval.chrom,mate_interval.start,mate_interval.end).upper()
+                    minus_coding_interval = Seq(plus_coding_interval).reverse_complement()
+
 
                     #note that I am getting the reads of the interval. Not the reads of the mates
                     for read in sorted_bam.fetch(interval.chrom,interval.start,interval.end):
@@ -106,23 +114,45 @@ class realignment:
 
                                 # no need to realignment
                                 if read.has_tag('SA'):
-                #                    a = 0
+
+
+                                    #check realignment from SA tag
+
+                                    if circle_from_SA(read,self.mapq_cutoff,mate_interval) == True:
+
+                                        mate_interval[3] = int(mate_interval[3]) + 1
+
+                                else:
+                                    #realignment
+
+
+
+
+
+                                    #bases = np.char.array(list(read.query_sequence))
+
+                                    base_qualities = np.vstack((read.query_qualities,read.query_qualities,read.query_qualities
+                                                                ,read.query_qualities))
+
+
+
+                                    #print(phred_to_prob(base_qualities))
+
+                                    #print(test)
+
+
+
+                                    #exit()
+
+
 
                             else:
+                                a = 0
                                 #Nothing! no more loops
                         else:
-                            #Nothing no more loops!
+
+                            # check discordancy if the read is discordant
                             a = 0
-
-
-
-
-
-
-
-
-
-
 
 
         end = time.time()
