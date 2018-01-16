@@ -6,6 +6,7 @@ import pysam as ps
 import pybedtools as bt
 import warnings
 import numpy as np
+import pandas as pd
 from itertools import groupby
 
 
@@ -400,6 +401,9 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff):
 
 
 
+
+
+
 def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
     """Function that takes as input a queryname sorted bam and computes the mean insert a size and
     the standard deviation from. This number is computed from the F1R2 read with a user defined sample size,
@@ -444,95 +448,84 @@ def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
 
     return(mean, std)
 
-def get_realignment_interval(grouped,grouped_pd,interval_extension,bam):
-    """Function that takes as input the insert metricsa grouped realignment interval and a pandas grouped one and will
-    return the interval to perform the probabilistic realignment"""
+def get_realignment_intervals(bed_prior,interval_extension):
+    """Function that takes as input a bed file with the read type information and will remove the soft-clipped if there
+    are more informative priors (DR,SA). If there are only soft-clipped reads, they will be saved to a bed file to attemp
+    lonely soft-clipped read rescue"""
 
-    #interval definition
+    labels = ['chrom', 'start', 'end', 'read_type', 'orientation']
+    candidate_mates_dataframe = pd.DataFrame.from_records(bed_prior, columns=labels)
 
-
-    read_types = grouped_pd.read_type.unique()
-
-
+    read_types = candidate_mates_dataframe.read_type.unique()
 
 
 
     if np.any(read_types == 'SC') == False:
 
-        grouped = grouped.sort()
 
-        #complete realignment interval
-        grouped = grouped.merge()
+        # nothing. Sort and merge
+        candidate_mates = bt.BedTool.from_dataframe(candidate_mates_dataframe).sort().merge(c=5,o='distinct')
 
 
-    elif (np.any(read_types == 'SC') == True) and (np.any(read_types == 'DR')== True or np.any(read_types == 'SA')== True):
+    elif np.any(read_types == 'SC') == True and (np.any(read_types == 'DR') == True or np.any(read_types == 'SA') == True):
+        #remove lines with sc
 
-        #remove the 'SC'
-        no_sc_grouped = []
-        for interval in grouped:
-            if interval[3] != 'SC':
-                no_sc_grouped.append(interval)
+        candidate_mates_no_sc = candidate_mates_dataframe.drop(candidate_mates_dataframe[candidate_mates_dataframe.read_type == 'SC'].index)
+        candidate_mates = bt.BedTool.from_dataframe(candidate_mates_no_sc).sort().merge(c=5,o='distinct')
 
-        grouped = bt.BedTool(no_sc_grouped)
-        grouped = grouped.sort()
-        grouped = grouped.merge()
+        print("SC== T and DR and SA == T loop",candidate_mates)
+        exit()
 
     else:
+        #only soft clipped
 
-        # save the intervals with lonely soft-clips, and try to realign then with ultra sensitive bwa-mem parameters
-        a = 0
-
-
+        return(bed_prior)
 
 
+    extended = []
 
+    print("before extension",candidate_mates)
 
-
-
-    #orientation extension
-
-
-    #only one extension
-
-    extension_orientation = grouped_pd.orientation.unique()
+    for interval in candidate_mates:
 
 
 
-    extended_grouped_L = []
+        if (np.any(interval[3]=='LR') == True) or (np.any(interval[3]=='L') == True and np.any(interval[3]=='R') == True):
 
 
-    # check if the interval should be left extended
-    if np.any(extension_orientation == 'L') == True:
-
-        for interval in grouped:
             start = interval.start - interval_extension
-
-            # in case that start is smaller than chromosome length
-            if start < 0:
-                extended_grouped_L.append([interval.chrom,str(0),interval.end])
-
-            else:
-                extended_grouped_L.append([interval.chrom, int(round(start)), interval.end])
-
-        grouped = bt.BedTool(extended_grouped_L)
-
-
-
-    extended_grouped = []
-
-    #Check if the interval should be right extended
-    if np.any(extension_orientation == 'R') == True:
-
-        for interval in grouped:
 
             end = interval.end + interval_extension
 
-            extended_grouped.append([interval.chrom,interval.start,int(round(end))])
+            if start < 0:
+                extended.append([interval.chrom,str(0),end])
+
+            else:
+                extended.append([interval.chrom, int(round(start)), int(round(end))])
+
+        elif np.any(interval[3]=='L') == True:
 
 
-        grouped = bt.BedTool(extended_grouped)
 
-    return(grouped)
+            start = interval.start - interval_extension
+
+            if start < 0:
+                extended.append([interval.chrom,str(0),interval.end])
+
+            else:
+                extended.append([interval.chrom, int(round(start)), interval.end])
+
+        elif np.any(interval[3]=='L') == True:
+
+            print("AAAAAAAAAAAAAAAAAAAAA")
+
+            end = interval.start + interval_extension
+
+            extended.append([interval.chrom, interval.start, int(round(end))])
+
+
+    return(bt.BedTool(extended))
+
 
 def realignment_intervals_with_counter(bed):
     """Function that takes as input a bed with the realignment intervals and add two columns with 0 that will indicate
@@ -569,9 +562,6 @@ def circle_from_SA(read,mapq_cutoff,mate_interval):
 
                 #orientation
                 if read.is_reverse == True and supl_info[2] == '-':
-                    print(read)
-                    print(supl_info)
-                    exit()
                     return(True)
 
                 elif read.is_reverse == False and supl_info[2] == '+':

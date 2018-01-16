@@ -73,31 +73,32 @@ class realignment:
 
         for interval in circ_peaks:
 
-            #clean temp files
-            #bt.helpers.cleanup()
 
-            #
             candidate_mates = get_mate_intervals(sorted_bam,interval,self.mapq_cutoff)
 
             if len(candidate_mates) > 0:
                 iteration +=1
                 print(iteration)
 
-                # sort by column 4
-                sorted_candidate_mates = sorted(candidate_mates, key=lambda x: x[3])
-                candidate_mates = bt.BedTool(sorted_candidate_mates)
-                # group by column 4. and get the minimum start point and the maximum end point
-                grouped = candidate_mates.groupby(g=4, c=[1, 2, 3, 5], o=['distinct', 'min', 'max','distinct'])
+                print("mate intervals",bt.BedTool(candidate_mates))
 
-                # reformat to fit pybedtools requirements and get pandas object. Usefull for calculations
-                grouped_pandas = pd.read_table(grouped.fn, names=['read_type', 'chrom', 'start', 'stop','orientation'])
-                grouped = grouped_pandas[['chrom', 'start', 'stop', 'read_type','orientation']]
-                grouped = bt.BedTool.from_dataframe(grouped)
 
-                realignment_intervals = get_realignment_interval(grouped,grouped_pandas,extension,sorted_bam)
 
-                # add counter for discordanst and soft-clipped to realign
-                realignment_intervals = realignment_intervals_with_counter(realignment_intervals)
+                realignment_interval_extended = get_realignment_intervals(candidate_mates,extension)
+
+                print("extended realignment intervals",realignment_interval_extended)
+
+
+
+
+
+
+
+
+                realignment_intervals = realignment_intervals_with_counter(realignment_interval_extended)
+
+
+
 
                 for mate_interval in realignment_intervals:
 
