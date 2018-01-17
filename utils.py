@@ -473,8 +473,7 @@ def get_realignment_intervals(bed_prior,interval_extension):
         candidate_mates_no_sc = candidate_mates_dataframe.drop(candidate_mates_dataframe[candidate_mates_dataframe.read_type == 'SC'].index)
         candidate_mates = bt.BedTool.from_dataframe(candidate_mates_no_sc).sort().merge(c=5,o='distinct')
 
-        print("SC== T and DR and SA == T loop",candidate_mates)
-        exit()
+
 
     else:
         #only soft clipped
@@ -484,7 +483,7 @@ def get_realignment_intervals(bed_prior,interval_extension):
 
     extended = []
 
-    print("before extension",candidate_mates)
+
 
     for interval in candidate_mates:
 
@@ -515,9 +514,9 @@ def get_realignment_intervals(bed_prior,interval_extension):
             else:
                 extended.append([interval.chrom, int(round(start)), interval.end])
 
-        elif np.any(interval[3]=='L') == True:
+        elif np.any(interval[3]=='R') == True:
 
-            print("AAAAAAAAAAAAAAAAAAAAA")
+
 
             end = interval.start + interval_extension
 
@@ -544,8 +543,8 @@ def realignment_intervals_with_counter(bed):
 def circle_from_SA(read,mapq_cutoff,mate_interval):
 
     """Function that takes as input a read (soft-clipped) with a Suplementary alignment the mapping quality cut-off
-    and the mate intervals and attemps the realignment. Will return True if the supplementary alignment matches the
-    interval"""
+    and the mate intervals and checks if it fits the conditions to call a circle. Will return True if the supplementary
+    alignment matches the interval"""
 
     suplementary = read.get_tag('SA')
 

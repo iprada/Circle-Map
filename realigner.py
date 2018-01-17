@@ -80,37 +80,28 @@ class realignment:
                 iteration +=1
                 print(iteration)
 
-                print("mate intervals",bt.BedTool(candidate_mates))
 
-
-
+                # sort merge and extend
                 realignment_interval_extended = get_realignment_intervals(candidate_mates,extension)
 
-                print("extended realignment intervals",realignment_interval_extended)
 
-
-
-
-
-
-
-
+                #add counters
                 realignment_intervals = realignment_intervals_with_counter(realignment_interval_extended)
-
-
 
 
                 for mate_interval in realignment_intervals:
 
                     #sample realignment intervals
                     plus_coding_interval = self.genome_fa.fetch(mate_interval.chrom,mate_interval.start,mate_interval.end).upper()
-                    minus_coding_interval = Seq(plus_coding_interval).reverse_complement()
+                    minus_coding_interval = Seq(plus_coding_interval).complement()
 
 
                     #note that I am getting the reads of the interval. Not the reads of the mates
                     for read in sorted_bam.fetch(interval.chrom,interval.start,interval.end):
 
+
                         if is_soft_clipped(read):
+
                             if read.mapq >= self.mapq_cutoff:
 
                                 # no need to realignment
@@ -126,18 +117,31 @@ class realignment:
                                 else:
                                     #realignment
 
+                                    print(read)
+                                    exit()
 
 
 
 
-                                    #bases = np.char.array(list(read.query_sequence))
-
-                                    base_qualities = np.vstack((read.query_qualities,read.query_qualities,read.query_qualities
-                                                                ,read.query_qualities))
 
 
+                                    #base_qualities = np.vstack((read.query_qualities,read.query_qualities,read.query_qualities
+                                    #                            ,read.query_qualities))
 
-                                    #print(phred_to_prob(base_qualities))
+                                    #print(read.seq[-17:],read.cigar)
+
+
+                                    #base_prob = phred_to_prob(base_qualities)
+
+                                    #print(base_prob)
+
+
+
+
+
+
+
+                                    exit()
 
                                     #print(test)
 
