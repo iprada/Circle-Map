@@ -20,7 +20,7 @@ class realignment:
     """Class for managing the realignment and eccDNA indetification of circle-map"""
 
     def __init__(self, input_bam,qname_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
-                 insert_size_sample_size,ncores):
+                 insert_size_sample_size,n_hits,prob_cutoff,ncores):
         self.input_bam = input_bam
         self.qname_bam = qname_bam
         self.genome_fa = ps.FastaFile(genome_fasta)
@@ -30,7 +30,9 @@ class realignment:
         self.std_extenstion = std_extension
         self.insert_sample_size = insert_size_sample_size
         self.cores = ncores
-        self.phred_to_prob = np.vectorize(phred_to_prob)
+        self.n_hits = n_hits
+        self.prob_cutoff = prob_cutoff
+        self.phreds_to_probs = np.vectorize(phred_to_prob)
 
 
 
@@ -117,37 +119,11 @@ class realignment:
                                 else:
                                     #realignment
 
-                                    print(read)
-                                    exit()
+                                    realignment_bases = get_longest_soft_clipped_bases(read)
+
+                                    realign(read,self.n_hits,plus_coding_interval,minus_coding_interval)
 
 
-
-
-
-
-                                    #base_qualities = np.vstack((read.query_qualities,read.query_qualities,read.query_qualities
-                                    #                            ,read.query_qualities))
-
-                                    #print(read.seq[-17:],read.cigar)
-
-
-                                    #base_prob = phred_to_prob(base_qualities)
-
-                                    #print(base_prob)
-
-
-
-
-
-
-
-                                    exit()
-
-                                    #print(test)
-
-
-
-                                    #exit()
 
 
 

@@ -46,3 +46,8 @@ or skip lonely soft-clipped reads
 loop there should be a saved bed file for the rescue of the lonely soft-clips
 
 - When doing the realignment for every interval. Circle-Map needs to keep track of the realignment nucleotide positions
+
+
+## May be
+
+- Try efficient looping with itertools

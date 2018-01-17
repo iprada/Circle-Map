@@ -7,7 +7,9 @@ import pybedtools as bt
 import warnings
 import numpy as np
 import pandas as pd
-from itertools import groupby
+import itertools as it
+import edlib
+import time
 
 
 
@@ -67,10 +69,10 @@ def aligned_bases_from_sa(sa_cigar):
 
     """Function that gets as input the SA tag CIGAR and reports the number of bases that where matched to the genome"""
 
-    cigar = [''.join(g) for _, g in groupby(sa_cigar, str.isalpha)]
+    cigar = [''.join(g) for _, g in it.groupby(sa_cigar, str.isalpha)]
 
 
-    match_index = cigar.index('M')
+    match_index =  [x for x in range(len(cigar)) if cigar[x]=='M']
 
     aligned = 0
     #if only one hit
@@ -95,10 +97,10 @@ def genome_alignment_from_cigar(sa_cigar):
     """
     aligned = 0
 
-    cigar = [''.join(g) for _, g in groupby(sa_cigar, str.isalpha)]
+    cigar = [''.join(g) for _, g in it.groupby(sa_cigar, str.isalpha)]
 
     #do it for the matches
-    match_index = cigar.index('M')
+    match_index = [x for x in range(len(cigar)) if cigar[x]=='M']
 
 
     # if only one hit
@@ -583,6 +585,129 @@ def phred_to_prob(array):
     lity scores"""
 
     return(1 - (10**((array*-1)/10)))
+
+def get_longest_soft_clipped_bases(read):
+    """Function that takes as input the cigar string and returns the longest soft-clipped sequence index"""
+
+    read_cigar = read.cigar
+
+
+    #get index of the soft-clipped in the cigar
+    match_index = [x for x in range(len(read_cigar)) if read_cigar[x][0] == 4]
+
+
+    # soft-clipped in only one side
+    if len(match_index) == 1:
+
+        #return first n soft-clipped
+        if match_index == [0]:
+            return(read.seq[0:read_cigar[0][1]])
+
+        #return last n nucleotides
+        elif match_index[0] == len(read_cigar)/2:
+
+            return (read.seq[-read_cigar[match_index[0]][1]:])
+
+
+
+
+
+
+    #soft-clipped in both sides of the read
+    else:
+
+        #make sure that is soft-clipped on both sides
+
+        try:
+
+            assert read_cigar[0][0] == 4 and read_cigar[-1][0] == 4
+
+            # longest soft-clipped are first n nucleotides
+            if read_cigar[0][1] >= read_cigar[-1][1]:
+
+
+
+                return (read.seq[0:read_cigar[0][1]])
+
+            else:
+
+                return(read.seq[-read_cigar[-1][1]:])
+
+        except AssertionError as e:
+
+            print(e)
+
+
+def realign(read,n_hits,plus_strand,minus_strand):
+    """Function that takes as input a read, the number of hits to find and the plus and minus strand and will return
+    the number of hits"""
+
+    soft_clipped_bases = get_longest_soft_clipped_bases(read)
+
+
+
+    print(read)
+
+    if read.is_reverse:
+
+        alignment = edlib.align(soft_clipped_bases, minus_strand, mode='HW', task='path')
+
+        print(alignment)
+        print(alignment['locations'])
+
+        print(soft_clipped_bases)
+        print(minus_strand[alignment['locations'][0][0]:alignment['locations'][0][1]+alignment['editDistance']])
+
+    else:
+
+        alignment = edlib.align(soft_clipped_bases, plus_strand, mode='HW', task='path')
+
+        print(alignment)
+        print(alignment['locations'])
+
+        print(soft_clipped_bases)
+        print(plus_strand[alignment['locations'][0][0]:alignment['locations'][0][1]+alignment['editDistance']])
+
+
+
+        #mask the alignment bases
+
+        #plus_strand[alignment['locations'][0][0]:alignment['locations'][0][1]+alignment['editDistance']] = map('X',plus_strand[alignment['locations'][0][0]:alignment['locations'][0][1]+alignment['editDistance']])
+
+
+        mask_bases = 'X' * (alignment['locations'][0][1]-alignment['locations'][0][0])
+
+
+        a_plus_strand = plus_strand[:alignment['locations'][0][0]] + mask_bases + plus_strand[alignment['locations'][0][1]:]
+        print(a_plus_strand)
+        print(plus_strand)
+
+        exit()
+
+
+
+
+        exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
