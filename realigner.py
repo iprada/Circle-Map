@@ -88,6 +88,10 @@ class realignment:
                 # sort merge and extend
                 realignment_interval_extended = get_realignment_intervals(candidate_mates,extension)
 
+                if realignment_interval_extended == None:
+
+                    continue
+
 
                 #add counters
                 realignment_intervals = realignment_intervals_with_counter(realignment_interval_extended)

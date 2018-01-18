@@ -480,7 +480,7 @@ def get_realignment_intervals(bed_prior,interval_extension):
     else:
         #only soft clipped
 
-        return(bed_prior)
+        return(None)
 
 
     extended = []
