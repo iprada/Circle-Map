@@ -639,55 +639,64 @@ def get_longest_soft_clipped_bases(read):
 
 
 def realign(read,n_hits,plus_strand,minus_strand):
+
+
     """Function that takes as input a read, the number of hits to find and the plus and minus strand and will return
     the number of hits"""
 
+
+    #get soft-clipped bases
     soft_clipped_bases = get_longest_soft_clipped_bases(read)
 
+    hits = 0
 
 
-    print(read)
+    top_hits = {}
 
-    if read.is_reverse:
-
-        alignment = edlib.align(soft_clipped_bases, minus_strand, mode='HW', task='path')
-
-        print(alignment)
-        print(alignment['locations'])
-
-        print(soft_clipped_bases)
-        print(minus_strand[alignment['locations'][0][0]:alignment['locations'][0][1]+alignment['editDistance']])
-
-    else:
-
-        alignment = edlib.align(soft_clipped_bases, plus_strand, mode='HW', task='path')
-
-        print(alignment)
-        print(alignment['locations'])
-
-        print(soft_clipped_bases)
-        print(plus_strand[alignment['locations'][0][0]:alignment['locations'][0][1]+alignment['editDistance']])
+    while hits < n_hits:
 
 
+        if read.is_reverse:
 
-        #mask the alignment bases
-
-        #plus_strand[alignment['locations'][0][0]:alignment['locations'][0][1]+alignment['editDistance']] = map('X',plus_strand[alignment['locations'][0][0]:alignment['locations'][0][1]+alignment['editDistance']])
-
-
-        mask_bases = 'X' * (alignment['locations'][0][1]-alignment['locations'][0][0])
-
-
-        a_plus_strand = plus_strand[:alignment['locations'][0][0]] + mask_bases + plus_strand[alignment['locations'][0][1]:]
-        print(a_plus_strand)
-        print(plus_strand)
-
-        exit()
+            alignment = edlib.align(soft_clipped_bases, minus_strand, mode='HW', task='path')
 
 
 
 
-        exit()
+            for location in alignment['locations']:
+
+
+                mask_bases = 'X' * ( location[1] - location[0])
+
+
+                minus_strand = minus_strand[:location[0]] + mask_bases + minus_strand[location[1]:]
+
+                hits += 1
+
+                top_hits[hits] = (location,alignment['cigar'])
+
+        else:
+
+            alignment = edlib.align(soft_clipped_bases, plus_strand, mode='HW', task='path')
+
+
+            for location in alignment['locations']:
+
+                mask_bases = 'X' * ( location[1] - location[0])
+
+                plus_strand = plus_strand[:location[0]] + mask_bases + plus_strand[location[1]:]
+
+                hits += 1
+
+                top_hits[hits] = (location,alignment['cigar'])
+
+
+    return(top_hits)
+
+
+
+
+
 
 
 

@@ -76,6 +76,8 @@ class realignment:
         for interval in circ_peaks:
 
 
+
+
             candidate_mates = get_mate_intervals(sorted_bam,interval,self.mapq_cutoff)
 
             if len(candidate_mates) > 0:
@@ -93,9 +95,12 @@ class realignment:
 
                 for mate_interval in realignment_intervals:
 
+                    print(mate_interval)
+
+
                     #sample realignment intervals
                     plus_coding_interval = self.genome_fa.fetch(mate_interval.chrom,mate_interval.start,mate_interval.end).upper()
-                    minus_coding_interval = Seq(plus_coding_interval).complement()
+                    minus_coding_interval = str(Seq(plus_coding_interval).complement())
 
 
                     #note that I am getting the reads of the interval. Not the reads of the mates
@@ -121,7 +126,7 @@ class realignment:
 
                                     realignment_bases = get_longest_soft_clipped_bases(read)
 
-                                    realign(read,self.n_hits,plus_coding_interval,minus_coding_interval)
+                                    #realign(read,self.n_hits,plus_coding_interval,minus_coding_interval)
 
 
 
