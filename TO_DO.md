@@ -51,3 +51,7 @@ loop there should be a saved bed file for the rescue of the lonely soft-clips
 ## May be
 
 - Try efficient looping with itertools
+
+## Limitations
+
+- Circle-Map realignment of the soft-clipped reads does not support reads with ONLY N

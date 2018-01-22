@@ -8,6 +8,7 @@ os.chdir("/isdata/kroghgrp/xsh723/circle_map/test_data/test_insert_size/")
 raw_bam = ps.AlignmentFile('paired_end_sim_aln.bam', "rb")
 
 counter = 0
+
 insert_size = []
 read1 = ''
 for read in raw_bam:

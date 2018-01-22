@@ -3,27 +3,37 @@ from __future__ import division
 import edlib
 import time
 import pysam as ps
+import traceback
+import signal
+import os
+import sys
 
 begin = time.time()
 genome_fa = "/data/xsh723/scratch/hg38/canonical_hg38/hg38.fa"
 
 fastafile = ps.FastaFile(genome_fa)
    # get the sequence
-fasta = fastafile.fetch("chr22", 0,248956422)
+fasta = fastafile.fetch("chr1", 1000000,1000100).upper()
+
+print(fasta)
 
 chr1 = fasta.upper()
 
 begin = time.time()
 
-pattern = 'ATCGATCAGAAATCATCTATCTCGATCGTAGCTAGCTAGCTAGCTAGCTAGCT'
+pattern = 'NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN'
 
-for i in range(0,2):
-    print(i)
-    result = edlib.align(pattern,chr1,mode='HW',task='path')
 
-end = time.time()
+print(pattern)
 
-print((end-begin)/60)
+
+
+
+result = edlib.align(pattern,chr1,mode='HW',task='path')
+print(result)
+
+
+
 #import edlib
 
 #begin_edlib = time.time()

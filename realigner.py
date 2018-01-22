@@ -99,7 +99,6 @@ class realignment:
 
                 for mate_interval in realignment_intervals:
 
-                    print(mate_interval)
 
 
                     #sample realignment intervals
@@ -128,9 +127,14 @@ class realignment:
                                 else:
                                     #realignment
 
-                                    realignment_bases = get_longest_soft_clipped_bases(read)
+                                    #realignment_bases = get_longest_soft_clipped_bases(read)
 
-                                    #realign(read,self.n_hits,plus_coding_interval,minus_coding_interval)
+                                    realignment_dict = realign(read,self.n_hits,plus_coding_interval,minus_coding_interval)
+
+                                    print(read)
+
+                                    print(realignment_dict)
+                                    exit()
 
 
 
@@ -143,6 +147,8 @@ class realignment:
 
                             # check discordancy if the read is discordant
                             a = 0
+
+
 
 
         end = time.time()

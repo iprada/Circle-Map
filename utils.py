@@ -580,6 +580,30 @@ def circle_from_SA(read,mapq_cutoff,mate_interval):
     else:
         return(False)
 
+def check_alphabet(sequence):
+    """Function that takes as input a sequence and it will check that there is at least a letter matching the alphabet
+     in the sequence, returning true."""
+
+    code = "ATCG"
+
+    for base in sequence:
+        if base in code:
+            return(True)
+
+    return(False)
+
+def check_compatibility(seq1,seq2):
+
+    for base in seq1:
+
+        for base2 in seq2:
+
+            if base == base2:
+
+                return(True)
+
+    return(False)
+
 def phred_to_prob(array):
     """Function that takes as input a numpy array with phred base quality scores and returns an array with base probabi-
     lity scores"""
@@ -604,7 +628,7 @@ def get_longest_soft_clipped_bases(read):
             return(read.seq[0:read_cigar[0][1]])
 
         #return last n nucleotides
-        elif match_index[0] == len(read_cigar)/2:
+        elif match_index[0] == (len(read_cigar)-1):
 
             return (read.seq[-read_cigar[match_index[0]][1]:])
 
@@ -648,50 +672,83 @@ def realign(read,n_hits,plus_strand,minus_strand):
     #get soft-clipped bases
     soft_clipped_bases = get_longest_soft_clipped_bases(read)
 
+
+    if check_alphabet(soft_clipped_bases) == False:
+        # a error should be raised here future Inigo
+        print("warning: the alphabet of the soft-clipped %s is not DNA" % soft_clipped_bases)
+
+        return(None)
+
+
+
+
+
     hits = 0
 
 
     top_hits = {}
 
+
+
     while hits < n_hits:
+
+
 
 
         if read.is_reverse:
 
-            alignment = edlib.align(soft_clipped_bases, minus_strand, mode='HW', task='path')
+            if check_compatibility(soft_clipped_bases,minus_strand) == True:
+
+                alignment = edlib.align(soft_clipped_bases, minus_strand, mode='HW', task='path')
 
 
 
 
-            for location in alignment['locations']:
+
+                for location in alignment['locations']:
 
 
-                mask_bases = 'X' * ( location[1] - location[0])
+                    mask_bases = 'X' * ( location[1] - location[0])
 
 
-                minus_strand = minus_strand[:location[0]] + mask_bases + minus_strand[location[1]:]
+                    minus_strand = minus_strand[:location[0]] + mask_bases + minus_strand[location[1]:]
 
-                hits += 1
+                    hits += 1
 
-                top_hits[hits] = (location,alignment['cigar'])
+                    top_hits[hits] = (location,alignment['cigar'])
+
+            else:
+
+                hits +=n_hits
 
         else:
 
-            alignment = edlib.align(soft_clipped_bases, plus_strand, mode='HW', task='path')
+            if check_compatibility(soft_clipped_bases,plus_strand) == True:
 
 
-            for location in alignment['locations']:
+                alignment = edlib.align(soft_clipped_bases, plus_strand, mode='HW', task='path')
 
-                mask_bases = 'X' * ( location[1] - location[0])
 
-                plus_strand = plus_strand[:location[0]] + mask_bases + plus_strand[location[1]:]
 
-                hits += 1
 
-                top_hits[hits] = (location,alignment['cigar'])
+                for location in alignment['locations']:
+
+                    mask_bases = 'X' * ( location[1] - location[0])
+
+                    plus_strand = plus_strand[:location[0]] + mask_bases + plus_strand[location[1]:]
+
+                    hits += 1
+
+                    top_hits[hits] = (location,alignment['cigar'])
+
+            else:
+
+                hits +=n_hits
 
 
     return(top_hits)
+
+
 
 
 
