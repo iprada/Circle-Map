@@ -19,6 +19,7 @@
 - Check 0-1 based indexes
 - Make friendly command line interface with argparse
 - Implement coverage
+- Change some containers to dictionary for easy code reading
 
 ## ReadExtractor
 - When I am extracting the discordant reads. Could there be discordant reads aligned to the breakpoint?

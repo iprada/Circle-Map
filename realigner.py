@@ -20,7 +20,7 @@ class realignment:
     """Class for managing the realignment and eccDNA indetification of circle-map"""
 
     def __init__(self, input_bam,qname_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
-                 insert_size_sample_size,n_hits,prob_cutoff,ncores):
+                 insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,ncores):
         self.input_bam = input_bam
         self.qname_bam = qname_bam
         self.genome_fa = ps.FastaFile(genome_fasta)
@@ -30,6 +30,8 @@ class realignment:
         self.std_extenstion = std_extension
         self.insert_sample_size = insert_size_sample_size
         self.cores = ncores
+        self.gap_open = gap_open
+        self.gap_ext = gap_ext
         self.n_hits = n_hits
         self.prob_cutoff = prob_cutoff
         self.phreds_to_probs = np.vectorize(phred_to_prob)
@@ -105,6 +107,11 @@ class realignment:
                     plus_coding_interval = self.genome_fa.fetch(mate_interval.chrom,mate_interval.start,mate_interval.end).upper()
                     minus_coding_interval = str(Seq(plus_coding_interval).complement())
 
+                    # precompute the denominators of the error model. They will be constants for every interval
+                    plus_base_freqs = background_freqs(plus_coding_interval)
+                    minus_base_freqs = {'T':plus_base_freqs['A'],'A':plus_base_freqs['T'],
+                                        'C':plus_base_freqs['G'],'G':plus_base_freqs['C']}
+
 
                     #note that I am getting the reads of the interval. Not the reads of the mates
                     for read in sorted_bam.fetch(interval.chrom,interval.start,interval.end):
@@ -129,12 +136,21 @@ class realignment:
 
                                     #realignment_bases = get_longest_soft_clipped_bases(read)
 
-                                    realignment_dict = realign(read,self.n_hits,plus_coding_interval,minus_coding_interval)
 
-                                    print(read)
+
+                                    realignment_dict = realign(read,self.n_hits,plus_coding_interval,minus_coding_interval,
+                                                               plus_base_freqs,minus_base_freqs,self.gap_open,self.gap_ext)
 
                                     print(realignment_dict)
-                                    exit()
+
+                                    
+
+
+
+
+
+
+
 
 
 

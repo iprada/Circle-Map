@@ -9,8 +9,6 @@ import numpy as np
 import pandas as pd
 import itertools as it
 import edlib
-import time
-
 
 
 
@@ -608,10 +606,11 @@ def phred_to_prob(array):
     """Function that takes as input a numpy array with phred base quality scores and returns an array with base probabi-
     lity scores"""
 
-    return(1 - (10**((array*-1)/10)))
+    return(10**((array*-1)/10))
 
 def get_longest_soft_clipped_bases(read):
-    """Function that takes as input the cigar string and returns the longest soft-clipped sequence index"""
+    """Function that takes as input the cigar string and returns a dictionary containing the longest soft-clipped part of
+     the read, the quality values and  the read mapping quality"""
 
     read_cigar = read.cigar
 
@@ -625,12 +624,13 @@ def get_longest_soft_clipped_bases(read):
 
         #return first n soft-clipped
         if match_index == [0]:
-            return(read.seq[0:read_cigar[0][1]])
+            return{'seq': read.seq[0:read_cigar[0][1]],'qual': read.query_qualities[0:read_cigar[0][1]],'mapq':read.mapq}
 
         #return last n nucleotides
         elif match_index[0] == (len(read_cigar)-1):
 
-            return (read.seq[-read_cigar[match_index[0]][1]:])
+            return {'seq':read.seq[-read_cigar[match_index[0]][1]:],
+                    'qual':read.query_qualities[-read_cigar[match_index[0]][1]:],'mapq':read.mapq}
 
 
 
@@ -651,35 +651,49 @@ def get_longest_soft_clipped_bases(read):
 
 
 
-                return (read.seq[0:read_cigar[0][1]])
+                return {'seq': read.seq[0:read_cigar[0][1]],'qual': read.query_qualities[0:read_cigar[0][1]],
+                        'mapq':read.mapq}
 
             else:
 
-                return(read.seq[-read_cigar[-1][1]:])
+                return{'seq':read.seq[-read_cigar[-1][1]:],'qual': read.query_qualities[-read_cigar[-1][1]:],
+                       'mapq': read.mapq}
 
         except AssertionError as e:
 
             print(e)
 
+def background_freqs(seq):
+    """Function that takes as input the sequence of the nucletide frequencies in the realignment interval"""
 
-def realign(read,n_hits,plus_strand,minus_strand):
+    return{nucleotide: seq.count(nucleotide)/len(seq) for nucleotide in 'ATCG'}
+
+
+
+
+
+def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freqs,gap_open,gap_extend):
 
 
     """Function that takes as input a read, the number of hits to find and the plus and minus strand and will return
-    the number of hits"""
+    the number of hits, the sequencing qualities for that read and the g+c content of the realignment interval"""
 
 
-    #get soft-clipped bases
-    soft_clipped_bases = get_longest_soft_clipped_bases(read)
+    #get soft-clipped read
+    soft_clipped_read = get_longest_soft_clipped_bases(read)
 
 
-    if check_alphabet(soft_clipped_bases) == False:
-        # a error should be raised here future Inigo
-        print("warning: the alphabet of the soft-clipped %s is not DNA" % soft_clipped_bases)
+
+    if check_alphabet(soft_clipped_read['seq']) == False:
+
+        #Warning raised when alphabets do not match
+
+
+        warnings.warn(
+            "WARNING: a soft-clipped containing only ambiguous DNA bases was found. Soft-clipped sequence is: %s" %
+            soft_clipped_read['seq'])
 
         return(None)
-
-
 
 
 
@@ -689,23 +703,18 @@ def realign(read,n_hits,plus_strand,minus_strand):
     top_hits = {}
 
 
+    if read.is_reverse:
 
-    while hits < n_hits:
+        while hits < n_hits:
 
+            if check_compatibility(soft_clipped_read['seq'], minus_strand) == True:
 
-
-
-        if read.is_reverse:
-
-            if check_compatibility(soft_clipped_bases,minus_strand) == True:
-
-                alignment = edlib.align(soft_clipped_bases, minus_strand, mode='HW', task='path')
-
-
+                alignment = edlib.align(soft_clipped_read['seq'], minus_strand, mode='HW', task='path')
 
 
 
                 for location in alignment['locations']:
+
 
 
                     mask_bases = 'X' * ( location[1] - location[0])
@@ -715,20 +724,22 @@ def realign(read,n_hits,plus_strand,minus_strand):
 
                     hits += 1
 
-                    top_hits[hits] = (location,alignment['cigar'])
+
+                    score = pssm(soft_clipped_read['qual'], soft_clipped_read['seq'],alignment['cigar'],minus_base_freqs,gap_open,gap_extend)
+
+                    top_hits[hits] = (location,alignment['cigar'],score)
 
             else:
 
                 hits +=n_hits
 
-        else:
+    else:
 
-            if check_compatibility(soft_clipped_bases,plus_strand) == True:
+        while hits < n_hits:
 
+            if check_compatibility(soft_clipped_read['seq'], plus_strand) == True:
 
-                alignment = edlib.align(soft_clipped_bases, plus_strand, mode='HW', task='path')
-
-
+                alignment = edlib.align(soft_clipped_read['seq'], plus_strand, mode='HW', task='path')
 
 
                 for location in alignment['locations']:
@@ -739,14 +750,134 @@ def realign(read,n_hits,plus_strand,minus_strand):
 
                     hits += 1
 
-                    top_hits[hits] = (location,alignment['cigar'])
+
+
+
+                    score = pssm(soft_clipped_read['qual'], soft_clipped_read['seq'],alignment['cigar'], plus_base_freqs,gap_open,gap_extend)
+
+                    top_hits[hits] = (location,alignment['cigar'],score)
 
             else:
 
                 hits +=n_hits
 
 
-    return(top_hits)
+
+
+    return({'alignments':top_hits,'mapq_prior': soft_clipped_read['mapq']})
+
+
+def edlib_cigar_to_iterable(edlib_cigar):
+    """Function that takes as input the edlib cigar and parses it to get it in a iterable manner"""
+
+    cigar = [''.join(g) for _, g in it.groupby(edlib_cigar, str.isdigit)]
+
+    return(cigar)
+
+
+
+def pssm(seq_prob,seq_nucl,edlib_cigar,base_freqs,gap_open,gap_extend):
+    """Function that takes as input the sequencing probabilities and cigar string and returns the log2 pssm of the read"""
+
+    phreds_to_probs = np.vectorize(phred_to_prob)
+
+
+
+    iterable_cigar = edlib_cigar_to_iterable(edlib_cigar)
+
+    seq_prob = phreds_to_probs(seq_prob)
+
+    #start positon to operate in the pssm. This is done to iterate over the operations in the cigar, and keep track of
+    # were I am in the seq and quality values
+    seq_pos = 0
+    indel_penalty = 0
+
+
+
+    #iterate trough CIGAR operations
+    for index in range(0,len(iterable_cigar),2):
+
+        operation_length = int(iterable_cigar[index])
+
+
+
+        operation = iterable_cigar[index+1]
+
+
+        #match, 1 minus prob(base called wrong)
+        if operation == '=':
+
+
+
+            for nucleotide in range(seq_pos, (operation_length + seq_pos)):
+
+                a = nucleotide
+                value = seq_nucl[nucleotide]
+
+                my_prob = seq_prob[nucleotide]
+
+                if seq_nucl[nucleotide] == 'A':
+
+                    seq_prob[nucleotide] = np.log2((1 - seq_prob[nucleotide])/base_freqs['A'])
+
+                elif seq_nucl[nucleotide] == 'T':
+
+                    seq_prob[nucleotide] = np.log2((1 - seq_prob[nucleotide]) / base_freqs['T'])
+
+                elif seq_nucl[nucleotide] == 'C':
+
+                    seq_prob[nucleotide] = np.log2((1 - seq_prob[nucleotide]) / base_freqs['C'])
+
+                elif seq_nucl[nucleotide] == 'G':
+
+                    seq_prob[nucleotide] = np.log2((1 - seq_prob[nucleotide]) / base_freqs['G'])
+
+
+
+            seq_pos += operation_length
+
+
+
+        elif operation == 'X':
+
+
+            for nucleotide in range(seq_pos,(operation_length + seq_pos)):
+
+                if seq_nucl[nucleotide] == 'A':
+
+                    seq_prob[nucleotide] = np.log2(
+                        (seq_prob[nucleotide]/((np.sum(value for key, value in base_freqs.items() if key != 'A'))*4))/base_freqs['A'])
+
+                elif seq_nucl[nucleotide] == 'T':
+
+                    seq_prob[nucleotide] = np.log2(
+                        (seq_prob[nucleotide]/((np.sum(value for key, value in base_freqs.items() if key != 'A'))*4))/base_freqs['T'])
+
+                elif seq_nucl[nucleotide] == 'G':
+
+                    seq_prob[nucleotide] = np.log2(
+                        (seq_prob[nucleotide]/((np.sum(value for key, value in base_freqs.items() if key != 'A'))*4))/base_freqs['G'])
+
+                elif seq_nucl[nucleotide] == 'C':
+
+                    seq_prob[nucleotide] = np.log2(
+                        (seq_prob[nucleotide]/((np.sum(value for key, value in base_freqs.items() if key != 'A'))*4))/base_freqs['C'])
+
+                elif seq_nucl[nucleotide] == 'N':
+
+                    seq_prob[nucleotide] = 0
+                    warnings.warn("Ambiguous base found in nucleotide sequence. Assigning score of 0 in the log2 pssm")
+
+            seq_pos += operation_length
+
+
+        elif operation == 'I' or 'D':
+
+            #affine gap scoring model
+            indel_penalty += gap_open + gap_extend*(operation_length-1)
+
+
+    return(np.sum(seq_prob)-indel_penalty)
 
 
 
