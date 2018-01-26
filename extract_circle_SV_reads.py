@@ -14,7 +14,7 @@ from utils import is_soft_clipped,is_hard_clipped
 
 class readExtractor:
     """Class for managing the read extracting part of circle map"""
-    def __init__(self,sorted_bam,output_bam,working_dir,extract_discordant,extract_soft_clipped,extract_hard_clipped,
+    def __init__(self,sorted_bam,output_bam,working_dir,mapq_cutoff,extract_discordant,extract_soft_clipped,extract_hard_clipped,
                  verbose,parser
                  ):
         #input-output
@@ -27,6 +27,10 @@ class readExtractor:
         self.no_discordants = extract_discordant
         self.no_soft_clipped = extract_soft_clipped
         self.no_hard_clipped = extract_hard_clipped
+
+        #mapq cutoff
+
+        self.mapq_cutoff = mapq_cutoff
 
         #verbose level
         self.verbose = int(verbose)
@@ -117,22 +121,25 @@ class readExtractor:
                                 #aligned to the same chromosome
                                 if read1.reference_id == read2.reference_id:
 
-                                    #is discordant extraction turn off?
-                                    if self.no_discordants == False:
-                                        circle_sv_reads.write(read1)
-                                        circle_sv_reads.write(read2)
-                                    else:
-                                        continue
+                                    if read1.mapq >= self.mapq_cutoff and read2.mapq >= self.mapq_cutoff:
+
+                                        #is discordant extraction turn off?
+                                        if self.no_discordants == False:
+                                            circle_sv_reads.write(read1)
+                                            circle_sv_reads.write(read2)
+                                        else:
+                                            continue
                             else:
                                 #if the leftmost mapping condition is not met check if they are soft-clipped
                                 if is_soft_clipped(read1) == True:
 
 
-
                                     if self.no_soft_clipped == False:
 
-                                        circle_sv_reads.write(read1)
-                                        circle_sv_reads.write(read2)
+                                        if read1.mapq >= self.mapq_cutoff:
+
+                                            circle_sv_reads.write(read1)
+
                                     else:
                                         continue
 
@@ -143,18 +150,20 @@ class readExtractor:
 
                                         if self.no_hard_clipped == False:
 
-                                            circle_sv_reads.write(read1)
+                                            if read1.mapq >= self.mapq_cutoff:
+                                                circle_sv_reads.write(read1)
                                         else:
                                             continue
 
 
                                 if is_soft_clipped(read2) == True:
 
-
                                     if self.no_soft_clipped == False:
 
-                                        circle_sv_reads.write(read2)
-                                        circle_sv_reads.write(read1)
+                                        if read2.mapq >= self.mapq_cutoff:
+
+                                            circle_sv_reads.write(read2)
+
                                     else:
                                         continue
 
@@ -166,7 +175,9 @@ class readExtractor:
 
                                         if self.no_hard_clipped == False:
 
-                                            circle_sv_reads.write(read2)
+                                            if read2.mapq >= self.mapq_cutoff:
+
+                                                circle_sv_reads.write(read2)
 
                                         else:
 
@@ -174,14 +185,14 @@ class readExtractor:
 
 
                         else:
-                            #check soft-clipped if R2F1 orientation is not met
+                            #check soft-clipped if R2F1 orientation is not True
                             if is_soft_clipped(read1) == True:
 
 
                                 if self.no_soft_clipped == False:
 
-                                    circle_sv_reads.write(read1)
-                                    circle_sv_reads.write(read2)
+                                    if read1.mapq  >= self.mapq_cutoff:
+                                        circle_sv_reads.write(read1)
 
                                 else:
 
@@ -194,7 +205,9 @@ class readExtractor:
 
 
                                     if self.no_hard_clipped == False:
-                                        circle_sv_reads.write(read1)
+
+                                        if read1.mapq >= self.mapq_cutoff:
+                                            circle_sv_reads.write(read1)
 
                                     else:
 
@@ -206,8 +219,10 @@ class readExtractor:
 
                                 if self.no_soft_clipped == False:
 
-                                    circle_sv_reads.write(read2)
-                                    circle_sv_reads.write(read1)
+                                    if read2.mapq >= self.mapq_cutoff:
+
+                                        circle_sv_reads.write(read2)
+
 
                                 else:
 

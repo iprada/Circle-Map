@@ -201,22 +201,11 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores):
 
     #from bam to BedGraph
 
-    ####################################################################################################################
-    ####################################################################################################################
-    ####################################################################################################################
-    ################################### CHANGE THIS PART OF THE CODE ONCE DEVELOPMENT IS FINISHED ######################
-    ####################################################################################################################
-    ####################################################################################################################
-    ####################################################################################################################
-
-    #peak_coverage = bam.genome_coverage(bg=True)
+    peak_coverage = bam.genome_coverage(bg=True)
 
     #sort (sanity) and merge, BedGraph to bed
-    #sorted_peak_coverage = peak_coverage.sort()
-    #merged_peak_coverage = sorted_peak_coverage.merge()
-    #merged_peak_coverage.saveas("peak_coverage.bed")
-
-    merged_peak_coverage = bt.BedTool("peak_coverage.bed")
+    sorted_peak_coverage = peak_coverage.sort()
+    merged_peak_coverage = sorted_peak_coverage.merge()
 
     return(merged_peak_coverage,sorted_bam)
 
@@ -561,22 +550,22 @@ def circle_from_SA(read,mapq_cutoff,mate_interval):
 
                 #orientation
                 if read.is_reverse == True and supl_info[2] == '-':
-                    return(True)
+                    return{'support' : True, 'leftmost': int(supl_info[1]), 'cigar' : supl_info[3]}
 
                 elif read.is_reverse == False and supl_info[2] == '+':
 
-                    return(True)
+                    return{'support' : True, 'leftmost' : int(supl_info[1]), 'cigar' : supl_info[3]}
 
             else:
 
-                return(False)
+                return{'support' : False}
 
         else:
 
-            return(False)
+            return{'support' : False}
 
     else:
-        return(False)
+        return{'support' : False}
 
 def check_alphabet(sequence):
     """Function that takes as input a sequence and it will check that there is at least a letter matching the alphabet
@@ -699,13 +688,15 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
 
     hits = 0
 
+    min_score = len(soft_clipped_read['seq'])
+
 
     top_hits = {}
 
 
     if read.is_reverse:
 
-        while hits < n_hits:
+        while hits < n_hits and min_score >= -(len(soft_clipped_read['seq'])):
 
             if check_compatibility(soft_clipped_read['seq'], minus_strand) == True:
 
@@ -727,15 +718,19 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
 
                     score = pssm(soft_clipped_read['qual'], soft_clipped_read['seq'],alignment['cigar'],minus_base_freqs,gap_open,gap_extend)
 
+                    if score < min_score:
+                        min_score = score
+
+
                     top_hits[hits] = (location,alignment['cigar'],score)
 
             else:
-
+                # the search was exaustive
                 hits +=n_hits
 
     else:
 
-        while hits < n_hits:
+        while hits < n_hits and min_score >= -(len(soft_clipped_read['seq'])):
 
             if check_compatibility(soft_clipped_read['seq'], plus_strand) == True:
 
@@ -750,10 +745,10 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
 
                     hits += 1
 
-
-
-
                     score = pssm(soft_clipped_read['qual'], soft_clipped_read['seq'],alignment['cigar'], plus_base_freqs,gap_open,gap_extend)
+
+                    if score < min_score:
+                        min_score = score
 
                     top_hits[hits] = (location,alignment['cigar'],score)
 
@@ -807,14 +802,7 @@ def pssm(seq_prob,seq_nucl,edlib_cigar,base_freqs,gap_open,gap_extend):
         #match, 1 minus prob(base called wrong)
         if operation == '=':
 
-
-
             for nucleotide in range(seq_pos, (operation_length + seq_pos)):
-
-                a = nucleotide
-                value = seq_nucl[nucleotide]
-
-                my_prob = seq_prob[nucleotide]
 
                 if seq_nucl[nucleotide] == 'A':
 
@@ -878,6 +866,26 @@ def pssm(seq_prob,seq_nucl,edlib_cigar,base_freqs,gap_open,gap_extend):
 
 
     return(np.sum(seq_prob)-indel_penalty)
+
+
+def realignment_probability(hit_dict,interval_length):
+    """Function that takes as input the realignment dictionary and returns the alignment probability of the best hit"""
+
+
+    best_hit = hit_dict['alignments'][1][2]
+
+    regularizer = (interval_length * phred_to_prob(hit_dict['mapq_prior']))/(1- phred_to_prob(hit_dict['mapq_prior']))
+
+
+
+    posterior = 2**best_hit/(np.sum((2**value[2]) for key,value in hit_dict['alignments'].items()) + regularizer)
+
+    return(posterior)
+
+
+
+
+
 
 
 

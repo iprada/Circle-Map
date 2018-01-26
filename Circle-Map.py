@@ -75,7 +75,7 @@ Commands:
                 if self.args.directory[-1:] != "/":
                     self.args.dir = self.args.directory + "/"
 
-                object = readExtractor(self.args.i,self.args.output,self.args.dir,self.args.nodiscordant,
+                object = readExtractor(self.args.i,self.args.output,self.args.dir,self.args.quality,self.args.nodiscordant,
                                        self.args.nohardclipped,self.args.nosoftclipped,self.args.verbose,self.subprogram)
                 object.extract_sv_circleReads()
 
@@ -114,6 +114,12 @@ Commands:
                                   help="Working directory, default is the working directory",
                                   default=os.getcwd())
 
+            #mapping quality cutoff
+
+            optional.add_argument('-q', '--quality',type=int, metavar='',
+                                  help="bwa-mem mapping quality cutoff. Default value 10",
+                                  default=10)
+
             # read extraction options
             # extract discordant reads
             optional.add_argument('-nd', '--nodiscordant', help="Turn off discordant (R2F1 oriented) read extraction",
@@ -138,6 +144,12 @@ Commands:
 
             optional.add_argument('-dir', '--directory', metavar='',help="Working directory, default is the working directory",
                                   default=os.getcwd())
+
+
+            #mapping quality cutoff
+            optional.add_argument('-q', '--quality', type=int, metavar='',
+                                  help="bwa-mem mapping quality cutoff. Default value 10",
+                                  default=10)
 
             # read extraction options
             # extract discordant reads
