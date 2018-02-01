@@ -13,6 +13,7 @@ import edlib
 
 
 
+
 def is_soft_clipped(read):
 
     """Function that checks the CIGAR string of the sam file and returns true if the read is soft-clipped"""
@@ -49,6 +50,56 @@ def is_hard_clipped(read):
     else:
         return (False)
 
+def rightmost_from_read(read):
+    """Function that takes as input a read a returns its rightmost mapping position"""
+
+    rightmost = 0
+
+    for cigar in read.cigar:
+
+        if cigar[0] == 0:
+            rightmost += cigar[1]
+
+        elif cigar[0] == 2:
+            rightmost += cigar[1]
+
+        elif cigar[0] == 3:
+            rightmost += cigar[1]
+
+
+    return(read.reference_start + rightmost)
+
+def rightmost_from_sa(leftmost,sa_cigar):
+    """Function that takes as input the leftmost position of a supplementary alignment and returns it rightmost mapping
+    position"""
+
+
+    #the SA alignment is 1 based
+    rightmost = int(leftmost)-1
+
+    cigar = [''.join(g) for _, g in it.groupby(sa_cigar, str.isalpha)]
+
+    match_index = [x for x in range(len(cigar)) if cigar[x] == 'M']
+    deletion_index = [x for x in range(len(cigar)) if cigar[x] == 'D']
+    ambiguous_index = [x for x in range(len(cigar)) if cigar[x] == 'N']
+
+
+    for index in match_index:
+        rightmost += int(cigar[index-1])
+
+    for index in deletion_index:
+        rightmost += int(cigar[index-1])
+
+
+    for index in ambiguous_index:
+        rightmost += int(cigar[index-1])
+
+    return(rightmost)
+
+
+
+
+
 def aligned_bases(read):
 
     """Function that counts the number of aligned bases from the CIGAR string and returns and integer"""
@@ -60,6 +111,11 @@ def aligned_bases(read):
             aligned += cigar[1]
         else:
             continue
+
+
+
+
+
 
     return(aligned)
 
@@ -881,6 +937,107 @@ def realignment_probability(hit_dict,interval_length):
     posterior = 2**best_hit/(np.sum((2**value[2]) for key,value in hit_dict['alignments'].items()) + regularizer)
 
     return(posterior)
+
+
+def intersect_sa_sc(sa_bed,sc_bed,overlap_fraction):
+    """Function that takes as input the sa_bed list and the sc_bed list groupsby them and returns the grouped output for
+    that interval"""
+
+    labels = ['chrom', 'start', 'end', 'read','read_type']
+
+
+    if len(sa_bed) > 0:
+
+
+        sa_bed_grouped_pandas = pd.DataFrame.from_records(sa_bed, columns=labels)
+        sorted_grouped = sa_bed_grouped_pandas.groupby(['chrom', 'start', 'end'], sort=False).read.nunique()
+        sorted_grouped_list = [x for x in sorted_grouped.reset_index().values.tolist()]
+        sa_bed_grouped = bt.BedTool(sorted_grouped_list)
+
+        if len(sc_bed) > 0:
+
+            #merge if the reciprocal overlap is 0.99
+            sc_bed = bt.BedTool(sc_bed)
+            intersection = sa_bed_grouped.intersect(sc_bed,f=overlap_fraction,r=True,wao=True)
+
+
+            group_sa_sc = intersection.to_dataframe()
+
+            sorted_grouped = group_sa_sc.groupby(['chrom', 'start', 'end','name'], sort=False).thickEnd.nunique()
+            sorted_grouped_reset = sorted_grouped.reset_index()
+            sorted_grouped_reset['read'] = sorted_grouped_reset['name'] + sorted_grouped_reset['thickEnd']
+            sorted_grouped_reset = sorted_grouped_reset.drop(['name', 'thickEnd'],axis=1)
+            sorted_grouped_list = sorted_grouped_reset.values.tolist()
+
+            sa_bed_grouped = bt.BedTool(sorted_grouped_list)
+
+            return {'type': "grouped", 'data': sa_bed_grouped}
+
+
+
+
+        else:
+
+            sa_bed_grouped_pandas = pd.DataFrame.from_records(sa_bed, columns=labels)
+            sorted_grouped = sa_bed_grouped_pandas.groupby(['chrom', 'start', 'end'], sort=False).read.nunique()
+            sorted_grouped_list = [x for x in sorted_grouped.reset_index().values.tolist()]
+            sa_bed_grouped = bt.BedTool(sorted_grouped_list)
+
+            return {'type': "sa", 'data': sa_bed_grouped}
+
+
+
+
+
+    else:
+        if len(sc_bed) > 0:
+
+            sc_bed_grouped_pandas = pd.DataFrame.from_records(sc_bed, columns=labels)
+            sorted_grouped = sc_bed_grouped_pandas.groupby(['chrom', 'start', 'end'], sort=False).read.nunique()
+            sorted_grouped_list = [x for x in sorted_grouped.reset_index().values.tolist()]
+            sc_bed_grouped = bt.BedTool(sorted_grouped_list)
+
+            return{'type': "sc",'data' : sc_bed_grouped}
+
+        else:
+            return(None)
+
+
+def add_discordants(sa_sc_dict,discordants):
+    """Function that takes  as input the SA,SC dictionary and the discordant read information,adds the discordant information
+    to the SA,SC reads and returns the final output interval"""
+
+    #
+
+    number_of_discordants = len(discordants.sort().groupby(g=[1,2,3],c=4,o='count_distinct'))
+
+    output = []
+    if sa_sc_dict['type'] == "grouped":
+
+        for interval in sa_sc_dict['data']:
+            output.append([interval.chrom,interval.start,interval.end,interval[3],number_of_discordants])
+
+    elif sa_sc_dict['type'] == "sa":
+        for interval in sa_sc_dict['data']:
+            output.append([interval.chrom,interval.start,interval.end,interval[3],number_of_discordants])
+
+    elif sa_sc_dict['type'] == "sc":
+        for interval in sa_sc_dict['data']:
+            output.append([interval.chrom,interval.start,interval.end,interval[3],number_of_discordants])
+
+
+    return(output)
+
+
+
+
+
+
+
+
+
+
+
 
 
 

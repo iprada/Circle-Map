@@ -1,10 +1,21 @@
-from __future__ import division
+import pysam as ps
+import os
+import matplotlib.pyplot as plt
 
-import numpy as np
+os.chdir("/isdata/kroghgrp/xsh723/rasmus/B02_05_samples/")
 
-my_dict = {'A': 0.192, 'T': 0.214, 'C': 0.316, 'G': 0.278}
+mapping_qualities = []
+bamfile02 = ps.AlignmentFile("BWAB03.bam")
 
+i = 0
 
+for read in bamfile02:
+    while i < 10000000:
+        print(i)
+        mapping_qualities.append(read.mapq)
+        i +=1
+    else:
+        plt.hist(mapping_qualities)
+        plt.show()
 
-
-print(np.sum(value for key, value in my_dict.items() if key != 'A'))
+        exit()

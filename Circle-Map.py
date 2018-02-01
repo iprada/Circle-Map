@@ -79,8 +79,19 @@ Commands:
                                        self.args.nohardclipped,self.args.nosoftclipped,self.args.verbose,self.subprogram)
                 object.extract_sv_circleReads()
 
-            elif sys.argv[1] == "realign":
-                a = 0
+            elif sys.argv[1] == "Realign":
+                self.subprogram = self.args_realigner()
+                self.args = self.subprogram.parse_args(sys.argv[2:])
+
+                if self.args.directory[-1:] != "/":
+                    self.args.dir = self.args.directory + "/"
+
+                object = (self.args.i,self.args.qbam,self.args.fasta,self.args.directory,self.args.q,
+                          self.args.iq,self.args.sd,self.args.s,self.args.g,
+                          self.args.e,self.args.n,self.args.p,self.args.t,self.args.m,
+                          self.args.f)
+
+
 
 
 
@@ -191,13 +202,149 @@ Commands:
 
         return(parser)
 
-    def fetch(self):
-        parser = argparse.ArgumentParser(
-            description='Download objects and refs from another repository')
-        # NOT prefixing the argument with -- means it's not optional
-        parser.add_argument('repository')
-        args = parser.parse_args(sys.argv[2:])
-        print('Running git fetch, repository=%s' % args.repository)
+    def args_realigner(self):
+        parser = self.realigner
+
+
+        # declare the different groups for the parser
+        parser._action_groups.pop()
+        io_options = parser.add_argument_group('Input/Output options')
+        alignment_options = parser.add_argument_group('Alignment options')
+        i_size_estimate = parser.add_argument_group('Insert size estimation options')
+        output_merging = parser.add_argument_group('Output merging options')
+        parallel = parser.add_argument_group('Parallele options')
+
+        io_options.add_argument('-i', metavar='', help="Input: bam file containing the reads extracted by ReadExtractor")
+        io_options.add_argument('-qbam', metavar='',help="Input: query name sorted bam file")
+        io_options.add_argument('-fasta', metavar='', help="Input: file contaning the genome fasta")
+
+        if "-i" and "qbam" and "fasta" in sys.argv:
+            #alignment
+            alignment_options.add_argument('-n', '--nhits', type=int, metavar='',
+                                  help="Number of alignment to compute the probability of the realignment. Default: 10",
+                                  default=10)
+
+            alignment_options.add_argument('-p', '--cut_off', type=float, metavar='',
+                                           help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.99",
+                                           default=0.99)
+
+            alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 8",
+                                           default=8)
+
+            alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
+                                           help="Gap open penalty in the position specific scoring matrix. Default: 17",
+                                           default=17)
+
+            alignment_options.add_argument('-e', '--gap_ext', type=int, metavar='',
+                                           help="Gap extension penalty in the position specific scoring matrix. Default: 1",
+                                           default=1)
+
+            alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
+                                           help="Minimum mapping quality allowed in the supplementary alignments. Default: 10",
+                                           default=10)
+
+
+            #insert size
+
+            i_size_estimate.add_argument('-iq', '--insert_mapq', type=int, metavar='',
+                                           help="Mapq cutoff for stimating the insert size distribution. Default 60",
+                                           default=60)
+
+            i_size_estimate.add_argument('-sd', '--std', type=int, metavar='',
+                                         help="Number of standard deviations of the insert size to extend the intervals. Default 4",
+                                         default=4)
+
+
+            i_size_estimate.add_argument('-s', '--sample_size', type=int, metavar='',
+                                         help="Number of concordant reads (R2F1) to use for estimating the insert size distribution. Default 100000",
+                                         default=100000)
+
+            #overlap merging
+
+            output_merging.add_argument('-f', '--merge_fraction', type=float, metavar='',
+                                         help="Fraction to merge the SC and SA called intervals. Default 0.99",
+                                         default=0.99)
+
+            parallel.add_argument('-t', '--threads', type=int, metavar='',
+                                        help="Number of threads to use.Default 1",
+                                        default=1)
+
+
+
+        else:
+
+            alignment_options.add_argument('-n', '--nhits', type=int, metavar='',
+                                           help="Number of alignment to compute the probability of the realignment. Default: 10",
+                                           default=10)
+
+            alignment_options.add_argument('-p', '--cut_off', type=float, metavar='',
+                                           help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.99",
+                                           default=0.99)
+
+            alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 8",
+                                           default=8)
+
+            alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
+                                           help="Gap open penalty in the position specific scoring matrix. Default: 17",
+                                           default=17)
+
+            alignment_options.add_argument('-e', '--gap_ext', type=int, metavar='',
+                                           help="Gap extension penalty in the position specific scoring matrix. Default: 1",
+                                           default=1)
+
+            alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
+                                           help="Minimum mapping quality allowed in the supplementary alignments. Default: 10",
+                                           default=10)
+
+            # insert size
+
+            i_size_estimate.add_argument('-iq', '--insert_mapq', type=int, metavar='',
+                                         help="Mapq cutoff for stimating the insert size distribution. Default 60",
+                                         default=60)
+
+            i_size_estimate.add_argument('-sd', '--std', type=int, metavar='',
+                                         help="Number of standard deviations of the insert size to extend the intervals. Default 4",
+                                         default=4)
+
+            i_size_estimate.add_argument('-s', '--sample_size', type=int, metavar='',
+                                         help="Number of concordant reads (R2F1) to use for estimating the insert size distribution. Default 100000",
+                                         default=100000)
+
+            # overlap merging
+
+            output_merging.add_argument('-f', '--merge_fraction', type=float, metavar='',
+                                        help="Fraction to merge the SC and SA called intervals. Default 0.99",
+                                        default=0.99)
+
+            parallel.add_argument('-t', '--threads', type=int, metavar='',
+                                  help="Number of threads to use.Default 1",
+                                  default=1)
+
+
+            #find out which arguments are missing
+
+            parser.print_help()
+
+            time.sleep(0.01)
+            sys.stderr.write("\nInput does not match. Check that you provide the -i, -qbam and -fasta options"
+                             "\nExiting\n")
+            sys.exit(1)
+
+
+        if len(sys.argv[2:]) == 0:
+            parser.print_help()
+            time.sleep(0.01)
+            sys.stderr.write("\nNo arguments given to Realign. Exiting\n")
+            sys.exit(1)
+
+
+        return(parser)
+
+
+
+
 
 
 if __name__ == '__main__':

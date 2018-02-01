@@ -9,7 +9,7 @@ import time
 
 
 begin = time.time()
-#fastafile = ps.FastaFile("/home/inigo/msc_thesis/genome_data/hg38.fa")
+fastafile = ps.FastaFile("/data/xsh723/scratch/hg38/canonical_hg38/hg38.fa")
 
 os.chdir("/isdata/kroghgrp/xsh723/circle_map/test_data/aligner")
 read_length = 100
@@ -58,9 +58,7 @@ mapq_filtered.saveas("mapq_filter.bed")
 
 mapq_filtered = bt.BedTool("mapq_filter.bed")
 
-print(len(mapq_filtered))
-print("I am here in the code")
-exit()
+
 
 results = []
 i = 0
@@ -224,7 +222,7 @@ for interval in mapq_filtered:
 
 
 results = bt.BedTool(results)
-results.saveas("results.bed")
+results.saveas("old_results.bed")
 
 
 
@@ -237,7 +235,7 @@ results.saveas("results.bed")
 
 
 
-os.system("cat results.bed  | awk '$7!=$6' | awk -v OFS='\t' '{if ($7>$6) {print $0} else {print $1,$2,$3,$4,$5,$7,$6}}' | sortBed | bedtools groupby -g 1,6,7 -c 2,3,4,5 -o min,max,sum,sum | awk -v OFS='\t' '{print $1,$4,$5,$6,$7}' > possible_results.bed")
+os.system("cat results.bed  | awk '$7!=$6' | awk -v OFS='\t' '{if ($7>$6) {print $0} else {print $1,$2,$3,$4,$5,$7,$6}}' | sortBed | bedtools groupby -g 1,6,7 -c 2,3,4,5 -o min,max,sum,sum | awk -v OFS='\t' '{print $1,$4,$5,$6,$7}' > old_pipeline_results.bed")
 
 
 
