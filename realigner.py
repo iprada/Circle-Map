@@ -91,6 +91,8 @@ class realignment:
 
         for interval in circ_peaks:
 
+            print(interval)
+
             interval_sc = []
             interval_sa = []
             interval_dr = []
@@ -98,6 +100,9 @@ class realignment:
 
             #find out the prior distribution (mate alignment positions).
             candidate_mates = get_mate_intervals(sorted_bam,interval,self.mapq_cutoff)
+            print("priors",candidate_mates)
+
+            print("merged priors",len(bt.BedTool(candidate_mates)))
 
             #check that the output is not empty
             if len(candidate_mates) > 0:
@@ -109,8 +114,12 @@ class realignment:
                 # sort merge and extend
                 realignment_interval_extended = get_realignment_intervals(candidate_mates,extension)
 
+                print(realignment_interval_extended)
+
                 if realignment_interval_extended == None:
                     continue
+
+
 
 
                 for mate_interval in realignment_interval_extended:
@@ -264,7 +273,7 @@ class realignment:
 
                     if len(sc_sa_dict['data']) > 0:
 
-                        interval_output = add_discordants(sc_sa_dict,bt.BedTool(interval_dr))
+                        interval_output = add_discordants(sc_sa_dict,interval_dr)
 
                         for interval in interval_output:
                             results.append(interval)

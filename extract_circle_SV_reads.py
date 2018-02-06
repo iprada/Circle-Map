@@ -124,7 +124,12 @@ class readExtractor:
                                     if read1.mapq >= self.mapq_cutoff and read2.mapq >= self.mapq_cutoff:
 
                                         #is discordant extraction turn off?
+
                                         if self.no_discordants == False:
+                                            #add mate mapping quality info
+                                            read1.tags += [('MQ',read2.mapq)]
+                                            read2.tags += [('MQ', read1.mapq)]
+
                                             circle_sv_reads.write(read1)
                                             circle_sv_reads.write(read2)
                                         else:
@@ -138,6 +143,7 @@ class readExtractor:
 
                                         if read1.mapq >= self.mapq_cutoff:
 
+                                            read1.tags += [('MQ', read2.mapq)]
                                             circle_sv_reads.write(read1)
 
                                     else:
@@ -151,6 +157,8 @@ class readExtractor:
                                         if self.no_hard_clipped == False:
 
                                             if read1.mapq >= self.mapq_cutoff:
+
+                                                read1.tags += [('MQ', read2.mapq)]
                                                 circle_sv_reads.write(read1)
                                         else:
                                             continue
@@ -162,6 +170,7 @@ class readExtractor:
 
                                         if read2.mapq >= self.mapq_cutoff:
 
+                                            read2.tags += [('MQ', read1.mapq)]
                                             circle_sv_reads.write(read2)
 
                                     else:
@@ -177,6 +186,7 @@ class readExtractor:
 
                                             if read2.mapq >= self.mapq_cutoff:
 
+                                                read2.tags += [('MQ', read1.mapq)]
                                                 circle_sv_reads.write(read2)
 
                                         else:
@@ -192,6 +202,8 @@ class readExtractor:
                                 if self.no_soft_clipped == False:
 
                                     if read1.mapq  >= self.mapq_cutoff:
+
+                                        read1.tags += [('MQ', read2.mapq)]
                                         circle_sv_reads.write(read1)
 
                                 else:
@@ -207,6 +219,7 @@ class readExtractor:
                                     if self.no_hard_clipped == False:
 
                                         if read1.mapq >= self.mapq_cutoff:
+                                            read1.tags += [('MQ', read2.mapq)]
                                             circle_sv_reads.write(read1)
 
                                     else:
@@ -221,6 +234,7 @@ class readExtractor:
 
                                     if read2.mapq >= self.mapq_cutoff:
 
+                                        read2.tags += [('MQ', read1.mapq)]
                                         circle_sv_reads.write(read2)
 
 
