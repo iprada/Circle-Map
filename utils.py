@@ -514,6 +514,8 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff):
 
     #this contains the sumatory over all probabilities
     sum = 0
+
+
     if np.any(read_types == 'SC') == False:
 
 
@@ -530,13 +532,8 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff):
 
         candidate_mates_no_sc = candidate_mates_dataframe.drop(candidate_mates_dataframe[candidate_mates_dataframe.read_type == 'SC'].index)
         candidate_mates = bt.BedTool.from_dataframe(candidate_mates_no_sc).sort().merge(c=[6,5,4],o=['sum','distinct','distinct'])
-        print(candidate_mates)
+        #print(candidate_mates)
         sum = np.sum(float(x[3]) for x in candidate_mates)
-
-
-
-
-
 
 
 
@@ -545,19 +542,18 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff):
 
         return(None)
 
-
     extended = []
-
 
 
     for interval in candidate_mates:
 
-
         if float(interval[3])/sum >= interval_p_cutoff:
 
+            orientation = interval[4].split(',')
 
-            if (np.any(interval[4]=='LR') == True) or (np.any(interval[4]=='L') == True and np.any(interval[4]=='R') == True):
 
+
+            if ('LR' in orientation) or ('L' and 'R' in orientation):
 
 
                 start = interval.start - interval_extension
@@ -565,34 +561,35 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff):
                 end = interval.end + interval_extension
 
                 if start < 0:
-                    extended.append([interval.chrom,str(0),end])
+                    extended.append([interval.chrom, str(0), int(round(end))])
 
                 else:
                     extended.append([interval.chrom, int(round(start)), int(round(end))])
 
-            elif np.any(interval[4]=='L') == True:
-
-
-
+            elif 'L' in orientation:
 
                 start = interval.start - interval_extension
 
                 if start < 0:
-                    extended.append([interval.chrom,str(0),interval.end])
+                    extended.append([interval.chrom, str(0), interval.end])
 
                 else:
                     extended.append([interval.chrom, int(round(start)), interval.end])
 
-            elif np.any(interval[4]=='R') == True:
-                print("aaaaa")
+            elif 'R' in orientation:
 
                 end = interval.start + interval_extension
 
                 extended.append([interval.chrom, interval.start, int(round(end))])
 
-
+    
 
     return(bt.BedTool(extended))
+
+
+
+
+
 
 
 def realignment_intervals_with_counter(bed):

@@ -104,7 +104,7 @@ class realignment:
             candidate_mates = get_mate_intervals(sorted_bam,interval,self.mapq_cutoff)
             print("priors",candidate_mates)
 
-            print("merged priors",len(bt.BedTool(candidate_mates)))
+
 
             #check that the output is not empty
             if len(candidate_mates) > 0:
