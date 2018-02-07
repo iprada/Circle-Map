@@ -12,7 +12,8 @@ class realignment:
     """Class for managing the realignment and eccDNA indetification of circle-map"""
 
     def __init__(self, input_bam,qname_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
-                 insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,ncores,min_soft_clipped_length,overlap_frac):
+                 insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,ncores,min_soft_clipped_length,overlap_frac,
+                 interval_p_cut):
         #I/O
         self.input_bam = input_bam
         self.qname_bam = qname_bam
@@ -26,6 +27,7 @@ class realignment:
         self.prob_cutoff = prob_cutoff
         self.min_sc_length = min_soft_clipped_length
         self.mapq_cutoff = mapq_cutoff
+        self.interval_p = interval_p_cut
 
         # affine gap scoring options
         self.gap_open = gap_open
@@ -112,9 +114,12 @@ class realignment:
 
 
                 # sort merge and extend
-                realignment_interval_extended = get_realignment_intervals(candidate_mates,extension)
+                realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p)
 
+                print("extended intervals")
                 print(realignment_interval_extended)
+
+                exit()
 
                 if realignment_interval_extended == None:
                     continue
