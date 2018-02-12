@@ -1,4 +1,4 @@
-#!/data/xsh723/anaconda/bin/python3.6
+#!/isdata/kroghgrp/xsh723/data_partition/anaconda/bin/python3.6
 #Author: Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
@@ -475,6 +475,7 @@ def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
     # in both reads together
     for read in whole_bam:
 
+
         if read.is_read1:
             read1 = read
         else:
@@ -482,20 +483,19 @@ def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
                 read2 = read
                 # both reads in memory
                 if read1.mapq >= mapq_cutoff and read2.mapq >= mapq_cutoff:
-
-                    if read1.is_reverse == False and read2.is_reverse == True:
-
-                        if (read2.tlen + read1.infer_query_length()) < 0 and (read1.tlen - read2.infer_query_length()) > 0:
-
-
-
-                            insert_length.append(read1.tlen)
-                            counter += 1
+                    if read1.is_proper_pair:
+                        if is_hard_clipped(read1) == False and is_hard_clipped(read2) == False:
+                            if is_soft_clipped(read1) == False and is_soft_clipped(read2) == False:
+                                if read1.is_reverse == False and read2.is_reverse == True:
+                                    if read1.tlen > 0:
+                                        insert_length.append(read1.tlen)
+                                        counter += 1
 
         if counter >= sample_size:
             break
         else:
             continue
+
 
     mean = np.mean(insert_length)
     std = np.std(insert_length)
@@ -507,84 +507,95 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff):
     are more informative priors (DR,SA). If there are only soft-clipped reads, they will be saved to a bed file to attemp
     lonely soft-clipped read rescue"""
 
-    labels = ['chrom', 'start', 'end', 'read_type', 'orientation','mate_mapq']
-    candidate_mates_dataframe = pd.DataFrame.from_records(bed_prior, columns=labels)
+    try:
 
-    read_types = candidate_mates_dataframe.read_type.unique()
+        labels = ['chrom', 'start', 'end', 'read_type', 'orientation','mate_mapq']
+        candidate_mates_dataframe = pd.DataFrame.from_records(bed_prior, columns=labels)
 
-    #this contains the sumatory over all probabilities
-    sum = 0
+        read_types = candidate_mates_dataframe.read_type.unique()
 
-
-    if np.any(read_types == 'SC') == False:
-
-
-        # nothing. Sort and merge
-
-        candidate_mates = bt.BedTool.from_dataframe(candidate_mates_dataframe).sort().merge(c=[6,5,4],o=['sum','distinct','distinct'])
-        sum = np.sum(float(x[3]) for x in candidate_mates)
+        #this contains the sumatory over all probabilities
+        sum = 0
 
 
+        if np.any(read_types == 'SC') == False:
 
 
-    elif np.any(read_types == 'SC') == True and (np.any(read_types == 'DR') == True or np.any(read_types == 'SA') == True):
-        #remove lines with sc
+            # nothing. Sort and merge
 
-        candidate_mates_no_sc = candidate_mates_dataframe.drop(candidate_mates_dataframe[candidate_mates_dataframe.read_type == 'SC'].index)
-        candidate_mates = bt.BedTool.from_dataframe(candidate_mates_no_sc).sort().merge(c=[6,5,4],o=['sum','distinct','distinct'])
-        #print(candidate_mates)
-        sum = np.sum(float(x[3]) for x in candidate_mates)
+
+            candidate_mates_dataframe = candidate_mates_dataframe.sort_values(by=['chrom', 'start','end'],ascending=[True,True,True])
+                        
+            candidate_mates = bt.BedTool.from_dataframe(candidate_mates_dataframe).merge(c=[6,5,4],o=['sum','distinct','distinct'])
+            sum = np.sum(float(x[3]) for x in candidate_mates)
 
 
 
-    else:
-        #only soft clipped
+
+        elif np.any(read_types == 'SC') == True and (np.any(read_types == 'DR') == True or np.any(read_types == 'SA') == True):
+            #remove lines with sc
+
+            candidate_mates_no_sc = candidate_mates_dataframe.drop(candidate_mates_dataframe[candidate_mates_dataframe.read_type == 'SC'].index)
+            candidate_mates_no_sc = candidate_mates_no_sc.sort_values(by=['chrom', 'start', 'end'],ascending=[True, True, True])
+            
+            candidate_mates = bt.BedTool.from_dataframe(candidate_mates_no_sc).merge(c=[6,5,4],o=['sum','distinct','distinct'])
+            
+            sum = np.sum(float(x[3]) for x in candidate_mates)
+
+
+
+        else:
+            #only soft clipped
+
+            return(None)
+
+        extended = []
+
+
+        for interval in candidate_mates:
+
+            if float(interval[3])/sum >= interval_p_cutoff:
+
+                orientation = interval[4].split(',')
+
+
+
+                if ('LR' in orientation) or ('L' and 'R' in orientation):
+
+
+                    start = interval.start - interval_extension
+
+                    end = interval.end + interval_extension
+
+                    if start < 0:
+                        extended.append([interval.chrom, str(0), int(round(end))])
+
+                    else:
+                        extended.append([interval.chrom, int(round(start)), int(round(end))])
+
+                elif 'L' in orientation:
+
+                    start = interval.start - interval_extension
+
+                    if start < 0:
+                        extended.append([interval.chrom, str(0), interval.end])
+
+                    else:
+                        extended.append([interval.chrom, int(round(start)), interval.end])
+
+                elif 'R' in orientation:
+
+                    end = interval.start + interval_extension
+
+                    extended.append([interval.chrom, interval.start, int(round(end))])
+
+
+
+        return(bt.BedTool(extended))
+
+    except:
 
         return(None)
-
-    extended = []
-
-
-    for interval in candidate_mates:
-
-        if float(interval[3])/sum >= interval_p_cutoff:
-
-            orientation = interval[4].split(',')
-
-
-
-            if ('LR' in orientation) or ('L' and 'R' in orientation):
-
-
-                start = interval.start - interval_extension
-
-                end = interval.end + interval_extension
-
-                if start < 0:
-                    extended.append([interval.chrom, str(0), int(round(end))])
-
-                else:
-                    extended.append([interval.chrom, int(round(start)), int(round(end))])
-
-            elif 'L' in orientation:
-
-                start = interval.start - interval_extension
-
-                if start < 0:
-                    extended.append([interval.chrom, str(0), interval.end])
-
-                else:
-                    extended.append([interval.chrom, int(round(start)), interval.end])
-
-            elif 'R' in orientation:
-
-                end = interval.start + interval_extension
-
-                extended.append([interval.chrom, interval.start, int(round(end))])
-
-    
-
-    return(bt.BedTool(extended))
 
 
 

@@ -1,4 +1,4 @@
-#!/data/xsh723/anaconda/bin/python3.6
+#!/isdata/kroghgrp/xsh723/data_partition/anaconda/bin/python3.6
 from __future__ import division
 
 
@@ -93,16 +93,12 @@ class realignment:
 
         for interval in circ_peaks:
 
-            print(interval)
-
-            interval_sc = []
-            interval_sa = []
-            interval_dr = []
+            print(interval)           
 
 
             #find out the prior distribution (mate alignment positions).
             candidate_mates = get_mate_intervals(sorted_bam,interval,self.mapq_cutoff)
-            print("priors",candidate_mates)
+
 
 
 
@@ -116,10 +112,10 @@ class realignment:
                 # sort merge and extend
                 realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p)
 
-                print("extended intervals")
+
                 print(realignment_interval_extended)
 
-                exit()
+
 
                 if realignment_interval_extended == None:
                     continue
@@ -160,30 +156,34 @@ class realignment:
                                     support = circle_from_SA(read, self.mapq_cutoff, mate_interval)
 
 
+                                    if support == None:
+                                        continue
 
-                                    if support['support'] == True:
+                                    else:
 
-                                        #compute mapping positions
+                                        if support['support'] == True:
 
-                                        read_end = rightmost_from_read(read)
+                                            #compute mapping positions
 
-                                        supplementary_end = rightmost_from_sa(support['leftmost'],support['cigar'])
+                                            read_end = rightmost_from_read(read)
+
+                                            supplementary_end = rightmost_from_sa(support['leftmost'],support['cigar'])
 
 
 
-                                        # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
-                                        if read.reference_start < support['leftmost']:
+                                            # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
+                                            if read.reference_start < support['leftmost']:
 
-                                            interval_sa.append([interval.chrom,read.reference_start,(supplementary_end-1),read.qname,'SA'])
+                                                results.append([interval.chrom,read.reference_start,(supplementary_end-1),read.qname,'SA',iteration])
 
-                                        elif read.reference_start > support['leftmost']:
+                                            elif read.reference_start > support['leftmost']:
 
-                                            interval_sa.append(
-                                                [interval.chrom, (support['leftmost']-1), read_end, read.qname, 'SA'])
+                                                results.append(
+                                                    [interval.chrom, (support['leftmost']-1), read_end, read.qname, 'SA',iteration])
 
-                                        else:
-                                            #uninformative read
-                                            continue
+                                            else:
+                                                #uninformative read
+                                                continue
 
 
 
@@ -225,12 +225,12 @@ class realignment:
                                                 if read.reference_start < mate_interval.start + int(
                                                         realignment_dict['alignments'][1][0][0]):
 
-                                                    interval_sc.append([interval.chrom, read.reference_start, soft_clip_end+1, read.qname, 'SC'])
+                                                    results.append([interval.chrom, read.reference_start, soft_clip_end+1, read.qname, 'SC',iteration])
 
                                                 elif read.reference_start + mate_interval.start + int(
                                                         realignment_dict['alignments'][1][0][0]):
 
-                                                    interval_sc.append([interval.chrom, soft_clip_start, read_end, read.qname, 'SC'])
+                                                    results.append([interval.chrom, soft_clip_start, read_end, read.qname, 'SC',iteration])
 
                                                 else:
                                                     # uninformative read
@@ -250,7 +250,7 @@ class realignment:
                                 if read.is_read2:
                                     if read.reference_start < read.next_reference_start:
                                         # discordant read
-                                        interval_dr.append([interval.chrom,read.reference_start,read.next_reference_start + read.infer_query_length(),0,read.qname])
+                                        results.append([interval.chrom,read.reference_start,read.next_reference_start + read.infer_query_length(),0,read.qname,iteration])
 
 
 
@@ -259,43 +259,9 @@ class realignment:
                             elif read.is_reverse == False and read.mate_is_reverse ==  True:
                                 if read.is_read2 == False:
                                     if read.next_reference_start < read.reference_start:
-                                        interval_dr.append([interval.chrom, read.next_reference_start,read.reference_start + read.infer_query_length(),0,read.qname])
+                                        results.append([interval.chrom, read.next_reference_start,read.reference_start + read.infer_query_length(),0,read.qname,iteration])
 
-            time_sc_sa = time.time()
-
-
-            #OPTIMIZING
-            sc_sa_dict = intersect_sa_sc(interval_sa,interval_sc,self.overlap_fraction)
-
-            end_sc_sa = time.time()
-
-            partial_time += (time_sc_sa - end_sc_sa) / 60
-            print("timing_sc_sa",partial_time)
-
-            if len(interval_dr) > 0:
-
-                if sc_sa_dict != None:
-
-                    if len(sc_sa_dict['data']) > 0:
-
-                        interval_output = add_discordants(sc_sa_dict,interval_dr)
-
-                        for interval in interval_output:
-                            results.append(interval)
-                            if len(interval) !=5:
-                                exit()
-                    else:
-                        continue
-
-            else:
-                if sc_sa_dict != None:
-
-                    if len(sc_sa_dict['data']) > 0:
-                        for interval in sc_sa_dict['data']:
-                            output_test = [interval.chrom,interval.start,interval.end,interval[3],0]
-                            results.append(output_test)
-                            if len(output_test) !=5:
-                                exit()
+            
 
 
 
@@ -317,9 +283,9 @@ class realignment:
 
         unparsed_bed = bt.BedTool(results)
 
-        grouped_bed = unparsed_bed.sort().groupby(g=[1,2,3],c=[4,5],o=['sum','sum'])
+        grouped_bed = unparsed_bed.sort().groupby(g=[1,2,3,],c=[4,5],o=['sum','sum'])
 
-        grouped_bed.saveas("circle_map_results.bed")
+        grouped_bed.saveas("circle_map_results_test_speed.bed")
 
         print((end-begin)/60)
 
