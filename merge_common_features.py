@@ -17,7 +17,7 @@ def fraction(start1,start2,end1,end2,read1,read2,chrom1,chrom2):
     distance = (abs(start1-start2) + abs(end1-end2))
 
     one_overlap_two = 1 - (distance/(end1-start1))
-    two_overlap_one =  1 - (distance/(end2-start1))
+    two_overlap_one =  1 - (distance/(end2-start2))
 
 
 
@@ -32,7 +32,7 @@ def second_merge(start1,start2,end1,end2,chrom1,chrom2):
     distance = (abs(start1 - start2) + abs(end1 - end2))
 
     one_overlap_two = 1 - (distance / (end1 - start1))
-    two_overlap_one = 1 - (distance / (end2 - start1))
+    two_overlap_one = 1 - (distance / (end2 - start2))
     return (one_overlap_two + two_overlap_one +chrom_match)
 
 
@@ -82,10 +82,9 @@ grouped = simulated_sorted.groupby(fraction(simulated_sorted.start,simulated_sor
 print(grouped)
 
 
-exit()
-bedtool_output = bt.BedTool.from_dataframe(grouped)
-bedtool_output.saveas("final_output_opt_my_test.bed")
-exit()
+
+
+
 second_merging_round = grouped.sort_values(by=['chrom','start','end'])
 
 final_output = second_merging_round.groupby(second_merge(second_merging_round.start,second_merging_round.start.shift(),
@@ -96,5 +95,5 @@ final_output = second_merging_round.groupby(second_merge(second_merging_round.st
 
 bedtool_output = bt.BedTool.from_dataframe(final_output)
 
-bedtool_output.saveas("final_output_opt_my_test.bed")
+bedtool_output.saveas("final_output_opt_my_test_new.bed")
 

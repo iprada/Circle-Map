@@ -101,3 +101,4 @@ ENV/
 # End of https://www.gitignore.io/api/python
 #don't track Pycharm files
 .idea/
+.screenlog.0
