@@ -119,7 +119,6 @@ class realignment:
                 print("extended intervals")
                 print(realignment_interval_extended)
 
-                exit()
 
                 if realignment_interval_extended == None:
                     continue
@@ -319,7 +318,7 @@ class realignment:
 
         grouped_bed = unparsed_bed.sort().groupby(g=[1,2,3],c=[4,5],o=['sum','sum'])
 
-        grouped_bed.saveas("circle_map_results.bed")
+        grouped_bed.saveas("circle_map_results_working_branch.bed")
 
         print((end-begin)/60)
 
