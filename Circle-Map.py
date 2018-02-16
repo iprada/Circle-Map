@@ -1,4 +1,4 @@
-#!/isdata/kroghgrp/xsh723/data_partition/anaconda/bin/python3.6
+#!/isdata/kroghgrp/xsh723/scratch/anaconda/bin/python3.6
 from __future__ import division
 #Author Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk

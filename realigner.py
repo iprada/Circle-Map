@@ -1,4 +1,4 @@
-#!/isdata/kroghgrp/xsh723/data_partition/anaconda/bin/python3.6
+#!/isdata/kroghgrp/xsh723/scratch/anaconda/bin/python3.6
 from __future__ import division
 
 
@@ -90,10 +90,11 @@ class realignment:
 
 
         results = []
+        only_discordants = []
 
         for interval in circ_peaks:
 
-            print(interval)           
+            #print(interval)
 
 
             #find out the prior distribution (mate alignment positions).
@@ -105,15 +106,15 @@ class realignment:
             #check that the output is not empty
             if len(candidate_mates) > 0:
 
-                iteration +=1
-                print(iteration)
+
+                #print(iteration)
 
 
                 # sort merge and extend
                 realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p)
 
 
-                print(realignment_interval_extended)
+                #print(realignment_interval_extended)
 
 
 
@@ -122,8 +123,12 @@ class realignment:
 
 
 
-
+                iteration_results = []
+                iteration_discordants = []
+                disorcordants_per_it = 0
                 for mate_interval in realignment_interval_extended:
+
+                    iteration += 1
 
 
 
@@ -174,12 +179,12 @@ class realignment:
                                             # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
                                             if read.reference_start < support['leftmost']:
 
-                                                results.append([interval.chrom,read.reference_start,(supplementary_end-1),read.qname,'SA',iteration])
+                                                iteration_results.append([interval.chrom,read.reference_start,(supplementary_end-1),read.qname,iteration])
 
                                             elif read.reference_start > support['leftmost']:
 
-                                                results.append(
-                                                    [interval.chrom, (support['leftmost']-1), read_end, read.qname, 'SA',iteration])
+                                                iteration_results.append(
+                                                    [interval.chrom, (support['leftmost']-1), read_end, read.qname,iteration])
 
                                             else:
                                                 #uninformative read
@@ -225,12 +230,12 @@ class realignment:
                                                 if read.reference_start < mate_interval.start + int(
                                                         realignment_dict['alignments'][1][0][0]):
 
-                                                    results.append([interval.chrom, read.reference_start, soft_clip_end+1, read.qname, 'SC',iteration])
+                                                    iteration_results.append([interval.chrom, read.reference_start, soft_clip_end+1, read.qname,iteration])
 
                                                 elif read.reference_start + mate_interval.start + int(
                                                         realignment_dict['alignments'][1][0][0]):
 
-                                                    results.append([interval.chrom, soft_clip_start, read_end, read.qname, 'SC',iteration])
+                                                    iteration_results.append([interval.chrom, soft_clip_start, read_end, read.qname,iteration])
 
                                                 else:
                                                     # uninformative read
@@ -250,7 +255,8 @@ class realignment:
                                 if read.is_read2:
                                     if read.reference_start < read.next_reference_start:
                                         # discordant read
-                                        results.append([interval.chrom,read.reference_start,read.next_reference_start + read.infer_query_length(),0,read.qname,iteration])
+                                        disorcordants_per_it +=1
+                                        iteration_discordants.append([interval.chrom,read.reference_start,read.next_reference_start + read.infer_query_length(),read.qname])
 
 
 
@@ -259,34 +265,65 @@ class realignment:
                             elif read.is_reverse == False and read.mate_is_reverse ==  True:
                                 if read.is_read2 == False:
                                     if read.next_reference_start < read.reference_start:
-                                        results.append([interval.chrom, read.next_reference_start,read.reference_start + read.infer_query_length(),0,read.qname,iteration])
-
-            
-
-
+                                        disorcordants_per_it +=1
+                                        iteration_discordants.append([interval.chrom, read.next_reference_start + read.infer_query_length(),read.reference_start,
+                                                                      read.qname])
 
 
+                #second pass to add discordant read info
+
+                if len(iteration_results) > 0:
+
+                    for each_results in iteration_results:
+                        each_results.append(disorcordants_per_it)
+                        results.append(each_results)
+
+                elif len(iteration_discordants) > 0:
+                        discordant_bed = pd.DataFrame.from_records(iteration_discordants,columns=['chrom','start','end','read']).sort_values(['chrom','start','end'])
+                        discordant_bed = bt.BedTool.from_dataframe(discordant_bed)
+                        discordant_bed = discordant_bed.sort().merge(c=1,o='count')
+
+                        for interval in discordant_bed:
+                            interval.append(0)
+                            only_discordants.append(interval)
 
 
 
 
-
-
-
-
-            end = time.time()
-            print((end - begin) / 60)
 
         eccdna_bam.close()
 
         #the end
-
+        discordant_bed = bt.BedTool(only_discordants)
         unparsed_bed = bt.BedTool(results)
 
-        grouped_bed = unparsed_bed.sort().groupby(g=[1,2,3,],c=[4,5],o=['sum','sum'])
+        discordant_bed.saveas("discordant.bed")
+        unparsed_bed.saveas("unparsed.bed")
 
-        grouped_bed.saveas("circle_map_results_test_speed.bed")
+        unparsed_pd = unparsed_bed.to_dataframe(
+            names=['chrom', 'start', 'end', 'read', 'iteration', 'discordants'])
 
+        grouped = unparsed_pd.groupby(fraction(unparsed_pd.start, unparsed_pd.start.shift(),
+                                               unparsed_pd.end, unparsed_pd.end.shift(),
+                                               unparsed_pd.iteration,
+                                               unparsed_pd.iteration.shift()).lt(2.98).cumsum()).agg(
+            {'chrom': 'first', 'start': 'first', 'end': 'last', 'discordants': 'max','read': 'nunique'})
+
+        second_merging_round = grouped.sort_values(by=['chrom', 'start', 'end'])
+
+        final_output = second_merging_round.groupby(
+            second_merge(second_merging_round.start, second_merging_round.start.shift(),
+                         second_merging_round.end, second_merging_round.end.shift()).lt(1.98).cumsum()).agg(
+            {'chrom': 'first', 'start': 'first', 'end': 'last', 'discordants': 'sum','read': 'sum'})
+
+        bedtool_output = bt.BedTool.from_dataframe(final_output)
+
+
+        final_output = bedtool_output.cat(discordant_bed, postmerge=False)
+
+        final_output.saveas("circle_map_results_test_speed.bed")
+
+        end = time.time()
         print((end-begin)/60)
 
 
