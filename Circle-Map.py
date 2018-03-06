@@ -1,5 +1,6 @@
 #!/isdata/kroghgrp/xsh723/scratch/anaconda/bin/python3.6
 from __future__ import division
+from utils import start_realign
 #Author Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
@@ -9,9 +10,14 @@ import sys
 import os
 import time
 from extract_circle_SV_reads import readExtractor
+from realigner import realignment
+from utils import merge_final_output
+import multiprocessing as mp
 
 
-class circle_map(object):
+
+class circle_map:
+
     def __init__(self):
         self.parser = argparse.ArgumentParser(
             description='Circle-Map',
@@ -83,13 +89,66 @@ Commands:
                 self.subprogram = self.args_realigner()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
 
+
+
                 if self.args.directory[-1:] != "/":
                     self.args.dir = self.args.directory + "/"
 
-                object = (self.args.i,self.args.qbam,self.args.fasta,self.args.directory,self.args.q,
-                          self.args.iq,self.args.sd,self.args.s,self.args.g,
-                          self.args.e,self.args.n,self.args.p,self.args.t,self.args.m,
-                          self.args.f)
+
+
+                splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads)
+
+                if __name__ == '__main__':
+
+                    lock = mp.Lock()
+
+
+                    processes = []
+
+                    for core in range(0,self.args.threads):
+
+                        object = realignment(sorted_bam, self.args.qbam, self.args.fasta, self.args.directory,
+                                             self.args.mapq,
+                                             self.args.insert_mapq, self.args.std, self.args.sample_size,
+                                             self.args.gap_open,
+                                             self.args.gap_ext, self.args.nhits, self.args.cut_off, self.args.min_sc,
+                                             self.args.merge_fraction, self.args.interval_probability, self.args.output,
+                                             self.args.threads, splitted[core],lock)
+
+                        processes.append(object)
+
+                    jobs = []
+                    # init the processes
+
+                    processes[0].print_parameters()
+                    for i in range(0,len(processes)):
+
+                        p = mp.Process(target=processes[i].realign)
+                        jobs.append(p)
+                        p.start()
+                    # kill the process
+                    for p in jobs:
+                        p.join()
+
+
+
+
+
+
+                    output = merge_final_output("%s" % self.args.output,begin)
+
+                    output.saveas("%s" % self.args.output)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -211,14 +270,24 @@ Commands:
         io_options = parser.add_argument_group('Input/Output options')
         alignment_options = parser.add_argument_group('Alignment options')
         i_size_estimate = parser.add_argument_group('Insert size estimation options')
-        output_merging = parser.add_argument_group('Output merging options')
-        parallel = parser.add_argument_group('Parallele options')
+        interval = parser.add_argument_group('Interval processing options')
+        running = parser.add_argument_group('Running options')
 
         io_options.add_argument('-i', metavar='', help="Input: bam file containing the reads extracted by ReadExtractor")
         io_options.add_argument('-qbam', metavar='',help="Input: query name sorted bam file")
         io_options.add_argument('-fasta', metavar='', help="Input: file contaning the genome fasta")
 
-        if "-i" and "qbam" and "fasta" in sys.argv:
+
+
+        if "-i" and "-qbam" and "-fasta" in sys.argv:
+
+            #output
+
+            io_options.add_argument('-c', metavar='', help="Genome Coverage file",default=None)
+
+            io_options.add_argument('-o','--output', metavar='', help="Output filename",
+                                    default="circle_%s.bed" % sys.argv[sys.argv.index("-i") + 1])
+
             #alignment
             alignment_options.add_argument('-n', '--nhits', type=int, metavar='',
                                   help="Number of alignment to compute the probability of the realignment. Default: 10",
@@ -238,7 +307,7 @@ Commands:
 
             alignment_options.add_argument('-e', '--gap_ext', type=int, metavar='',
                                            help="Gap extension penalty in the position specific scoring matrix. Default: 1",
-                                           default=1)
+                                           default=5)
 
             alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
                                            help="Minimum mapping quality allowed in the supplementary alignments. Default: 10",
@@ -260,19 +329,36 @@ Commands:
                                          help="Number of concordant reads (R2F1) to use for estimating the insert size distribution. Default 100000",
                                          default=100000)
 
-            #overlap merging
+            #Interval options
 
-            output_merging.add_argument('-f', '--merge_fraction', type=float, metavar='',
+            interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
                                          help="Fraction to merge the SC and SA called intervals. Default 0.99",
                                          default=0.99)
 
-            parallel.add_argument('-t', '--threads', type=int, metavar='',
+            interval.add_argument('-P', '--interval_probability', type=float, metavar='',
+                                  help="Skip intervals where the probability of been the mate is less than the cutoff. Default: 0.01",
+                                  default=0.01)
+
+            #run options
+
+            running.add_argument('-t', '--threads', type=int, metavar='',
                                         help="Number of threads to use.Default 1",
                                         default=1)
+
+            running.add_argument('-dir', '--directory', metavar='',
+                                  help="Working directory, default is the working directory",
+                                  default=os.getcwd())
 
 
 
         else:
+
+            #output
+
+            io_options.add_argument('-c', metavar='', help="Genome Coverage file", default=None)
+
+            io_options.add_argument('-o', metavar='', help="Output filename")
+
 
             alignment_options.add_argument('-n', '--nhits', type=int, metavar='',
                                            help="Number of alignment to compute the probability of the realignment. Default: 10",
@@ -312,15 +398,27 @@ Commands:
                                          help="Number of concordant reads (R2F1) to use for estimating the insert size distribution. Default 100000",
                                          default=100000)
 
-            # overlap merging
+            # Interval options
 
-            output_merging.add_argument('-f', '--merge_fraction', type=float, metavar='',
+
+            interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
                                         help="Fraction to merge the SC and SA called intervals. Default 0.99",
                                         default=0.99)
 
-            parallel.add_argument('-t', '--threads', type=int, metavar='',
+            interval.add_argument('-P', '--interval_probability', type=float, metavar='',
+                                  help="Skip intervals where the probability of been the mate is less than the cutoff. Default: 0.01",
+                                  default=0.99)
+
+
+            # Running options
+
+            running.add_argument('-t', '--threads', type=int, metavar='',
                                   help="Number of threads to use.Default 1",
                                   default=1)
+
+            running.add_argument('-dir', '--directory', metavar='',
+                                 help="Working directory, default is the working directory",
+                                 default=os.getcwd())
 
 
             #find out which arguments are missing

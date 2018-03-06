@@ -3,6 +3,7 @@ from __future__ import division
 
 
 import os
+import sys
 from Bio.Seq import Seq
 import time
 from utils import *
@@ -12,13 +13,14 @@ class realignment:
     """Class for managing the realignment and eccDNA indetification of circle-map"""
 
     def __init__(self, input_bam,qname_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
-                 insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,ncores,min_soft_clipped_length,overlap_frac,
-                 interval_p_cut):
+                 insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,min_soft_clipped_length,overlap_frac,
+                 interval_p_cut, output_name,ncores,circle_peaks,locker):
         #I/O
-        self.input_bam = input_bam
+        self.ecc_dna = input_bam
         self.qname_bam = qname_bam
         self.directory = directory
         self.genome_fa = ps.FastaFile(genome_fasta)
+        self.peaks = circle_peaks
 
         #realignment parameters
 
@@ -43,32 +45,51 @@ class realignment:
         #output options
 
         self.overlap_fraction = overlap_frac
+        self.output = output_name
 
         #regular options
         self.cores = ncores
         self.phreds_to_probs = np.vectorize(phred_to_prob)
+        self.lock = locker
+
+
+
+    def print_parameters(self):
+
+        print("Running realignment\n")
+        print("Probabilistic realignment parameters:\n"
+              "\tAlignments to consider: %s \n"
+              "\tProbability cut-off to consider as mapped: %s \n"
+              "\tMinimum soft-clipped length to attemp realignment: %s \n"
+              "\tMinimum bwa mem mapping quality to consider: %s \n"
+              "\tGap open penalty: %s \n"
+              "\tGap extension penalty: %s \n"
+              % (self.n_hits, self.prob_cutoff,self.min_sc_length,self.mapq_cutoff,self.gap_open, self.gap_ext))
+
+        print("Interval extension parameters:\n"
+              "\tInsert size mapping quality cut-off: %s \n"
+              "\tNumber of read to sample: %s \n"
+              "\tNumber of standard deviations to extend the realignment intervals: %s \n"
+              % (self.insert_size_mapq,self.insert_sample_size,self.std_extenstion))
+
+        print("Interval processing options: \n"
+              "\tMerging fraction: %s \n"
+              "\tInterval probability cut-off: %s \n"
+              % (self.overlap_fraction,self.interval_p))
 
 
 
 
 
 
-    def realignment(self):
+
+    def realign(self):
         """Function that will iterate trough the bam file containing reads indicating eccDNA structural variants and
         will output a bed file containing the soft-clipped reads, the discordant and the coverage within the interval"""
 
-        partial_time = 0
         begin = time.time()
 
         os.chdir(self.directory)
-
-        eccdna_bam = ps.AlignmentFile("%s" % self.input_bam, "rb")
-
-
-
-
-        #compute genome coverage of the eccDNA SV reads and sort bam
-        circ_peaks,sorted_bam = bam_circ_sv_peaks(eccdna_bam,self.input_bam,self.cores)
 
 
         # compute insert size distribution
@@ -92,8 +113,11 @@ class realignment:
         results = []
         only_discordants = []
 
-        for interval in circ_peaks:
+        for interval in self.peaks:
 
+            if check_size_and_write(results,only_discordants,self.output,self.lock,self.directory) == True:
+                results = []
+                only_discordants = []
 
             try:
 
@@ -101,7 +125,7 @@ class realignment:
 
 
                 #find out the prior distribution (mate alignment positions).
-                candidate_mates = get_mate_intervals(sorted_bam,interval,self.mapq_cutoff)
+                candidate_mates = get_mate_intervals(self.ecc_dna,interval,self.mapq_cutoff)
 
 
 
@@ -110,14 +134,11 @@ class realignment:
                 if len(candidate_mates) > 0:
 
 
-                    #print(iteration)
-
-
                     # sort merge and extend
                     realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p)
 
 
-                    #print(realignment_interval_extended)
+
 
 
 
@@ -149,7 +170,7 @@ class realignment:
 
 
                         #note that I am getting the reads of the interval. Not the reads of the mates
-                        for read in sorted_bam.fetch(interval.chrom,interval.start,interval.end):
+                        for read in self.ecc_dna.fetch(interval.chrom,interval.start,interval.end,multiple_iterators=True):
 
 
                             if is_soft_clipped(read):
@@ -284,7 +305,6 @@ class realignment:
                     elif len(iteration_discordants) > 0:
                             discordant_bed = pd.DataFrame.from_records(iteration_discordants,columns=['chrom','start','end','read']).sort_values(['chrom','start','end'])
                             discordant_bed = bt.BedTool.from_dataframe(discordant_bed)
-                            print(discordant_bed)
                             discordant_bed = discordant_bed.sort().merge(c=1,o='count')
 
                             for interval in discordant_bed:
@@ -301,39 +321,19 @@ class realignment:
 
 
 
-        eccdna_bam.close()
+        self.ecc_dna.close()
 
-        #the end
-        discordant_bed = bt.BedTool(only_discordants)
-        unparsed_bed = bt.BedTool(results)
-
-        discordant_bed.saveas("discordant.bed")
-        unparsed_bed.saveas("unparsed.bed")
-
-        unparsed_pd = unparsed_bed.to_dataframe(
-            names=['chrom', 'start', 'end', 'read', 'iteration', 'discordants'])
-
-        grouped = unparsed_pd.groupby(fraction(unparsed_pd.start, unparsed_pd.start.shift(),
-                                               unparsed_pd.end, unparsed_pd.end.shift(),
-                                               unparsed_pd.iteration,
-                                               unparsed_pd.iteration.shift()).lt(2.98).cumsum()).agg(
-            {'chrom': 'first', 'start': 'first', 'end': 'last', 'discordants': 'max','read': 'nunique'})
-
-        second_merging_round = grouped.sort_values(by=['chrom', 'start', 'end'])
-
-        final_output = second_merging_round.groupby(
-            second_merge(second_merging_round.start, second_merging_round.start.shift(),
-                         second_merging_round.end, second_merging_round.end.shift()).lt(1.98).cumsum()).agg(
-            {'chrom': 'first', 'start': 'first', 'end': 'last', 'discordants': 'sum','read': 'sum'})
-
-        bedtool_output = bt.BedTool.from_dataframe(final_output)
+        #Write process output to disk
+        final_output = iteration_merge(only_discordants,results)
+        write_to_disk(final_output,self.output,self.lock,self.directory)
 
 
-        final_output = bedtool_output.cat(discordant_bed, postmerge=False)
 
-        final_output.saveas("circle_map_results_optimized_solved_groupby.bed")
 
-        end = time.time()
-        print((end-begin)/60)
+
+
+
+
+
 
 

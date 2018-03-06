@@ -9,6 +9,10 @@ import numpy as np
 import pandas as pd
 import itertools as it
 import edlib
+import os
+import subprocess as sp
+import glob
+import time
 import sys
 
 
@@ -209,7 +213,7 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores):
             bam.close()
             ps.sort("-@","%s" % cores,"-o", "coordinate_%s" % input_bam_name, "%s" % input_bam_name)
 
-            sorted_bam = ps.AlignmentFile("coordinate_%s" %input_bam_name)
+            sorted_bam = ps.AlignmentFile("coordinate_%s" % input_bam_name)
 
             ps.index("coordinate_%s" % input_bam_name)
 
@@ -280,7 +284,7 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff):
 
 
         candidate_mates = []
-        for read in sorted_bam.fetch(interval.chrom, interval.start, interval.end):
+        for read in sorted_bam.fetch(interval.chrom, interval.start, interval.end,multiple_iterators=True):
 
             if read.mapq >= mapq_cutoff:
 
@@ -572,7 +576,6 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff):
             candidate_mates_dataframe = candidate_mates_dataframe.groupby((candidate_mates_dataframe.end.shift()-candidate_mates_dataframe.start).lt(0).cumsum()).agg({'chrom':'first','start':'first','end':'last','probability':'sum'})
 
             candidate_mates = bt.BedTool.from_dataframe(candidate_mates_dataframe[['chrom','start','end','probability']])
-            print(candidate_mates)
             sum = np.sum(float(x[3]) for x in candidate_mates)
 
 
@@ -991,6 +994,9 @@ def realignment_probability(hit_dict,interval_length):
 
 
 def fraction(start1,start2,end1,end2,read1,read2):
+    #completely internal function
+    """Function that performs a first round of merging. If the realigned intervals and SA intervals overlap, and are ca-
+    lled within the same iteration (which means that it is the same circle probably) they will be merged"""
 
 
     read_match = (read1 == read2)*1
@@ -1007,6 +1013,11 @@ def fraction(start1,start2,end1,end2,read1,read2):
 
 def second_merge(start1,start2,end1,end2):
 
+    # Non interval function
+
+    """After identif"""
+
+
     distance = (abs(start1 - start2) + abs(end1 - end2))
 
     one_overlap_two = 1 - (distance / (end1 - start1))
@@ -1015,11 +1026,131 @@ def second_merge(start1,start2,end1,end2):
     return (one_overlap_two + two_overlap_one)
 
 
+def iteration_merge(only_discordants,results):
+    """a"""
+    a = 0
+
+    discordant_bed = bt.BedTool(only_discordants)
+    unparsed_bed = bt.BedTool(results)
+
+    unparsed_pd = unparsed_bed.to_dataframe(
+        names=['chrom', 'start', 'end', 'read', 'iteration', 'discordants'])
+
+    grouped = unparsed_pd.groupby(fraction(unparsed_pd.start, unparsed_pd.start.shift(),
+                                           unparsed_pd.end, unparsed_pd.end.shift(),
+                                           unparsed_pd.iteration,
+                                           unparsed_pd.iteration.shift()).lt(2.98).cumsum()).agg(
+        {'chrom': 'first', 'start': 'first', 'end': 'last', 'discordants': 'max', 'read': 'nunique'})
+
+    bedtool_output = bt.BedTool.from_dataframe(grouped)
+
+    bed_to_write = bedtool_output.cat(discordant_bed, postmerge=False)
+
+    return(bed_to_write)
 
 
 
 
 
+def merge_final_output(results,begin):
+
+
+
+    print("Writting final output to disk")
+
+    os.chdir("temp_files/")
+
+    unparsed_bed = bt.BedTool(results)
+
+
+
+    unparsed_pd = unparsed_bed.to_dataframe(
+        names=['chrom', 'start', 'end', 'discordants', 'sc'])
+
+
+
+    second_merging_round = unparsed_pd.sort_values(by=['chrom', 'start', 'end'])
+
+    final_output = second_merging_round.groupby(
+        second_merge(second_merging_round.start, second_merging_round.start.shift(),
+                     second_merging_round.end, second_merging_round.end.shift()).lt(1.98).cumsum()).agg(
+        {'chrom': 'first', 'start': 'first', 'end': 'last', 'discordants': 'max', 'sc': 'sum'})
+
+    bedtool_output = bt.BedTool.from_dataframe(final_output)
+
+
+
+    print("Finished!")
+
+    end = time.time()
+
+    total_time = (end - begin) / 60
+
+
+    print("\nCircle-Map realign finished indentifying circles in %s \n" % total_time)
+    print("\nCircle-Map has identified %s circles\n" % len(bedtool_output))
+
+    return(bedtool_output)
+
+
+def write_to_disk(partial_bed,output,locker,dir):
+
+    locker.acquire()
+    os.chdir("%s/temp_files/" % dir)
+    output_bed = bt.BedTool('%s' % output)
+    output_bed.cat(partial_bed,postmerge=False).saveas('%s' % output)
+    os.chdir("%s" % dir)
+    locker.release()
+
+
+def start_realign(circle_bam,output,threads):
+    """a"""
+
+    begin = time.time()
+
+    print("\nRunning Circle-Map realign\n")
+
+    print("Computing genome coverage from the structural variant reads\n")
+
+    eccdna_bam = ps.AlignmentFile("%s" % circle_bam, "rb")
+
+    sp.call("mkdir temp_files", shell=True)
+
+    circle_peaks,sorted_bam = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads)
+
+    circle_peaks.saveas("temp_files/peaks.bed")
+
+
+    # split to cores
+
+    print("\nSplitting coverage file to cores\n")
+
+    command = [" cd temp_files ; bedtools split -n %s -p splitted -i peaks.bed ; cd .." % threads]
+    sp.call(command, shell=True)
+
+    sp.call("touch temp_files/%s" % output, shell=True)
+
+    splitted = [bt.BedTool(file) for file in glob.glob("temp_files/splitted*bed")]
+
+    return(splitted,sorted_bam,begin)
+
+
+
+
+def check_size_and_write(results,only_discortants,output,lock,directory):
+
+    if sys.getsizeof(results) < 100000000:
+        return(False)
+
+
+    else:
+
+        partial_bed = iteration_merge(only_discortants, results)
+
+        print("Writting %s circular intervals to disk" % len(partial_bed))
+        write_to_disk(partial_bed,output,lock,directory)
+
+        return(True)
 
 
 

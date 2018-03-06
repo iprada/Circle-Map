@@ -1,21 +1,12 @@
-import pysam as ps
+import pybedtools as bt
 import os
-import matplotlib.pyplot as plt
 
-os.chdir("/isdata/kroghgrp/xsh723/rasmus/B02_05_samples/")
+os.chdir("/isdata/kroghgrp/xsh723/projects/circle_map/test_data/realigner/test_command_interfance")
 
-mapping_qualities = []
-bamfile02 = ps.AlignmentFile("BWAB03.bam")
+b = bt.BedTool('test_circles.bed')
 
-i = 0
+a = bt.BedTool('test.bed')
 
-for read in bamfile02:
-    while i < 10000000:
-        print(i)
-        mapping_qualities.append(read.mapq)
-        i +=1
-    else:
-        plt.hist(mapping_qualities)
-        plt.show()
+a.cat(b).saveas('test.bed')
 
-        exit()
+
