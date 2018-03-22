@@ -1098,7 +1098,9 @@ def write_to_disk(partial_bed,output,locker,dir):
     locker.acquire()
     os.chdir("%s/temp_files/" % dir)
     output_bed = bt.BedTool('%s' % output)
-    output_bed.cat(partial_bed,postmerge=False).saveas('%s' % output)
+    writer_bed = output_bed.cat(partial_bed,postmerge=False)
+    print("Writting to disk %s circles" % len(writer_bed))
+    writer_bed.saveas('%s' % output)
     os.chdir("%s" % dir)
     locker.release()
 

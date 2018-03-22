@@ -40,9 +40,12 @@ loop there should be a saved bed file for the rescue of the lonely soft-clips
 ## May be
 
 - Try efficient looping with itertools
+- Merge
 
 ## Limitations
 
 - Circle-Map realignment of the soft-clipped reads does not support reads with ONLY N. UPDATE=25/01/2018: This is not a limitation. SUpported
 
 - In the merging output, I apply a sum function to the intervals that overlap, hence if a read is hard clipped it should NOT be used
+
+

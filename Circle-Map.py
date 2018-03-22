@@ -306,7 +306,7 @@ Commands:
                                            default=17)
 
             alignment_options.add_argument('-e', '--gap_ext', type=int, metavar='',
-                                           help="Gap extension penalty in the position specific scoring matrix. Default: 1",
+                                           help="Gap extension penalty in the position specific scoring matrix. Default: 5",
                                            default=5)
 
             alignment_options.add_argument('-q', '--mapq', type=int, metavar='',

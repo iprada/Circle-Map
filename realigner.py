@@ -114,6 +114,7 @@ class realignment:
         only_discordants = []
 
         for interval in self.peaks:
+            
 
             if check_size_and_write(results,only_discordants,self.output,self.lock,self.directory) == True:
                 results = []
@@ -290,7 +291,7 @@ class realignment:
                                     if read.is_read2 == False:
                                         if read.next_reference_start < read.reference_start:
                                             disorcordants_per_it +=1
-                                            iteration_discordants.append([interval.chrom, read.next_reference_start + read.infer_query_length(),read.reference_start,
+                                            iteration_discordants.append([interval.chrom, read.next_reference_start,read.reference_start+read.infer_query_length(),
                                                                           read.qname])
 
 
