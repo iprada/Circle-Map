@@ -1158,7 +1158,28 @@ def check_size_and_write(results,only_discortants,output,lock,directory):
 
 
 
+def merge_coverage_bed(results):
 
+    """Function that takes as bed file containing the coordinates of the double mapped reads and
+    returns the merged bed file containining the information about the clusters"""
+
+    unparsed_bed = bt.BedTool(results)
+
+    unparsed_pd = unparsed_bed.to_dataframe(
+        names=['chrom', 'start', 'end','item'])
+
+
+
+    sort = unparsed_pd.sort_values(by=['chrom', 'start', 'end'])
+
+    final_output = sort.groupby(
+        second_merge(sort.start, sort.start.shift(),
+                     sort.end, sort.end.shift()).lt(1.98).cumsum()).agg(
+        {'chrom': 'first', 'start': 'first', 'end': 'last','item': 'sum'})
+
+    bedtool_output = bt.BedTool.from_dataframe(final_output)
+
+    return(bedtool_output)
 
 
 
