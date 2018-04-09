@@ -2,7 +2,7 @@ import pysam as ps
 import pybedtools as bt
 import os
 import time
-from utils import merge_coverage_bed
+from utils import merge_coverage_bed,compute_coverage
 
 
 class coverage:
@@ -16,13 +16,15 @@ class coverage:
 
     def find_circles(self):
 
+        begin = time.time()
+
         os.chdir("%s" % self.dir)
 
         bam = ps.AlignmentFile("%s" % self.bam,'rb')
 
-        print("Iterating trough the bam file")
 
-        begin = time.time()
+
+        print("Iterating trough the bam file")
 
         output = []
         for read in bam:
@@ -30,13 +32,18 @@ class coverage:
             try:
                 if read.has_tag('XA'):
                     tag = read.get_tag('XA').split(';')[:-1]
+
                     read_edit_distance = read.get_tag('NM')
 
                     if read_edit_distance <= self.mismatch and len(tag) ==1:
-                        
+
                         read_chrom = bam.get_reference_name(read.reference_id)
                         chrom = tag[0].split(',')[0]
+
+
                         if chrom == read_chrom:
+
+
                             aln = int(tag[0].split(',')[1][1:])
 
                             if aln < read.reference_start:
@@ -53,12 +60,16 @@ class coverage:
 
 
             except BaseException as e:
-                exit()
                 print(e)
 
 
+
         bed = merge_coverage_bed(output)
-        bed.saveas("coverage.bed")
+        final_bed = compute_coverage(bam,bed)
+        print("Computing coverage statistics")
+        final_bed.saveas("coverage.bed")
+
+
 
         end = time.time()
 

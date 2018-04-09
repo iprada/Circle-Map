@@ -12,12 +12,13 @@ from utils import *
 class realignment:
     """Class for managing the realignment and eccDNA indetification of circle-map"""
 
-    def __init__(self, input_bam,qname_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
+    def __init__(self, input_bam,qname_bam,sorted_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
                  insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,min_soft_clipped_length,overlap_frac,
                  interval_p_cut, output_name,ncores,circle_peaks,locker):
         #I/O
         self.ecc_dna = input_bam
         self.qname_bam = qname_bam
+        self.sorted_bam = ps.AlignmentFile(sorted_bam, "rb")
         self.directory = directory
         self.genome_fa = ps.FastaFile(genome_fasta)
         self.peaks = circle_peaks
@@ -90,6 +91,8 @@ class realignment:
         begin = time.time()
 
         os.chdir(self.directory)
+
+
 
 
         # compute insert size distribution
@@ -325,8 +328,11 @@ class realignment:
         self.ecc_dna.close()
 
         #Write process output to disk
-        final_output = iteration_merge(only_discordants,results)
-        write_to_disk(final_output,self.output,self.lock,self.directory)
+        output = iteration_merge(only_discordants,results)
+
+
+
+        write_to_disk(output,self.output,self.lock,self.directory)
 
 
 

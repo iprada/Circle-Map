@@ -11,8 +11,11 @@ import os
 import time
 from extract_circle_SV_reads import readExtractor
 from realigner import realignment
-from utils import merge_final_output
+from utils import merge_final_output,coverage_split,compute_coverage
 import multiprocessing as mp
+import pybedtools as bt
+
+
 
 
 
@@ -98,16 +101,18 @@ Commands:
 
                 splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads)
 
+
+
+
                 if __name__ == '__main__':
 
                     lock = mp.Lock()
-
 
                     processes = []
 
                     for core in range(0,self.args.threads):
 
-                        object = realignment(sorted_bam, self.args.qbam, self.args.fasta, self.args.directory,
+                        object = realignment(sorted_bam, self.args.qbam,self.args.sbam, self.args.fasta, self.args.directory,
                                              self.args.mapq,
                                              self.args.insert_mapq, self.args.std, self.args.sample_size,
                                              self.args.gap_open,
@@ -130,14 +135,41 @@ Commands:
                     for p in jobs:
                         p.join()
 
-
-
-
-
-
-                    output = merge_final_output("%s" % self.args.output,begin)
-
+                    output = merge_final_output("%s" % self.args.output, begin,self.args.directory)
                     output.saveas("%s" % self.args.output)
+
+                    splitted = coverage_split(self.args.output,self.args.threads)
+
+                    coverage_processes = []
+                    for core in range(0, self.args.threads):
+
+                        p = mp.Process(target=compute_coverage,args=(self.args.sbam,splitted[core],self.args.output,
+                                                                     lock,self.args.directory))
+                        coverage_processes.append(p)
+                        p.start()
+
+                    for p in coverage_processes:
+                        p.join()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                    # compute coverage statistics
+
+
+
+
 
 
 
@@ -275,6 +307,7 @@ Commands:
 
         io_options.add_argument('-i', metavar='', help="Input: bam file containing the reads extracted by ReadExtractor")
         io_options.add_argument('-qbam', metavar='',help="Input: query name sorted bam file")
+        io_options.add_argument('-sbam', metavar='', help="Input: coordinate sorted bam file")
         io_options.add_argument('-fasta', metavar='', help="Input: file contaning the genome fasta")
 
 
@@ -298,8 +331,8 @@ Commands:
                                            default=0.99)
 
             alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
-                                           help="Minimum soft-clipped length to attempt the realignment. Default: 8",
-                                           default=8)
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 14",
+                                           default=14)
 
             alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
                                            help="Gap open penalty in the position specific scoring matrix. Default: 17",
@@ -310,8 +343,8 @@ Commands:
                                            default=5)
 
             alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
-                                           help="Minimum mapping quality allowed in the supplementary alignments. Default: 10",
-                                           default=10)
+                                           help="Minimum mapping quality allowed in the supplementary alignments. Default: 20",
+                                           default=20)
 
 
             #insert size
@@ -369,20 +402,20 @@ Commands:
                                            default=0.99)
 
             alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
-                                           help="Minimum soft-clipped length to attempt the realignment. Default: 8",
-                                           default=8)
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 14",
+                                           default=14)
 
             alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
                                            help="Gap open penalty in the position specific scoring matrix. Default: 17",
                                            default=17)
 
             alignment_options.add_argument('-e', '--gap_ext', type=int, metavar='',
-                                           help="Gap extension penalty in the position specific scoring matrix. Default: 1",
-                                           default=1)
+                                           help="Gap extension penalty in the position specific scoring matrix. Default: 5",
+                                           default=5)
 
             alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
-                                           help="Minimum mapping quality allowed in the supplementary alignments. Default: 10",
-                                           default=10)
+                                           help="Minimum mapping quality allowed in the supplementary alignments. Default: 20",
+                                           default=20)
 
             # insert size
 

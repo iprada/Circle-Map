@@ -1052,7 +1052,8 @@ def iteration_merge(only_discordants,results):
 
 
 
-def merge_final_output(results,begin):
+def merge_final_output(results,begin,dir):
+
 
 
 
@@ -1095,6 +1096,7 @@ def merge_final_output(results,begin):
 
 def write_to_disk(partial_bed,output,locker,dir):
 
+
     locker.acquire()
     os.chdir("%s/temp_files/" % dir)
     output_bed = bt.BedTool('%s' % output)
@@ -1117,6 +1119,9 @@ def start_realign(circle_bam,output,threads):
     eccdna_bam = ps.AlignmentFile("%s" % circle_bam, "rb")
 
     sp.call("mkdir temp_files", shell=True)
+
+
+
 
     circle_peaks,sorted_bam = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads)
 
@@ -1141,6 +1146,7 @@ def start_realign(circle_bam,output,threads):
 
 def check_size_and_write(results,only_discortants,output,lock,directory):
 
+
     if sys.getsizeof(results) < 100000000:
         return(False)
 
@@ -1161,7 +1167,7 @@ def check_size_and_write(results,only_discortants,output,lock,directory):
 def merge_coverage_bed(results):
 
     """Function that takes as bed file containing the coordinates of the double mapped reads and
-    returns the merged bed file containining the information about the clusters"""
+    returns the merged bed file containing the information about the clusters"""
 
     unparsed_bed = bt.BedTool(results)
 
@@ -1174,12 +1180,23 @@ def merge_coverage_bed(results):
 
     final_output = sort.groupby(
         second_merge(sort.start, sort.start.shift(),
-                     sort.end, sort.end.shift()).lt(1.98).cumsum()).agg(
+                     sort.end, sort.end.shift()).lt(1.6).cumsum()).agg(
         {'chrom': 'first', 'start': 'first', 'end': 'last','item': 'sum'})
 
     bedtool_output = bt.BedTool.from_dataframe(final_output)
 
     return(bedtool_output)
+
+def write_coverage_to_disk(partial_bed,output,locker,dir):
+
+    locker.acquire()
+    os.chdir("%s/temp_files/" % dir)
+    output_bed = bt.BedTool('%s' % output)
+    writer_bed = output_bed.cat(partial_bed,postmerge=False)
+    print("Writting to disk %s circles with coverage metrics" % len(writer_bed))
+    writer_bed.saveas('%s' % output)
+    os.chdir("%s" % dir)
+    locker.release()
 
 
 
