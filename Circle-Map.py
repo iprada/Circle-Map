@@ -278,9 +278,12 @@ Commands:
         parser._action_groups.pop()
         io_options = parser.add_argument_group('Input/Output options')
         alignment_options = parser.add_argument_group('Alignment options')
+        out_decision = parser.add_argument_group('eccDNA output options')
         i_size_estimate = parser.add_argument_group('Insert size estimation options')
         interval = parser.add_argument_group('Interval processing options')
+        coverage_metrics = parser.add_argument_group('Coverage metrics options')
         running = parser.add_argument_group('Running options')
+
 
         io_options.add_argument('-i', metavar='', help="Input: bam file containing the reads extracted by ReadExtractor")
         io_options.add_argument('-qbam', metavar='',help="Input: query name sorted bam file")
@@ -348,6 +351,31 @@ Commands:
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
                                   help="Skip intervals where the probability of been the mate is less than the cutoff. Default: 0.01",
                                   default=0.01)
+
+            #When to call a circle
+
+            out_decision.add_argument('-S', '--split', type=int, metavar='',
+                                         help="Number of required split reads to output a eccDNA",
+                                         default=2)
+
+            out_decision.add_argument('-r', '--ratio', type=float, metavar='',
+                                      help="Minimum in/out required ratio",
+                                      default=0.6)
+
+            # coverage metrics
+
+            coverage_metrics.add_argument('-b', '--bases', type=int, metavar='',
+                                         help="Number of bases to extend for computing the coverage ratio",
+                                         default=200)
+
+            coverage_metrics.add_argument('-cq', '--cmapq', type=int, metavar='',
+                                          help="Minimum mapping quality treshold for coverage computation",
+                                          default=0)
+
+            coverage_metrics.add_argument('-E', '--extension', type=int, metavar='',
+                                          help="a",
+                                          default=0)
+
 
             #run options
 
@@ -418,6 +446,16 @@ Commands:
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
                                   help="Skip intervals where the probability of been the mate is less than the cutoff. Default: 0.01",
                                   default=0.99)
+
+            # When to call a circle
+
+            out_decision.add_argument('-S', '--split', type=int, metavar='',
+                                      help="Number of required split reads to output a eccDNA",
+                                      default=2)
+
+            out_decision.add_argument('-r', '--ratio', type=float, metavar='',
+                                      help="Minimum in/out required ratio",
+                                      default=0.6)
 
 
             # Running options

@@ -7,17 +7,17 @@ import numpy as np
 class coverage:
     """Class for managing the coverage metrics of circle-map"""
 
-    def __init__(self,sorted_bam,eccdna_bed,in_out_dist,mapq,start_end_len):
+    def __init__(self,sorted_bam,eccdna_bed,extension,mapq,inside_length):
 
         self.bam = ps.AlignmentFile(sorted_bam, "rb")
         self.bed = eccdna_bed
 
         #length of out
-        self.in_out = in_out_dist
+        self.ext = extension
         self.mapq = mapq
 
         #length of the region for the ratio
-        self.start_end_len = start_end_len
+        self.ilen = inside_length
 
     def get_wg_coverage(self):
         """Function that takes as input a sorted bam and a merged bam of the circles in the whole genome and returns a numpy
@@ -41,14 +41,14 @@ class coverage:
 
             print(interval)
 
-            if interval.start - self.in_out < 0:
+            if interval.start - self.ext < 0:
                 start = 0
 
             else:
-                start = interval.start - self.in_out
+                start = interval.start - self.ext
 
-            if header_dict[interval.chrom] < (interval.end + self.in_out):
-                end = interval.end + self.in_out
+            if header_dict[interval.chrom] < (interval.end + self.ext):
+                end = interval.end + self.ext
             else:
                 end = interval.end
 
@@ -86,15 +86,15 @@ class coverage:
                 end = interval.end - key.start
 
 
-                if start - self.in_out < 0:
+                if start - self.ext < 0:
                     ext_start = 0
                 else:
-                    ext_start = start - self.in_out
+                    ext_start = start - self.ext
 
-                if header_dict[interval.chrom] < (end+ self.in_out):
+                if header_dict[interval.chrom] < (end+ self.ext):
                     ext_end = header_dict[interval.chrom]
                 else:
-                    ext_end = end + self.in_out
+                    ext_end = end + self.ext
 
                 # slice extended array and coverage array
                 ext_array = value[ext_start:ext_end]
@@ -106,8 +106,8 @@ class coverage:
 
 
                 #compute ratios
-                start_coverage_ratio = np.sum(region_array[0:self.start_end_len]) / np.sum(ext_array[0:(self.start_end_len+self.in_out)])
-                end_coverage_ratio = np.sum(region_array[-self.start_end_len:]) / np.sum(ext_array[-(self.start_end_len + self.in_out):])
+                start_coverage_ratio = np.sum(region_array[0:self.ilen]) / np.sum(ext_array[0:(self.ilen+self.ext)])
+                end_coverage_ratio = np.sum(region_array[-self.ilen:]) / np.sum(ext_array[-(self.ilen + self.ext):])
 
 
                 zero_frac = np.count_nonzero(region_array == 0) / len(region_array)
