@@ -11,7 +11,8 @@ import os
 import time
 from extract_circle_SV_reads import readExtractor
 from realigner import realignment
-from utils import merge_final_output,coverage_split,compute_coverage
+from utils import merge_final_output
+from coverage import coverage
 import multiprocessing as mp
 import pybedtools as bt
 
@@ -138,34 +139,10 @@ Commands:
                     output = merge_final_output("%s" % self.args.output, begin,self.args.directory)
                     output.saveas("%s" % self.args.output)
 
-                    splitted = coverage_split(self.args.output,self.args.threads)
-
-                    coverage_processes = []
-                    for core in range(0, self.args.threads):
-
-                        p = mp.Process(target=compute_coverage,args=(self.args.sbam,splitted[core],self.args.output,
-                                                                     lock,self.args.directory))
-                        coverage_processes.append(p)
-                        p.start()
-
-                    for p in coverage_processes:
-                        p.join()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
                     # compute coverage statistics
+
+
 
 
 

@@ -1,78 +1,126 @@
+import os
 import pysam as ps
 import pybedtools as bt
-import os
-import time
-from utils import merge_coverage_bed,compute_coverage
+import numpy as np
 
 
 class coverage:
-    """Class for indentifying repeat derived eccDNA by looking of the reads with two alignments"""
+    """Class for managing the coverage metrics of circle-map"""
+
+    def __init__(self,sorted_bam,eccdna_bed,in_out_dist,mapq,start_end_len):
+
+        self.bam = ps.AlignmentFile(sorted_bam, "rb")
+        self.bed = eccdna_bed
+
+        #length of out
+        self.in_out = in_out_dist
+        self.mapq = mapq
+
+        #length of the region for the ratio
+        self.start_end_len = start_end_len
+
+    def get_wg_coverage(self):
+        """Function that takes as input a sorted bam and a merged bam of the circles in the whole genome and returns a numpy
+        array for every interval with the coverage"""
+
+        print("Computing whole genome coverage")
+
+        reference_contigs = self.bam.header['SQ']
+
+        header_dict = {}
+        for reference in reference_contigs:
+            header_dict[reference['SN']] = reference['LN']
+
+        merged_bed = self.bed.sort().merge()
+
+        print("%s merged intervals for coverage computation " % len(merged_bed))
 
 
-    def __init__(self,bam,directory,mismatch):
-        self.bam = bam
-        self.dir = directory
-        self.mismatch = mismatch
+        coverage_dict = {}
+        for interval in merged_bed:
 
-    def find_circles(self):
+            print(interval)
 
-        begin = time.time()
+            if interval.start - self.in_out < 0:
+                start = 0
 
-        os.chdir("%s" % self.dir)
+            else:
+                start = interval.start - self.in_out
 
-        bam = ps.AlignmentFile("%s" % self.bam,'rb')
+            if header_dict[interval.chrom] < (interval.end + self.in_out):
+                end = interval.end + self.in_out
+            else:
+                end = interval.end
+
+            cov = self.bam.count_coverage(contig=interval.chrom, start=start, end=end, quality_threshold=self.mapq)
+            summarized_cov = np.array([cov[0], cov[1], cov[2], cov[3]]).sum(axis=0)
+
+            # save memory, convert to uint32.
+            summ_cov = np.uint32(summarized_cov)
+
+            coverage_dict[bt.Interval(interval.chrom, start, end)] = summ_cov
+
+        return (coverage_dict,header_dict)
 
 
+    def compute_coverage(self,cov_dict,header_dict):
 
-        print("Iterating trough the bam file")
+        """Function that takes as input a sorted bam file and a bed file a bed file with summarized statistics of the cove-
+        rage within the intervals"""
+
+        print("Computing the coverage of the identified eccDNA")
 
         output = []
-        for read in bam:
+        for key,value in cov_dict.items():
 
-            try:
-                if read.has_tag('XA'):
-                    tag = read.get_tag('XA').split(';')[:-1]
-
-                    read_edit_distance = read.get_tag('NM')
-
-                    if read_edit_distance <= self.mismatch and len(tag) ==1:
-
-                        read_chrom = bam.get_reference_name(read.reference_id)
-                        chrom = tag[0].split(',')[0]
+            print(key)
 
 
-                        if chrom == read_chrom:
+            overlaps = bt.BedTool(self.bed.all_hits(key))
 
 
-                            aln = int(tag[0].split(',')[1][1:])
+            for interval in overlaps:
 
-                            if aln < read.reference_start:
-
-                                interval = [chrom,aln,read.reference_start,1]
-
-                                output.append(interval)
-
-                            else:
-
-                                interval = [chrom,read.reference_start,aln,1]
-
-                                output.append(interval)
+                # compute array slicing indices
+                start = interval.start -key.start
+                end = interval.end - key.start
 
 
-            except BaseException as e:
-                print(e)
+                if start - self.in_out < 0:
+                    ext_start = 0
+                else:
+                    ext_start = start - self.in_out
+
+                if header_dict[interval.chrom] < (end+ self.in_out):
+                    ext_end = header_dict[interval.chrom]
+                else:
+                    ext_end = end + self.in_out
+
+                # slice extended array and coverage array
+                ext_array = value[ext_start:ext_end]
+                region_array = value[start:end]
 
 
-
-        bed = merge_coverage_bed(output)
-        final_bed = compute_coverage(bam,bed)
-        print("Computing coverage statistics")
-        final_bed.saveas("coverage.bed")
+                mean = np.mean(region_array)
+                sd = np.std(region_array)
 
 
+                #compute ratios
+                start_coverage_ratio = np.sum(region_array[0:self.start_end_len]) / np.sum(ext_array[0:(self.start_end_len+self.in_out)])
+                end_coverage_ratio = np.sum(region_array[-self.start_end_len:]) / np.sum(ext_array[-(self.start_end_len + self.in_out):])
 
-        end = time.time()
 
+                zero_frac = np.count_nonzero(region_array == 0) / len(region_array)
 
+                interval.append(str(mean))
+                interval.append(str(sd))
 
-        print((end-begin)/60)
+                interval.append(str(start_coverage_ratio))
+                interval.append(str(end_coverage_ratio))
+
+                interval.append(str(zero_frac))
+
+                output.append(interval)
+
+        return(bt.BedTool(output))
+

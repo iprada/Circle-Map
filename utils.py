@@ -1160,10 +1160,6 @@ def check_size_and_write(results,only_discortants,output,lock,directory):
 
         return(True)
 
-
-
-
-
 def merge_coverage_bed(results):
 
     """Function that takes as bed file containing the coordinates of the double mapped reads and
@@ -1187,16 +1183,6 @@ def merge_coverage_bed(results):
 
     return(bedtool_output)
 
-def write_coverage_to_disk(partial_bed,output,locker,dir):
-
-    locker.acquire()
-    os.chdir("%s/temp_files/" % dir)
-    output_bed = bt.BedTool('%s' % output)
-    writer_bed = output_bed.cat(partial_bed,postmerge=False)
-    print("Writting to disk %s circles with coverage metrics" % len(writer_bed))
-    writer_bed.saveas('%s' % output)
-    os.chdir("%s" % dir)
-    locker.release()
 
 
 
