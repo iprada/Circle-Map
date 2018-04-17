@@ -11,7 +11,7 @@ import os
 import time
 from extract_circle_SV_reads import readExtractor
 from realigner import realignment
-from utils import merge_final_output
+from utils import merge_final_output,filter_by_ratio
 from coverage import coverage
 import multiprocessing as mp
 import pybedtools as bt
@@ -100,7 +100,7 @@ Commands:
 
 
 
-                splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads)
+                splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads,self.args.verbose)
 
 
 
@@ -119,7 +119,7 @@ Commands:
                                              self.args.gap_open,
                                              self.args.gap_ext, self.args.nhits, self.args.cut_off, self.args.min_sc,
                                              self.args.merge_fraction, self.args.interval_probability, self.args.output,
-                                             self.args.threads, splitted[core],lock)
+                                             self.args.threads, splitted[core],lock,self.args.split,self.args.ratio,self.args.verbose)
 
                         processes.append(object)
 
@@ -136,11 +136,16 @@ Commands:
                     for p in jobs:
                         p.join()
 
-                    output = merge_final_output("%s" % self.args.output, begin,self.args.directory)
-                    output.saveas("%s" % self.args.output)
+                    output = merge_final_output("%s" % self.args.output, begin,self.args.split,self.args.directory)
 
 
                     # compute coverage statistics
+
+                    coverage_object = coverage(self.args.sbam,output,self.args.bases,self.args.cmapq,self.args.extension,self.args.directory)
+                    coverage_dict, header_dict = coverage_object.get_wg_coverage()
+                    output = coverage_object.compute_coverage(coverage_dict, header_dict)
+                    filtered_output = filter_by_ratio(output,self.args.ratio)
+                    filtered_output.saveas("%s" % self.args.output)
 
 
 
@@ -292,6 +297,7 @@ Commands:
 
 
 
+
         if "-i" and "-qbam" and "-fasta" in sys.argv:
 
             #output
@@ -355,26 +361,26 @@ Commands:
             #When to call a circle
 
             out_decision.add_argument('-S', '--split', type=int, metavar='',
-                                         help="Number of required split reads to output a eccDNA",
+                                         help="Number of required split reads to output a eccDNA. Default: 2",
                                          default=2)
 
             out_decision.add_argument('-r', '--ratio', type=float, metavar='',
-                                      help="Minimum in/out required ratio",
+                                      help="Minimum in/out required ratio. Default: 0.6",
                                       default=0.6)
 
             # coverage metrics
 
             coverage_metrics.add_argument('-b', '--bases', type=int, metavar='',
-                                         help="Number of bases to extend for computing the coverage ratio",
+                                         help="Number of bases to extend for computing the coverage ratio. Default: 200",
                                          default=200)
 
             coverage_metrics.add_argument('-cq', '--cmapq', type=int, metavar='',
-                                          help="Minimum mapping quality treshold for coverage computation",
+                                          help="Minimum mapping quality treshold for coverage computation. Default: 0",
                                           default=0)
 
             coverage_metrics.add_argument('-E', '--extension', type=int, metavar='',
-                                          help="a",
-                                          default=0)
+                                          help="Number of bases inside the eccDNA coordinates to compute the ratio. Default: 100",
+                                          default=100)
 
 
             #run options
@@ -386,6 +392,10 @@ Commands:
             running.add_argument('-dir', '--directory', metavar='',
                                   help="Working directory, default is the working directory",
                                   default=os.getcwd())
+
+            running.add_argument('-v', '--verbose', type=int, metavar='',
+                                  help='Verbose level, 1=error,2=warning, 3=message',
+                                  choices=[1, 2, 3], default=3)
 
 
 
@@ -450,12 +460,26 @@ Commands:
             # When to call a circle
 
             out_decision.add_argument('-S', '--split', type=int, metavar='',
-                                      help="Number of required split reads to output a eccDNA",
+                                      help="Number of required split reads to output a eccDNA. Default: 2",
                                       default=2)
 
             out_decision.add_argument('-r', '--ratio', type=float, metavar='',
-                                      help="Minimum in/out required ratio",
+                                      help="Minimum in/out required ratio. Default: 0.6",
                                       default=0.6)
+
+            # coverage metrics
+
+            coverage_metrics.add_argument('-b', '--bases', type=int, metavar='',
+                                          help="Number of bases to extend for computing the coverage ratio. Default: 200",
+                                          default=200)
+
+            coverage_metrics.add_argument('-cq', '--cmapq', type=int, metavar='',
+                                          help="Minimum mapping quality treshold for coverage computation. Default: 0",
+                                          default=0)
+
+            coverage_metrics.add_argument('-E', '--extension', type=int, metavar='',
+                                          help="Number of bases inside the eccDNA coordinates to compute the ratio. Default: 100",
+                                          default=100)
 
 
             # Running options
@@ -467,6 +491,10 @@ Commands:
             running.add_argument('-dir', '--directory', metavar='',
                                  help="Working directory, default is the working directory",
                                  default=os.getcwd())
+
+            running.add_argument('-v', '--verbose', type=int, metavar='',
+                                 help='Verbose level, 1=error,2=warning, 3=message',
+                                 choices=[1, 2, 3], default=3)
 
 
             #find out which arguments are missing

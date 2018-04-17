@@ -196,7 +196,7 @@ def genome_alignment_from_cigar(sa_cigar):
 
 
 
-def bam_circ_sv_peaks(bam,input_bam_name,cores):
+def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose):
     """Function that takes as input a bam file and returns a merged bed file of the genome covered by the bam, it will create
     and index too"""
 
@@ -246,18 +246,21 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores):
             bam = bt.BedTool("%s" % input_bam_name)
 
         else:
+            if verbose < 2:
 
-            warnings.warn(
-                "WARNING: the bam file does not have an SO tag.\nCircle-Map cannot check if the bam file is sorted by coordinate.\n If the bam file is not sorted by coordinate the program will file")
-            print(
-                "As sanity check, sort your bam file coordinate with the following command:\n\n\tsamtools sort -o output.bam input.bam")
+                warnings.warn(
+                    "WARNING: the bam file does not have an SO tag.\nCircle-Map cannot check if the bam file is sorted by coordinate.\n If the bam file is not sorted by coordinate the program will file")
+                print(
+                    "As sanity check, sort your bam file coordinate with the following command:\n\n\tsamtools sort -o output.bam input.bam")
 
 
     else:
-        warnings.warn(
-            "WARNING: the bam file does not have an HD tag.\nCircle-Map cannot check if the bam file is sorted by coordinate.\n If the bam file is not sorted by coordinate the program will file")
-        print(
-            "As sanity check, sort your bam file coordinate with the following command:\n\n\tsamtools sort -o output.bam input.bam")
+
+        if verbose < 2:
+            warnings.warn(
+                "WARNING: the bam file does not have an HD tag.\nCircle-Map cannot check if the bam file is sorted by coordinate.\n If the bam file is not sorted by coordinate the program will file")
+            print(
+                "As sanity check, sort your bam file coordinate with the following command:\n\n\tsamtools sort -o output.bam input.bam")
 
 
     #from bam to BedGraph
@@ -274,7 +277,7 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores):
     return(merged_peak_coverage,sorted_bam)
 
 
-def get_mate_intervals(sorted_bam,interval,mapq_cutoff):
+def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose):
 
     """Function that takes as input a sorted bam, an interval and the mapq cutoff and returns the mate alignment positions
         (the realignment prior) intervals"""
@@ -396,9 +399,11 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff):
 
                             else:
 
-                                warnings.warn(
-                                    "WARNING: the bam file does not have a SQ tag. Circle-Map cannot check the reference length for realigning\n"
-                                    "soft clipped reads without a SA tag, hence, skipping. Please, check if your bam file is truncated")
+                                if verbose < 2:
+
+                                    warnings.warn(
+                                        "WARNING: the bam file does not have a SQ tag. Circle-Map cannot check the reference length for realigning\n"
+                                        "soft clipped reads without a SA tag, hence, skipping. Please, check if your bam file is truncated")
 
                         elif is_hard_clipped(read):
 
@@ -464,8 +469,10 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff):
 
     except BaseException as e:
 
-        warnings.warn(
-            "WARNING: Could not get mate interval priors for the interval %s due to the following error %s \n Skipping interval" % (str(interval),str(e)))
+        if verbose < 2:
+
+            warnings.warn(
+                "WARNING: Could not get mate interval priors for the interval %s due to the following error %s \n Skipping interval" % (str(interval),str(e)))
 
 
 
@@ -521,7 +528,7 @@ def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
 
     return(mean, std)
 
-def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff):
+def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,verbose):
 
     """Function that takes as input a bed file with the read type information and will remove the soft-clipped if there
             are more informative priors (DR,SA). If there are only soft-clipped reads, they will be saved to a bed file to attemp
@@ -627,9 +634,11 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff):
 
     except BaseException as e:
 
-        warnings.warn(
-            "WARNING: Could not compute the probability for the mate interval priors %s due to the following error %s \n Skipping intervals" % (
-            str(bed_prior), str(e)))
+        if verbose < 2:
+
+            warnings.warn(
+                "WARNING: Could not compute the probability for the mate interval priors %s due to the following error %s \n Skipping intervals" % (
+                str(bed_prior), str(e)))
 
 
 
@@ -766,7 +775,7 @@ def background_freqs(seq):
 
 
 
-def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freqs,gap_open,gap_extend):
+def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freqs,gap_open,gap_extend,verbose):
 
 
     """Function that takes as input a read, the number of hits to find and the plus and minus strand and will return
@@ -782,10 +791,11 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
 
         #Warning raised when alphabets do not match
 
+        if verbose < 2:
 
-        warnings.warn(
-            "WARNING: a soft-clipped containing only ambiguous DNA bases was found. Soft-clipped sequence is: %s" %
-            soft_clipped_read['seq'])
+            warnings.warn(
+                "WARNING: a soft-clipped containing only ambiguous DNA bases was found. Soft-clipped sequence is: %s" %
+                soft_clipped_read['seq'])
 
         return(None)
 
@@ -821,7 +831,7 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
                     hits += 1
 
 
-                    score = pssm(soft_clipped_read['qual'], soft_clipped_read['seq'],alignment['cigar'],minus_base_freqs,gap_open,gap_extend)
+                    score = pssm(soft_clipped_read['qual'], soft_clipped_read['seq'],alignment['cigar'],minus_base_freqs,gap_open,gap_extend,verbose)
 
                     if score < min_score:
                         min_score = score
@@ -850,7 +860,7 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
 
                     hits += 1
 
-                    score = pssm(soft_clipped_read['qual'], soft_clipped_read['seq'],alignment['cigar'], plus_base_freqs,gap_open,gap_extend)
+                    score = pssm(soft_clipped_read['qual'], soft_clipped_read['seq'],alignment['cigar'], plus_base_freqs,gap_open,gap_extend,verbose)
 
                     if score < min_score:
                         min_score = score
@@ -876,7 +886,7 @@ def edlib_cigar_to_iterable(edlib_cigar):
 
 
 
-def pssm(seq_prob,seq_nucl,edlib_cigar,base_freqs,gap_open,gap_extend):
+def pssm(seq_prob,seq_nucl,edlib_cigar,base_freqs,gap_open,gap_extend,verbose):
     """Function that takes as input the sequencing probabilities and cigar string and returns the log2 pssm of the read"""
 
     phreds_to_probs = np.vectorize(phred_to_prob)
@@ -958,8 +968,10 @@ def pssm(seq_prob,seq_nucl,edlib_cigar,base_freqs,gap_open,gap_extend):
 
                 elif seq_nucl[nucleotide] == 'N':
 
-                    seq_prob[nucleotide] = 0
-                    warnings.warn("Ambiguous base found in nucleotide sequence. Assigning score of 0 in the log2 pssm")
+                    if verbose < 2:
+
+                        seq_prob[nucleotide] = 0
+                        warnings.warn("Ambiguous base found in nucleotide sequence. Assigning score of 0 in the log2 pssm")
 
             seq_pos += operation_length
 
@@ -1052,7 +1064,7 @@ def iteration_merge(only_discordants,results):
 
 
 
-def merge_final_output(results,begin,dir):
+def merge_final_output(results,begin,splits,dir):
 
 
 
@@ -1077,7 +1089,18 @@ def merge_final_output(results,begin,dir):
                      second_merging_round.end, second_merging_round.end.shift()).lt(1.98).cumsum()).agg(
         {'chrom': 'first', 'start': 'first', 'end': 'last', 'discordants': 'max', 'sc': 'sum'})
 
-    bedtool_output = bt.BedTool.from_dataframe(final_output)
+    unfiltered_output = bt.BedTool.from_dataframe(final_output)
+
+    # filter splits
+
+    filtered = []
+    for interval in unfiltered_output:
+
+        if int(interval[4]) >= splits:
+            filtered.append(interval)
+
+    filtered_output = bt.BedTool(filtered)
+
 
 
 
@@ -1089,9 +1112,9 @@ def merge_final_output(results,begin,dir):
 
 
     print("\nCircle-Map realign finished indentifying circles in %s \n" % total_time)
-    print("\nCircle-Map has identified %s circles\n" % len(bedtool_output))
+    print("\nCircle-Map has identified %s circles\n" % len(filtered_output))
 
-    return(bedtool_output)
+    return(filtered_output)
 
 
 def write_to_disk(partial_bed,output,locker,dir):
@@ -1107,7 +1130,7 @@ def write_to_disk(partial_bed,output,locker,dir):
     locker.release()
 
 
-def start_realign(circle_bam,output,threads):
+def start_realign(circle_bam,output,threads,verbose):
     """a"""
 
     begin = time.time()
@@ -1123,7 +1146,7 @@ def start_realign(circle_bam,output,threads):
 
 
 
-    circle_peaks,sorted_bam = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads)
+    circle_peaks,sorted_bam = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose)
 
     circle_peaks.saveas("temp_files/peaks.bed")
 
@@ -1182,6 +1205,21 @@ def merge_coverage_bed(results):
     bedtool_output = bt.BedTool.from_dataframe(final_output)
 
     return(bedtool_output)
+
+def filter_by_ratio(eccdna_bed,cutoff):
+    """Function that takes as input the eccDNA bed and returns the data filtered by tha change at the start and the end
+    """
+
+    filtered = []
+    for interval in eccdna_bed:
+
+        if float(interval[7]) > cutoff or float(interval[8]) > cutoff:
+            filtered.append(interval)
+
+    return(bt.BedTool(filtered))
+
+
+
 
 
 

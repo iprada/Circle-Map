@@ -7,9 +7,9 @@ import numpy as np
 class coverage:
     """Class for managing the coverage metrics of circle-map"""
 
-    def __init__(self,sorted_bam,eccdna_bed,extension,mapq,inside_length):
+    def __init__(self,sorted_bam,eccdna_bed,extension,mapq,inside_length,directory):
 
-        self.bam = ps.AlignmentFile(sorted_bam, "rb")
+        self.bam = ps.AlignmentFile(directory + "/" + sorted_bam, "rb")
         self.bed = eccdna_bed
 
         #length of out
@@ -19,11 +19,16 @@ class coverage:
         #length of the region for the ratio
         self.ilen = inside_length
 
+        def print_parameters(self):
+            print("Running coverage computations \n")
+
+
+
     def get_wg_coverage(self):
         """Function that takes as input a sorted bam and a merged bam of the circles in the whole genome and returns a numpy
         array for every interval with the coverage"""
 
-        print("Computing whole genome coverage")
+
 
         reference_contigs = self.bam.header['SQ']
 
@@ -101,24 +106,49 @@ class coverage:
                 region_array = value[start:end]
 
 
-                mean = np.mean(region_array)
-                sd = np.std(region_array)
 
 
-                #compute ratios
-                start_coverage_ratio = np.sum(region_array[0:self.ilen]) / np.sum(ext_array[0:(self.ilen+self.ext)])
-                end_coverage_ratio = np.sum(region_array[-self.ilen:]) / np.sum(ext_array[-(self.ilen + self.ext):])
 
 
-                zero_frac = np.count_nonzero(region_array == 0) / len(region_array)
+                try:
 
-                interval.append(str(mean))
-                interval.append(str(sd))
+                    mean = np.mean(region_array)
+                    sd = np.std(region_array)
 
-                interval.append(str(start_coverage_ratio))
-                interval.append(str(end_coverage_ratio))
+                    interval.append(str(mean))
+                    interval.append(str(sd))
 
-                interval.append(str(zero_frac))
+                except:
+
+                    interval.append('NA')
+                    interval.append('NA')
+
+
+                # compute ratios
+
+                try:
+
+                    start_coverage_ratio = np.sum(region_array[0:self.ilen]) / np.sum(
+                        ext_array[0:(self.ilen + self.ext)])
+                    end_coverage_ratio = np.sum(region_array[-self.ilen:]) / np.sum(ext_array[-(self.ilen + self.ext):])
+
+                    interval.append(str(start_coverage_ratio))
+                    interval.append(str(end_coverage_ratio))
+
+                except:
+
+                    interval.append('NA')
+                    interval.append('NA')
+
+                try:
+
+
+                    zero_frac = np.count_nonzero(region_array == 0) / len(region_array)
+                    interval.append(str(zero_frac))
+
+                except:
+
+                    interval.append('NA')
 
                 output.append(interval)
 

@@ -14,7 +14,7 @@ class realignment:
 
     def __init__(self, input_bam,qname_bam,sorted_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
                  insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,min_soft_clipped_length,overlap_frac,
-                 interval_p_cut, output_name,ncores,circle_peaks,locker):
+                 interval_p_cut, output_name,ncores,circle_peaks,locker,split,ratio,verbose):
         #I/O
         self.ecc_dna = input_bam
         self.qname_bam = qname_bam
@@ -43,6 +43,7 @@ class realignment:
         self.insert_sample_size = insert_size_sample_size
 
 
+
         #output options
 
         self.overlap_fraction = overlap_frac
@@ -50,8 +51,15 @@ class realignment:
 
         #regular options
         self.cores = ncores
+        self.verbose = verbose
         self.phreds_to_probs = np.vectorize(phred_to_prob)
         self.lock = locker
+
+        #this two parameters don't work on this class. They are here for printing the parameters
+        self.split = split
+        self.ratio = ratio
+
+
 
 
 
@@ -72,6 +80,11 @@ class realignment:
               "\tNumber of read to sample: %s \n"
               "\tNumber of standard deviations to extend the realignment intervals: %s \n"
               % (self.insert_size_mapq,self.insert_sample_size,self.std_extenstion))
+
+        print("eccDNA output options: \n"
+              "\tSplit read cut-off: %s \n"
+              "\tCoverage ratio cut-off: %s \n" % (self.split,self.ratio))
+
 
         print("Interval processing options: \n"
               "\tMerging fraction: %s \n"
@@ -129,7 +142,7 @@ class realignment:
 
 
                 #find out the prior distribution (mate alignment positions).
-                candidate_mates = get_mate_intervals(self.ecc_dna,interval,self.mapq_cutoff)
+                candidate_mates = get_mate_intervals(self.ecc_dna,interval,self.mapq_cutoff,self.verbose)
 
 
 
@@ -139,7 +152,8 @@ class realignment:
 
 
                     # sort merge and extend
-                    realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p)
+                    realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p,
+                                                                              self.verbose)
 
 
 
@@ -229,7 +243,7 @@ class realignment:
                                         #realignment
 
                                             realignment_dict = realign(read,self.n_hits,plus_coding_interval,minus_coding_interval,
-                                                                       plus_base_freqs,minus_base_freqs,self.gap_open,self.gap_ext)
+                                                                       plus_base_freqs,minus_base_freqs,self.gap_open,self.gap_ext,self.verbose)
 
 
                                             if realignment_dict == None:
@@ -317,9 +331,13 @@ class realignment:
 
             except BaseException as e:
 
-                warnings.warn(
-                    "Failed on interval %s due to the error %s" % (
-                        str(interval), str(e)))
+                if self.verbose < 2:
+
+                    warnings.warn(
+                        "Failed on interval %s due to the error %s" % (
+                            str(interval), str(e)))
+                else:
+                    continue
 
 
 
