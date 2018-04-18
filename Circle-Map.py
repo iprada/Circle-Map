@@ -11,6 +11,7 @@ import os
 import time
 from extract_circle_SV_reads import readExtractor
 from realigner import realignment
+from repeats import repeat
 from utils import merge_final_output,filter_by_ratio
 from coverage import coverage
 import multiprocessing as mp
@@ -38,6 +39,7 @@ Commands:
 
    ReadExtractor     Extracts the reads indicating extrachromosomal circular DNA structural variants
    Realign         Realign the soft-clipped reads and identify circular DNA
+   Repeats         Identify eccDNA coming from repeat regions
 ''')
         subparsers = self.parser.add_subparsers()
 
@@ -59,6 +61,20 @@ Commands:
             name="Realign",
             description='Realigns the soft-clipped reads and indentifies circular DNA',
             prog="CircleMap Realign",
+            usage='''CircleMap Realign [options]
+
+                             Author= Inigo Prada-Luengo
+                             version=1.0
+                             contact= https://github.com/iprada/Circle-Map/issues
+                             The Regenberg laboratory
+                             '''
+
+        )
+
+        self.repeats = subparsers.add_parser(
+            name="Repeats",
+            description='Identify cluster of reads with two alignments',
+            prog="CircleMap Reepeats",
             usage='''CircleMap Realign [options]
 
                              Author= Inigo Prada-Luengo
@@ -147,25 +163,23 @@ Commands:
                     filtered_output = filter_by_ratio(output,self.args.ratio)
                     filtered_output.saveas("%s" % self.args.output)
 
+            elif sys.argv[1] == "Repeats":
 
+                self.subprogram = self.args_repeats()
+                self.args = self.subprogram.parse_args(sys.argv[2:])
 
+                if self.args.directory[-1:] != "/":
+                    self.args.dir = self.args.directory + "/"
 
+                object = repeat(self.args.i,self.args.directory,self.args.mismatch)
+                bed = object.find_circles()
+                coverage_object = coverage(self.args.i, bed, self.args.bases, self.args.cmapq,
+                                           self.args.extension, self.args.directory)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                coverage_dict, header_dict = coverage_object.get_wg_coverage()
+                output = coverage_object.compute_coverage(coverage_dict, header_dict)
+                filtered_output = filter_by_ratio(output, self.args.ratio)
+                filtered_output.saveas("%s" % self.args.output)
 
 
 
@@ -513,6 +527,110 @@ Commands:
             sys.stderr.write("\nNo arguments given to Realign. Exiting\n")
             sys.exit(1)
 
+
+        return(parser)
+
+
+    def args_repeats(self):
+
+        parser = self.repeats
+
+
+        parser._action_groups.pop()
+        required = parser.add_argument_group('required arguments')
+        optional = parser.add_argument_group('optional arguments')
+        # prefixing the argument with -- means it's optional
+        # input and output
+
+
+        required.add_argument('-i', metavar='', help="Input: coordinate name sorted bam file")
+
+
+        if "-i" in sys.argv:
+
+            optional.add_argument('-o', '--output', metavar='',
+                              help="Ouput: Reads indicating circular DNA structural variants from repeat regions",
+                              default="circle_repeats_%s" % sys.argv[sys.argv.index("-i") + 1])
+
+            optional.add_argument('-dir', '--directory',metavar='',
+                                  help="Working directory, default is the working directory",
+                                  default=os.getcwd())
+
+            # coverage metrics
+            optional.add_argument('-m', '--mismatch', metavar='',
+                                  help="Number of mismatches allowed on the reads",
+                                  default=2)
+
+            optional.add_argument('-b', '--bases', type=int, metavar='',
+                                          help="Number of bases to extend for computing the coverage ratio. Default: 200",
+                                          default=200)
+
+            optional.add_argument('-cq', '--cmapq', type=int, metavar='',
+                                          help="Minimum mapping quality treshold for coverage computation. Default: 0",
+                                          default=0)
+
+            optional.add_argument('-E', '--extension', type=int, metavar='',
+                                          help="Number of bases inside the eccDNA coordinates to compute the ratio. Default: 100",
+                                          default=100)
+	
+            optional.add_argument('-r', '--ratio', type=float, metavar='',
+                                      help="Minimum in/out required ratio. Default: 0.6",
+                                      default=0.6)
+
+
+
+        else:
+
+            optional.add_argument('-o', '--output', metavar='',
+                                  help="Ouput: Reads indicating circular DNA structural variants",
+                                  )
+
+            optional.add_argument('-dir', '--directory', metavar='',
+                                  help="Working directory, default is the working directory",
+                                  default=os.getcwd())
+
+            # coverage metrics
+
+            optional.add_argument('-m', '--mismatch', metavar='',
+                                  help="Number of mismatches allowed on the reads",
+                                  default=2)
+
+            optional.add_argument('-b', '--bases', type=int, metavar='',
+                                  help="Number of bases to extend for computing the coverage ratio. Default: 200",
+                                  default=200)
+
+            optional.add_argument('-cq', '--cmapq', type=int, metavar='',
+                                  help="Minimum mapping quality treshold for coverage computation. Default: 0",
+                                  default=0.6)
+
+            optional.add_argument('-E', '--extension', type=int, metavar='',
+                                  help="Number of bases inside the eccDNA coordinates to compute the ratio. Default: 100",
+                                  default=100)
+
+            optional.add_argument('-r', '--ratio', type=float, metavar='',
+                                      help="Minimum in/out required ratio. Default: 0.6",
+                                      default=0.6)
+
+
+
+            parser.print_help()
+
+            time.sleep(0.01)
+            sys.stderr.write("\nNo input input given to Repeats, be sure that you are providing the flag '-i'"
+                             "\nExiting\n")
+            sys.exit(1)
+
+
+
+        #parse the commands
+
+
+
+        if len(sys.argv[2:]) == 0:
+            parser.print_help()
+            time.sleep(0.01)
+            sys.stderr.write("\nNo arguments given to Repeats. Exiting\n")
+            sys.exit(1)
 
         return(parser)
 
