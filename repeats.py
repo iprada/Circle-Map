@@ -2,7 +2,7 @@ import pysam as ps
 import pybedtools as bt
 import os
 import time
-from utils import merge_coverage_bed
+from utils import merge_coverage_bed,rightmost_from_sa
 
 
 class repeat:
@@ -48,14 +48,13 @@ class repeat:
 
                             if aln < read.reference_start:
 
-                                interval = [chrom,aln,read.reference_start,1]
+                                interval = [chrom,aln,read.reference_start+ read.infer_read_length(),1]
 
                                 output.append(interval)
 
                             else:
 
-                                interval = [chrom,read.reference_start,aln,1]
-
+                                interval = [chrom,read.reference_start,rightmost_from_sa(aln,tag[0].split(',')[2]),1]                               
                                 output.append(interval)
 
 
@@ -68,11 +67,11 @@ class repeat:
 
         #add dots to read metrics stats
 
-        with_dots = []
+        with_dot = []
         for interval in bed:
             interval.append(".")
-            with_dots.append(interval)
+            with_dot.append(interval)
 
-        bed= bt.BedTool(with_dots)
+        bed= bt.BedTool(with_dot)
 
         return(bed)
