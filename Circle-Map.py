@@ -379,8 +379,8 @@ Commands:
                                          default=2)
 
             out_decision.add_argument('-r', '--ratio', type=float, metavar='',
-                                      help="Minimum in/out required ratio. Default: 0.6",
-                                      default=0.6)
+                                      help="Minimum in/out required ratio. Default: 0.0",
+                                      default=0.0)
 
             # coverage metrics
 
@@ -478,8 +478,8 @@ Commands:
                                       default=2)
 
             out_decision.add_argument('-r', '--ratio', type=float, metavar='',
-                                      help="Minimum in/out required ratio. Default: 0.6",
-                                      default=0.6)
+                                      help="Minimum in/out required ratio. Default: 0.0",
+                                      default=0.0)
 
             # coverage metrics
 
