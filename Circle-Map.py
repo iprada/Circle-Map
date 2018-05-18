@@ -157,11 +157,16 @@ Commands:
 
                     # compute coverage statistics
 
-                    coverage_object = coverage(self.args.sbam,output,self.args.bases,self.args.cmapq,self.args.extension,self.args.directory)
-                    coverage_dict, header_dict = coverage_object.get_wg_coverage()
-                    output = coverage_object.compute_coverage(coverage_dict, header_dict)
-                    filtered_output = filter_by_ratio(output,self.args.ratio)
-                    filtered_output.saveas("%s" % self.args.output)
+                    if self.args.no_coverage == False:
+
+                        coverage_object = coverage(self.args.sbam,output,self.args.bases,self.args.cmapq,self.args.extension,self.args.directory)
+                        coverage_dict, header_dict = coverage_object.get_wg_coverage()
+                        output = coverage_object.compute_coverage(coverage_dict, header_dict)
+                        filtered_output = filter_by_ratio(output,self.args.ratio)
+                        filtered_output.saveas("%s" % self.args.output)
+
+                    else:
+                        output.saveas("%s" % self.args.output)
 
             elif sys.argv[1] == "Repeats":
 
@@ -384,6 +389,9 @@ Commands:
 
             # coverage metrics
 
+            coverage_metrics.add_argument('-N', '--no_coverage', help="Don't compute coverage statistics",
+                                          action='store_true')
+
             coverage_metrics.add_argument('-b', '--bases', type=int, metavar='',
                                          help="Number of bases to extend for computing the coverage ratio. Default: 200",
                                          default=200)
@@ -482,6 +490,10 @@ Commands:
                                       default=0.0)
 
             # coverage metrics
+
+            coverage_metrics.add_argument('-N', '--no_coverage', help="Don't compute coverage statistics",
+                                  action='store_true')
+
 
             coverage_metrics.add_argument('-b', '--bases', type=int, metavar='',
                                           help="Number of bases to extend for computing the coverage ratio. Default: 200",
