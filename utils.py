@@ -1,4 +1,4 @@
-#!/isdata/kroghgrp/xsh723/data_partition/anaconda/bin/python3.6
+#!/home/iprada/bin/miniconda3/bin/python3.6
 #Author: Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
@@ -269,8 +269,17 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose):
     peak_coverage = bam.genome_coverage(bg=True)
 
     #sort (sanity) and merge, BedGraph to bed
-    sorted_peak_coverage = peak_coverage.sort()
+    peak_coverage = peak_coverage.to_dataframe(
+        names=['chrom', 'start', 'end', 'count'])
+
+
+    sorted_peak_coverage = peak_coverage.sort_values(by=['chrom', 'start', 'end'])
+
+    sorted_peak_coverage = bt.BedTool.from_dataframe(sorted_peak_coverage)
+
     merged_peak_coverage = sorted_peak_coverage.merge()
+
+
 
     #merged_peak_coverage = bt.BedTool("merged_t08.bed")
 

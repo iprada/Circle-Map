@@ -1,4 +1,4 @@
-#!/isdata/kroghgrp/xsh723/scratch/anaconda/bin/python3.6
+#!/home/iprada/bin/miniconda3/bin/python3.6
 from __future__ import division
 from utils import start_realign
 #Author Inigo Prada Luengo
@@ -16,8 +16,9 @@ from utils import merge_final_output,filter_by_ratio
 from coverage import coverage
 import multiprocessing as mp
 import pybedtools as bt
-
-
+if not os.path.exists('pybedtools_temp'):
+    os.makedirs('pybedtools_temp')
+bt.set_tempdir('pybedtools_temp')
 
 
 
@@ -75,7 +76,7 @@ Commands:
             name="Repeats",
             description='Identify cluster of reads with two alignments',
             prog="CircleMap Reepeats",
-            usage='''CircleMap Realign [options]
+            usage='''CircleMap Repeats [options]
 
                              Author= Inigo Prada-Luengo
                              version=1.0
@@ -98,9 +99,6 @@ Commands:
                 self.subprogram = self.args_readextractor()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
 
-                if self.args.directory[-1:] != "/":
-                    self.args.dir = self.args.directory + "/"
-
                 object = readExtractor(self.args.i,self.args.output,self.args.dir,self.args.quality,self.args.nodiscordant,
                                        self.args.nohardclipped,self.args.nosoftclipped,self.args.verbose,self.subprogram)
                 object.extract_sv_circleReads()
@@ -108,13 +106,6 @@ Commands:
             elif sys.argv[1] == "Realign":
                 self.subprogram = self.args_realigner()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
-
-
-
-                if self.args.directory[-1:] != "/":
-                    self.args.dir = self.args.directory + "/"
-
-
 
                 splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads,self.args.verbose)
 
