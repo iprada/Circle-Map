@@ -1176,7 +1176,7 @@ def start_realign(circle_bam,output,threads,verbose):
 
 
 
-def check_size_and_write(results,only_discortants,output,lock,directory):
+def check_size_and_write(results,only_discortants,output,lock,didrectory):
 
 
     if sys.getsizeof(results) < 100000000:

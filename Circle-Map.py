@@ -17,8 +17,8 @@ from coverage import coverage
 import multiprocessing as mp
 import pybedtools as bt
 if not os.path.exists('pybedtools_temp'):
-    os.makedirs('pybedtools_temp')
-bt.set_tempdir('pybedtools_temp')
+    os.makedirs(os.getcwd() + 'pybedtools_temp')
+bt.set_tempdir(os.getcwd() + 'pybedtools_temp')
 
 
 
