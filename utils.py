@@ -572,7 +572,11 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
 
             candidate_mates_dataframe = candidate_mates_dataframe.sort_values(by=['chrom', 'start','end'],ascending=[True,True,True])
             candidate_mates_dataframe['probability'] = candidate_mates_dataframe.probability.astype(float)
+
+
             candidate_mates = candidate_mates_dataframe.groupby((candidate_mates_dataframe.end.shift()-candidate_mates_dataframe.start).lt(0).cumsum()).agg({'chrom':'first','start':'first','end':'last','probability':'sum'})
+
+
             sum = np.sum(float(x[3]) for index, x in candidate_mates.iterrows())
 
 
@@ -582,7 +586,11 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
             candidate_mates_no_sc = candidate_mates_dataframe.drop(candidate_mates_dataframe[candidate_mates_dataframe.read_type == 'SC'].index)
             candidate_mates_dataframe = candidate_mates_no_sc.sort_values(by=['chrom', 'start', 'end'],ascending=[True, True, True])
             candidate_mates_dataframe['probability'] = candidate_mates_dataframe.probability.astype(float)
+
+
             candidate_mates  = candidate_mates_dataframe.groupby((candidate_mates_dataframe.end.shift()-candidate_mates_dataframe.start).lt(0).cumsum()).agg({'chrom':'first','start':'first','end':'last','probability':'sum'})
+
+
             sum = np.sum(float(x[3]) for index,x in candidate_mates.iterrows())
 
 
@@ -1096,7 +1104,7 @@ def merge_final_output(results,begin,splits,dir):
     filtered = []
     for interval in unfiltered_output:
 
-        if int(interval[4]) >= splits:
+        if int(float(interval[4])) >= splits:
             filtered.append(interval)
 
     filtered_output = bt.BedTool(filtered)
@@ -1124,6 +1132,7 @@ def write_to_disk(partial_bed,output,locker,dir):
     os.chdir("%s/temp_files/" % dir)
     output_bed = bt.BedTool('%s' % output)
     writer_bed = output_bed.cat(partial_bed,postmerge=False)
+    print(writer_bed)
     print("Writting to disk %s circles" % len(writer_bed))
     writer_bed.saveas('%s' % output)
     os.chdir("%s" % dir)
@@ -1176,7 +1185,7 @@ def check_size_and_write(results,only_discortants,output,lock,directory):
 
     else:
 
-        partial_bed = iteration_merge(only_discortants, results)
+        partial_bed = iteration_(only_discortants, results)
 
         print("Writting %s circular intervals to disk" % len(partial_bed))
         write_to_disk(partial_bed,output,lock,directory)

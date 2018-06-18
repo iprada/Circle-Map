@@ -323,16 +323,26 @@ class realignment:
     
                     elif len(iteration_discordants) > 0:
                             discordant_bed = pd.DataFrame.from_records(iteration_discordants,columns=['chrom','start','end','read']).sort_values(['chrom','start','end'])
+                            discordant_bed = bt.BedTool.from_dataframe(discordant_bed)
+                            discordant_bed = discordant_bed.sort().merge(c=1, o='count')
+                            for interval in discordant_bed:
+                                interval.append(0)
+                                only_discordants.append(interval)
 
-                            discordant_bed = discordant_bed.groupby(
-                                (discordant_bed.end.shift() - discordant_bed.start).lt(
-                                    0).cumsum()).agg(
-                                {'chrom': 'first', 'start': 'first', 'end': 'last', 'read': 'count'})
+                            #discordant_bed = discordant_bed.groupby(
+                            #    (discordant_bed.end - discordant_bed.start.shift()-1).lt(
+                            #        0).cumsum()).agg(
+                            #    {'chrom': 'first', 'start': 'first', 'end': 'last', 'read': 'count'})
+
+                            #print(discordant_bed)
+                            #print([disc_interval['chrom'],disc_interval['start'],disc_interval['end'],disc_interval['read']])
 
     
-                            for index,disc_interval in discordant_bed.iterrows():
+                            #for index,disc_interval in discordant_bed.iterrows():
+                            #    print([disc_interval['chrom'], disc_interval['start'], disc_interval['end'],
+                            #           disc_interval['read']])
+                            #    only_discordants.append([disc_interval['chrom'],disc_interval['start'],disc_interval['end'],disc_interval['read']])
 
-                                only_discordants.append([disc_interval['chrom'],disc_interval['start'],disc_interval['end'],disc_interval['read']])
 
             except BaseException as e:
 
