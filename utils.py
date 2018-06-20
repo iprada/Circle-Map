@@ -14,6 +14,7 @@ import subprocess as sp
 import glob
 import time
 import sys
+from scipy import stats as st
 
 
 
@@ -1031,19 +1032,21 @@ def fraction(start1,start2,end1,end2,read1,read2):
     return(one_overlap_two + two_overlap_one + read_match)
 
 
-def second_merge(start1,start2,end1,end2):
 
-    # Non interval function
+def merge_fraction(chrom1,x1,x2,chrom2,y1,y2):
+    """compute overlap of the interval y over interval x"""
 
-    """After identif"""
+    distance = (np.minimum(x2.values,y2.values) - np.maximum(x1.values,y1.values))
 
 
-    distance = (abs(start1 - start2) + abs(end1 - end2))
 
-    one_overlap_two = 1 - (distance / (end1 - start1))
-    two_overlap_one = 1 - (distance / (end2 - start2))
+    one_overlap_two = distance/(y2.values-y1.values)
 
-    return (one_overlap_two + two_overlap_one)
+    two_overlap_one = distance/(x2.values-x1.values)
+
+
+    # check if they are on the same chromosome and the amount of overlap if so
+    return(pd.Series(chrom1 == chrom2) + pd.Series(two_overlap_one.clip(0)) + pd.Series(one_overlap_two.clip(0)))
 
 
 def iteration_merge(only_discordants,results):
@@ -1053,16 +1056,22 @@ def iteration_merge(only_discordants,results):
     discordant_bed = bt.BedTool(only_discordants)
     unparsed_bed = bt.BedTool(results)
 
+
     unparsed_pd = unparsed_bed.to_dataframe(
         names=['chrom', 'start', 'end', 'read', 'iteration', 'discordants'])
 
-    grouped = unparsed_pd.groupby(fraction(unparsed_pd.start, unparsed_pd.start.shift(),
-                                           unparsed_pd.end, unparsed_pd.end.shift(),
-                                           unparsed_pd.iteration,
-                                           unparsed_pd.iteration.shift()).lt(2.98).cumsum()).agg(
-        {'chrom': 'first', 'start': 'first', 'end': 'last', 'discordants': 'max', 'read': 'nunique'})
+    unparsed_pd = unparsed_pd.sort_values(['iteration','chrom','start','end']).reset_index()
+
+
+    grouped = unparsed_pd.groupby(merge_fraction(unparsed_pd.iteration.shift(), unparsed_pd.start.shift(),
+                                           unparsed_pd.end.shift(), unparsed_pd.iteration,
+                                           unparsed_pd.start,
+                                           unparsed_pd.end).lt(2.90).cumsum()).agg(
+        {'chrom': 'first', 'start': 'min', 'end': 'max', 'discordants': 'max', 'read': 'nunique'})
 
     bedtool_output = bt.BedTool.from_dataframe(grouped)
+    print(bedtool_output)
+
 
     bed_to_write = bedtool_output.cat(discordant_bed, postmerge=False)
 
@@ -1075,13 +1084,13 @@ def iteration_merge(only_discordants,results):
 def merge_final_output(results,begin,splits,dir):
 
 
-
-
     print("Writting final output to disk")
 
     os.chdir("temp_files/")
 
     unparsed_bed = bt.BedTool(results)
+    unparsed_bed.saveas('testing_final_merge.bed')
+    #print(unparsed_bed)
 
 
 
@@ -1090,12 +1099,12 @@ def merge_final_output(results,begin,splits,dir):
 
 
 
-    second_merging_round = unparsed_pd.sort_values(by=['chrom', 'start', 'end'])
+    second_merging_round = unparsed_pd.sort_values(['chrom', 'start', 'end']).reset_index()
 
     final_output = second_merging_round.groupby(
-        second_merge(second_merging_round.start, second_merging_round.start.shift(),
-                     second_merging_round.end, second_merging_round.end.shift()).lt(1.98).cumsum()).agg(
-        {'chrom': 'first', 'start': 'first', 'end': 'last', 'discordants': 'max', 'sc': 'sum'})
+        merge_fraction(second_merging_round.chrom.shift(), second_merging_round.start.shift(),
+                     second_merging_round.end.shift(),second_merging_round.chrom,second_merging_round.start,second_merging_round.end).lt(2.9).cumsum()).agg(
+        {'chrom': 'first', 'start': 'min', 'end': 'max', 'discordants' : 'max', 'sc': 'sum'})
 
     unfiltered_output = bt.BedTool.from_dataframe(final_output)
 
@@ -1132,12 +1141,10 @@ def write_to_disk(partial_bed,output,locker,dir):
     os.chdir("%s/temp_files/" % dir)
     output_bed = bt.BedTool('%s' % output)
     writer_bed = output_bed.cat(partial_bed,postmerge=False)
-    print(writer_bed)
     print("Writting to disk %s circles" % len(writer_bed))
     writer_bed.saveas('%s' % output)
     os.chdir("%s" % dir)
     locker.release()
-
 
 def start_realign(circle_bam,output,threads,verbose):
     """a"""
@@ -1185,7 +1192,7 @@ def check_size_and_write(results,only_discortants,output,lock,directory):
 
     else:
 
-        partial_bed = iteration_(only_discortants, results)
+        partial_bed = iteration_merge(only_discortants, results)
 
         print("Writting %s circular intervals to disk" % len(partial_bed))
         write_to_disk(partial_bed,output,lock,directory)
@@ -1207,8 +1214,8 @@ def merge_coverage_bed(results):
     sort = unparsed_pd.sort_values(by=['chrom', 'start', 'end'])
 
     final_output = sort.groupby(
-        second_merge(sort.start, sort.start.shift(),
-                     sort.end, sort.end.shift()).lt(1.6).cumsum()).agg(
+        merge_fraction(sort.chrom, sort.start,
+                     sort.end,sort.chrom.shift(),sort.start.shift(),sort.end.shift()).lt(2.6).cumsum()).agg(
         {'chrom': 'first', 'start': 'first', 'end': 'last','item': 'sum'})
 
     bedtool_output = bt.BedTool.from_dataframe(final_output)
@@ -1226,3 +1233,13 @@ def filter_by_ratio(eccdna_bed,cutoff):
             filtered.append(interval)
 
     return(bt.BedTool(filtered))
+
+def merge_bed(discordants_pd):
+    """Function that takes as input a bed file and returns a pandas dataframe indicating if files should be merged. This
+    function will merge everything that is overlapping by at least 1bp"""
+    #check range overlap
+    overlap = ((discordants_pd.start - discordants_pd.shift().end) - 1).lt(0)
+    #check chr overlap
+    chr_overlap = (discordants_pd.chrom == discordants_pd.shift().chrom)
+    #if both bools are succesful returns a 2
+    return ((overlap * 1 + chr_overlap * 1).lt(2).cumsum())

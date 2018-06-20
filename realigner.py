@@ -323,25 +323,13 @@ class realignment:
     
                     elif len(iteration_discordants) > 0:
                             discordant_bed = pd.DataFrame.from_records(iteration_discordants,columns=['chrom','start','end','read']).sort_values(['chrom','start','end'])
-                            discordant_bed = bt.BedTool.from_dataframe(discordant_bed)
-                            discordant_bed = discordant_bed.sort().merge(c=1, o='count')
-                            for interval in discordant_bed:
-                                interval.append(0)
-                                only_discordants.append(interval)
 
-                            #discordant_bed = discordant_bed.groupby(
-                            #    (discordant_bed.end - discordant_bed.start.shift()-1).lt(
-                            #        0).cumsum()).agg(
-                            #    {'chrom': 'first', 'start': 'first', 'end': 'last', 'read': 'count'})
-
-                            #print(discordant_bed)
-                            #print([disc_interval['chrom'],disc_interval['start'],disc_interval['end'],disc_interval['read']])
+                            discordant_bed = discordant_bed.groupby(merge_bed(discordant_bed)).agg(
+                                {'chrom': 'first', 'start': 'first', 'end': 'last', 'read': 'count'})
 
     
-                            #for index,disc_interval in discordant_bed.iterrows():
-                            #    print([disc_interval['chrom'], disc_interval['start'], disc_interval['end'],
-                            #           disc_interval['read']])
-                            #    only_discordants.append([disc_interval['chrom'],disc_interval['start'],disc_interval['end'],disc_interval['read']])
+                            for index,disc_interval in discordant_bed.iterrows():
+                                only_discordants.append([disc_interval['chrom'],disc_interval['start'],disc_interval['end'],disc_interval['read'],0])
 
 
             except BaseException as e:
@@ -361,7 +349,10 @@ class realignment:
         self.ecc_dna.close()
 
         #Write process output to disk
+        bt.BedTool(results).saveas('testing.bed')
         output = iteration_merge(only_discordants,results)
+
+
 
 
 
