@@ -349,8 +349,7 @@ class realignment:
         self.ecc_dna.close()
 
         #Write process output to disk
-        bt.BedTool(results).saveas('testing.bed')
-        output = iteration_merge(only_discordants,results)
+        output = iteration_merge(only_discordants,results,self.overlap_fraction)
 
 
 

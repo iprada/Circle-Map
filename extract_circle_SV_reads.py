@@ -45,7 +45,7 @@ class readExtractor:
         os.chdir(self.working_dir)
 
         #input
-        raw_bam = ps.AlignmentFile(self.working_dir + self.sorted_bam, "rb")
+        raw_bam = ps.AlignmentFile(self.working_dir + "/" + self.sorted_bam, "rb")
 
         #HD the tag for the header line. SO indicates sorting order of the alignements
         if 'HD' in raw_bam.header:
@@ -69,7 +69,7 @@ class readExtractor:
 
 
 
-        circle_sv_reads = ps.AlignmentFile(self.working_dir + self.output_bam, "wb", template=raw_bam)
+        circle_sv_reads = ps.AlignmentFile(self.working_dir + "/" + self.output_bam , "wb", template=raw_bam)
 
 
         #modify the tag to unsorted

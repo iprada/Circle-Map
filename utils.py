@@ -1049,9 +1049,9 @@ def merge_fraction(chrom1,x1,x2,chrom2,y1,y2):
     return(pd.Series(chrom1 == chrom2) + pd.Series(two_overlap_one.clip(0)) + pd.Series(one_overlap_two.clip(0)))
 
 
-def iteration_merge(only_discordants,results):
-    """a"""
-
+def iteration_merge(only_discordants,results,fraction):
+    """finction that merges the results of every iteration"""
+    norm_fraction = (fraction * 2) + 1
 
     discordant_bed = bt.BedTool(only_discordants)
     unparsed_bed = bt.BedTool(results)
@@ -1066,7 +1066,7 @@ def iteration_merge(only_discordants,results):
     grouped = unparsed_pd.groupby(merge_fraction(unparsed_pd.iteration.shift(), unparsed_pd.start.shift(),
                                            unparsed_pd.end.shift(), unparsed_pd.iteration,
                                            unparsed_pd.start,
-                                           unparsed_pd.end).lt(2.90).cumsum()).agg(
+                                           unparsed_pd.end).lt(norm_fraction).cumsum()).agg(
         {'chrom': 'first', 'start': 'min', 'end': 'max', 'discordants': 'max', 'read': 'nunique'})
 
     bedtool_output = bt.BedTool.from_dataframe(grouped)
@@ -1081,15 +1081,17 @@ def iteration_merge(only_discordants,results):
 
 
 
-def merge_final_output(results,begin,splits,dir):
+def merge_final_output(results,begin,splits,dir,fraction):
 
 
     print("Writting final output to disk")
 
     os.chdir("temp_files/")
 
+    # multiply *2 for reciprocal overlap +1 to check chromosome
+    norm_fraction = (fraction*2)+1
+
     unparsed_bed = bt.BedTool(results)
-    unparsed_bed.saveas('testing_final_merge.bed')
     #print(unparsed_bed)
 
 
@@ -1103,7 +1105,7 @@ def merge_final_output(results,begin,splits,dir):
 
     final_output = second_merging_round.groupby(
         merge_fraction(second_merging_round.chrom.shift(), second_merging_round.start.shift(),
-                     second_merging_round.end.shift(),second_merging_round.chrom,second_merging_round.start,second_merging_round.end).lt(2.9).cumsum()).agg(
+                     second_merging_round.end.shift(),second_merging_round.chrom,second_merging_round.start,second_merging_round.end).lt(norm_fraction).cumsum()).agg(
         {'chrom': 'first', 'start': 'min', 'end': 'max', 'discordants' : 'max', 'sc': 'sum'})
 
     unfiltered_output = bt.BedTool.from_dataframe(final_output)
@@ -1118,7 +1120,7 @@ def merge_final_output(results,begin,splits,dir):
 
     filtered_output = bt.BedTool(filtered)
 
-
+    os.chdir("%s" % dir)
 
 
     print("Finished!")
@@ -1130,6 +1132,8 @@ def merge_final_output(results,begin,splits,dir):
 
     print("\nCircle-Map realign finished indentifying circles in %s \n" % total_time)
     print("\nCircle-Map has identified %s circles\n" % len(filtered_output))
+
+
 
     return(filtered_output)
 
@@ -1173,8 +1177,9 @@ def start_realign(circle_bam,output,threads,verbose):
 
     command = [" cd temp_files ; bedtools split -n %s -p splitted -i peaks.bed ; cd .." % threads]
     sp.call(command, shell=True)
-
-    sp.call("touch temp_files/%s" % output, shell=True)
+    os.chdir("temp_files")
+    sp.call("touch %s" % output, shell=True)
+    os.chdir("../")
 
     splitted = [bt.BedTool(file) for file in glob.glob("temp_files/splitted*bed")]
 
@@ -1216,7 +1221,7 @@ def merge_coverage_bed(results):
     final_output = sort.groupby(
         merge_fraction(sort.chrom, sort.start,
                      sort.end,sort.chrom.shift(),sort.start.shift(),sort.end.shift()).lt(2.6).cumsum()).agg(
-        {'chrom': 'first', 'start': 'first', 'end': 'last','item': 'sum'})
+        {'chrom': 'first', 'start': 'min', 'end': 'max','item': 'sum'})
 
     bedtool_output = bt.BedTool.from_dataframe(final_output)
 

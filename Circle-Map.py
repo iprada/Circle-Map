@@ -17,9 +17,9 @@ from utils import merge_final_output,filter_by_ratio
 from coverage import coverage
 import multiprocessing as mp
 import pybedtools as bt
-if not os.path.exists('pybedtools_temp'):
-    os.makedirs(os.getcwd() + "/" + 'pybedtools_temp')
-bt.set_tempdir(os.getcwd() + "/" + 'pybedtools_temp')
+
+
+
 
 
 
@@ -100,7 +100,9 @@ Commands:
                 self.subprogram = self.args_readextractor()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
 
-                object = readExtractor(self.args.i,self.args.output,self.args.dir,self.args.quality,self.args.nodiscordant,
+
+
+                object = readExtractor(self.args.i,self.args.output,self.args.directory,self.args.quality,self.args.nodiscordant,
                                        self.args.nohardclipped,self.args.nosoftclipped,self.args.verbose,self.subprogram)
                 object.extract_sv_circleReads()
 
@@ -108,7 +110,10 @@ Commands:
                 self.subprogram = self.args_realigner()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
 
+
+
                 splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads,self.args.verbose)
+
 
 
 
@@ -144,7 +149,7 @@ Commands:
                     for p in jobs:
                         p.join()
 
-                    output = merge_final_output("%s" % self.args.output, begin,self.args.split,self.args.directory)
+                    output = merge_final_output("%s" % self.args.output, begin,self.args.split,self.args.directory,self.args.merge_fraction)
 
 
                     # compute coverage statistics
@@ -161,6 +166,8 @@ Commands:
                         output.saveas("%s" % self.args.output)
 
             elif sys.argv[1] == "Repeats":
+
+
 
                 self.subprogram = self.args_repeats()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
@@ -197,13 +204,13 @@ Commands:
 
 
         required.add_argument('-i', metavar='', help="Input: query name sorted bam file")
-
-
-        if "-i" in sys.argv:
-
-            optional.add_argument('-o', '--output', metavar='',
+        required.add_argument('-o', '--output', metavar='',
                               help="Ouput: Reads indicating circular DNA structural variants",
                               default="circle_%s" % sys.argv[sys.argv.index("-i") + 1])
+
+
+        if "-i" and "-o" in sys.argv:
+
 
             optional.add_argument('-dir', '--directory',metavar='',
                                   help="Working directory, default is the working directory",
@@ -234,8 +241,6 @@ Commands:
                                   choices=[1, 2, 3],default=3)
 
         else:
-            optional.add_argument('-o', '--output', metavar='',
-                                  help="Ouput: Reads indicating circular DNA structural variants")
 
             optional.add_argument('-dir', '--directory', metavar='',help="Working directory, default is the working directory",
                                   default=os.getcwd())
@@ -268,7 +273,7 @@ Commands:
             parser.print_help()
 
             time.sleep(0.01)
-            sys.stderr.write("\nNo input input given to readExtractor, be sure that you are providing the flag '-i'"
+            sys.stderr.write("\nNo input or output input given to readExtractor, be sure that you are providing the flags'-i' and '-o'"
                              "\nExiting\n")
             sys.exit(1)
 
@@ -363,7 +368,7 @@ Commands:
 
             interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
                                          help="Fraction to merge the SC and SA called intervals. Default 0.99",
-                                         default=0.99)
+                                         default=0.95)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
                                   help="Skip intervals where the probability of been the mate is less than the cutoff. Default: 0.01",
@@ -465,7 +470,7 @@ Commands:
 
             interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
                                         help="Fraction to merge the SC and SA called intervals. Default 0.99",
-                                        default=0.99)
+                                        default=0.95)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
                                   help="Skip intervals where the probability of been the mate is less than the cutoff. Default: 0.01",
@@ -645,3 +650,5 @@ Commands:
 
 if __name__ == '__main__':
     circle_map()
+    #clean
+    os.system("rm -rf temp_files")
