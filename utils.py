@@ -1204,24 +1204,30 @@ def check_size_and_write(results,only_discortants,output,lock,directory):
 
         return(True)
 
-def merge_coverage_bed(results):
+def merge_coverage_bed(results,frac):
 
     """Function that takes as bed file containing the coordinates of the double mapped reads and
     returns the merged bed file containing the information about the clusters"""
 
-    unparsed_bed = bt.BedTool(results)
+    fraction = (frac*2)+1
 
-    unparsed_pd = unparsed_bed.to_dataframe(
-        names=['chrom', 'start', 'end','item'])
-
+    unparsed_pd = pd.DataFrame.from_records(results,columns=['chrom', 'start', 'end','item'])
 
 
-    sort = unparsed_pd.sort_values(by=['chrom', 'start', 'end'])
 
-    final_output = sort.groupby(
+    sort = unparsed_pd.sort_values(by=['chrom', 'start', 'end']).reset_index(drop=True)
+
+    merging_out  = sort.groupby(
         merge_fraction(sort.chrom, sort.start,
-                     sort.end,sort.chrom.shift(),sort.start.shift(),sort.end.shift()).lt(2.6).cumsum()).agg(
+                     sort.end,sort.chrom.shift(),sort.start.shift(),sort.end.shift()).lt(fraction).cumsum()).agg(
         {'chrom': 'first', 'start': 'min', 'end': 'max','item': 'sum'})
+
+    merging_out = merging_out.sort_values(by=['chrom', 'start', 'end']).reset_index(drop=True)
+
+    final_output = merging_out.groupby(
+        merge_fraction(merging_out.chrom, merging_out.start,
+                       merging_out.end, merging_out.chrom.shift(), merging_out.start.shift(),merging_out.end.shift()).lt(fraction).cumsum()).agg(
+        {'chrom': 'first', 'start': 'first', 'end': 'last', 'item': 'sum'})
 
     bedtool_output = bt.BedTool.from_dataframe(final_output)
 

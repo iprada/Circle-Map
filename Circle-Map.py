@@ -175,7 +175,7 @@ Commands:
                 if self.args.directory[-1:] != "/":
                     self.args.dir = self.args.directory + "/"
 
-                object = repeat(self.args.i,self.args.directory,self.args.mismatch)
+                object = repeat(self.args.i,self.args.directory,self.args.mismatch,self.args.fraction)
                 bed = object.find_circles()
                 coverage_object = coverage(self.args.i, bed, self.args.bases, self.args.cmapq,
                                            self.args.extension, self.args.directory)
@@ -367,7 +367,7 @@ Commands:
             #Interval options
 
             interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
-                                         help="Fraction to merge the SC and SA called intervals. Default 0.99",
+                                         help="Fraction to merge the SC and SA called intervals. Default 0.95",
                                          default=0.95)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
@@ -469,7 +469,7 @@ Commands:
 
 
             interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
-                                        help="Fraction to merge the SC and SA called intervals. Default 0.99",
+                                        help="Fraction to merge the SC and SA called intervals. Default 0.95",
                                         default=0.95)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
@@ -586,6 +586,10 @@ Commands:
                                       help="Minimum in/out required ratio. Default: 0.6",
                                       default=0.6)
 
+            optional.add_argument('-f', '--fraction', type=float, metavar='',
+                                  help="Required fraction to merge the intervals of the double mapped reads. Default 0.8",
+                                  default=0.8)
+
 
 
         else:
@@ -619,6 +623,10 @@ Commands:
             optional.add_argument('-r', '--ratio', type=float, metavar='',
                                       help="Minimum in/out required ratio. Default: 0.6",
                                       default=0.6)
+
+            optional.add_argument('-f', '--fraction', type=float, metavar='',
+                                  help="Required fraction to merge the intervals of the double mapped reads. Default 0.8",
+                                  default=0.8)
 
 
 
