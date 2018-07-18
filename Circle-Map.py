@@ -1,4 +1,4 @@
-#!/home/iprada/bin/miniconda3/bin/python3.6
+#!/binf-isilon/kroghgrp/xsh723/scratch/anaconda/bin/python3.6
 from __future__ import division
 from utils import start_realign
 #Author Inigo Prada Luengo
@@ -175,7 +175,7 @@ Commands:
                 if self.args.directory[-1:] != "/":
                     self.args.dir = self.args.directory + "/"
 
-                object = repeat(self.args.i,self.args.directory,self.args.mismatch,self.args.fraction)
+                object = repeat(self.args.i,self.args.directory,self.args.mismatch,self.args.fraction,self.args.read_number)
                 bed = object.find_circles()
                 coverage_object = coverage(self.args.i, bed, self.args.bases, self.args.cmapq,
                                            self.args.extension, self.args.directory)
@@ -590,6 +590,10 @@ Commands:
                                   help="Required fraction to merge the intervals of the double mapped reads. Default 0.8",
                                   default=0.8)
 
+            optional.add_argument('-n', '--read_number', metavar='',
+                                  help="Minimum number of reads required to output",
+                                  default=20)
+
 
 
         else:
@@ -627,6 +631,10 @@ Commands:
             optional.add_argument('-f', '--fraction', type=float, metavar='',
                                   help="Required fraction to merge the intervals of the double mapped reads. Default 0.8",
                                   default=0.8)
+
+            optional.add_argument('-n', '--read_number', metavar='',
+                                  help="Minimum number of reads required to output",
+                                  default=20)
 
 
 

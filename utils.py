@@ -1188,7 +1188,7 @@ def start_realign(circle_bam,output,threads,verbose):
 
 
 
-def check_size_and_write(results,only_discortants,output,lock,directory):
+def check_size_and_write(results,only_discortants,output,lock,directory,fraction):
 
 
     if sys.getsizeof(results) < 100000000:
@@ -1197,14 +1197,14 @@ def check_size_and_write(results,only_discortants,output,lock,directory):
 
     else:
 
-        partial_bed = iteration_merge(only_discortants, results)
+        partial_bed = iteration_merge(only_discortants, results,fraction)
 
         print("Writting %s circular intervals to disk" % len(partial_bed))
         write_to_disk(partial_bed,output,lock,directory)
 
         return(True)
 
-def merge_coverage_bed(results,frac):
+def merge_coverage_bed(results,frac,number):
 
     """Function that takes as bed file containing the coordinates of the double mapped reads and
     returns the merged bed file containing the information about the clusters"""
@@ -1222,12 +1222,21 @@ def merge_coverage_bed(results,frac):
                      sort.end,sort.chrom.shift(),sort.start.shift(),sort.end.shift()).lt(fraction).cumsum()).agg(
         {'chrom': 'first', 'start': 'min', 'end': 'max','item': 'sum'})
 
+    merging_out = merging_out.drop(merging_out[merging_out.item < number].index)
+
     merging_out = merging_out.sort_values(by=['chrom', 'start', 'end']).reset_index(drop=True)
+
+
+
+
+
+
 
     final_output = merging_out.groupby(
         merge_fraction(merging_out.chrom, merging_out.start,
                        merging_out.end, merging_out.chrom.shift(), merging_out.start.shift(),merging_out.end.shift()).lt(fraction).cumsum()).agg(
-        {'chrom': 'first', 'start': 'first', 'end': 'last', 'item': 'sum'})
+        {'chrom': 'first', 'start': 'min', 'end': 'last', 'item': 'sum'})
+
 
     bedtool_output = bt.BedTool.from_dataframe(final_output)
 

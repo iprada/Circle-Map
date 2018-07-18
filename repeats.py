@@ -9,11 +9,12 @@ class repeat:
     """Class for indentifying repeat derived eccDNA by looking of the reads with two alignments"""
 
 
-    def __init__(self,bam,directory,mismatch,fraction):
+    def __init__(self,bam,directory,mismatch,fraction,read_number):
         self.bam = bam
         self.dir = directory
         self.mismatch = mismatch
         self.fraction = fraction
+        self.number = read_number
 
     def find_circles(self):
 
@@ -55,7 +56,7 @@ class repeat:
 
                             else:
 
-                                interval = [chrom,read.reference_start,rightmost_from_sa(aln,tag[0].split(',')[2]),1]                               
+                                interval = [chrom,read.reference_start,rightmost_from_sa(aln,tag[0].split(',')[2]),1]
                                 output.append(interval)
 
 
@@ -64,7 +65,7 @@ class repeat:
 
 
 
-        bed = merge_coverage_bed(output,self.fraction)
+        bed = merge_coverage_bed(output,self.fraction,self.number)
 
         #add dots to read metrics stats
 

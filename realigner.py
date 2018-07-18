@@ -133,7 +133,7 @@ class realignment:
         for index,interval in self.peaks.iterrows():
             
 
-            if check_size_and_write(results,only_discordants,self.output,self.lock,self.directory) == True:
+            if check_size_and_write(results,only_discordants,self.output,self.lock,self.directory,self.overlap_fraction) == True:
                 results = []
                 only_discordants = []
 
