@@ -1070,7 +1070,7 @@ def iteration_merge(only_discordants,results,fraction):
         {'chrom': 'first', 'start': 'min', 'end': 'max', 'discordants': 'max', 'read': 'nunique'})
 
     bedtool_output = bt.BedTool.from_dataframe(grouped)
-    print(bedtool_output)
+
 
 
     bed_to_write = bedtool_output.cat(discordant_bed, postmerge=False)
@@ -1092,8 +1092,6 @@ def merge_final_output(results,begin,splits,dir,fraction):
     norm_fraction = (fraction*2)+1
 
     unparsed_bed = bt.BedTool(results)
-    #print(unparsed_bed)
-
 
 
     unparsed_pd = unparsed_bed.to_dataframe(
