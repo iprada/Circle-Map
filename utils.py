@@ -1179,6 +1179,8 @@ def start_realign(circle_bam,output,threads,verbose):
     sp.call("touch %s" % output, shell=True)
     os.chdir("../")
 
+    #this releases from tmp file the unmerged and peak file
+    bt.cleanup()
     splitted = [bt.BedTool(file) for file in glob.glob("temp_files/splitted*bed")]
 
     return(splitted,sorted_bam,begin)

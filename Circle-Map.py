@@ -114,10 +114,6 @@ Commands:
 
                 splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads,self.args.verbose)
 
-
-
-
-
                 if __name__ == '__main__':
 
                     lock = mp.Lock()
