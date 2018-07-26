@@ -104,7 +104,7 @@ class realignment:
 
         begin = time.time()
 
-        os.chdir(self.directory)
+
 
 
 
@@ -139,7 +139,7 @@ class realignment:
 
             try:
 
-                #print(interval)
+
     
     
                 #find out the prior distribution (mate alignment positions).

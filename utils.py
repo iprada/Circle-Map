@@ -475,6 +475,7 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose):
                 # low mapping quality reads, do nothing
                 continue
 
+        #this function should return the candidate mates (realignment prior, discordant intervals/split read intervals and soft-clipped reads)
         return(candidate_mates)
 
     except BaseException as e:

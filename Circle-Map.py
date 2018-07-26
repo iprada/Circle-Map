@@ -111,7 +111,7 @@ Commands:
                 self.args = self.subprogram.parse_args(sys.argv[2:])
 
 
-
+                os.chdir(self.args.directory)
                 splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads,self.args.verbose)
 
                 if __name__ == '__main__':
