@@ -1,4 +1,4 @@
-#!/home/iprada/bin/miniconda3/bin/python3.6
+#!/home/iprada//bin/miniconda/bin/python3.6
 from __future__ import division
 from utils import start_realign
 #Author Inigo Prada Luengo

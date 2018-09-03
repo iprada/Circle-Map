@@ -218,7 +218,7 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose):
 
             ps.index("coordinate_%s" % input_bam_name)
 
-            bam = bt.BedTool("coordinate_%s" % input_bam_name)
+
 
 
 
@@ -235,7 +235,7 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose):
 
             ps.index("coordinate_%s" % input_bam_name)
 
-            bam = bt.BedTool("coordinate_%s" % input_bam_name)
+
 
         elif bam.header['HD']['SO'] == 'coordinate':
 
@@ -244,7 +244,7 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose):
 
             ps.index("%s" % input_bam_name)
 
-            bam = bt.BedTool("%s" % input_bam_name)
+
 
         else:
             if verbose < 2:
@@ -266,25 +266,11 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose):
 
     #from bam to BedGraph
 
-
-    peak_coverage = bam.genome_coverage(bg=True)
-
-    #sort (sanity) and merge, BedGraph to bed
-    peak_coverage = peak_coverage.to_dataframe(
-        names=['chrom', 'start', 'end', 'count'])
+    sp.call("bedtools genomecov -bg -ibam %s | sort -k 1,1 -k2,2n | mergeBed > temp_files/peaks.bed" %
+            input_bam_name,shell=True)
 
 
-    sorted_peak_coverage = peak_coverage.sort_values(by=['chrom', 'start', 'end'])
-
-    sorted_peak_coverage = bt.BedTool.from_dataframe(sorted_peak_coverage)
-
-    merged_peak_coverage = sorted_peak_coverage.merge()
-
-
-
-    #merged_peak_coverage = bt.BedTool("merged_t08.bed")
-
-    return(merged_peak_coverage,sorted_bam)
+    return(sorted_bam)
 
 
 def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose):
@@ -1164,10 +1150,9 @@ def start_realign(circle_bam,output,threads,verbose):
 
 
 
+    sorted_bam = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose)
 
-    circle_peaks,sorted_bam = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose)
 
-    circle_peaks.saveas("temp_files/peaks.bed")
 
 
     # split to cores
