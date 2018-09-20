@@ -25,6 +25,11 @@ import pybedtools as bt
 
 class circle_map:
 
+    def __getpid__(self):
+
+        pid = os.getpid()
+        return(pid)
+
     def __init__(self):
         self.parser = argparse.ArgumentParser(
             description='Circle-Map',
@@ -112,7 +117,7 @@ Commands:
 
 
                 os.chdir(self.args.directory)
-                splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads,self.args.verbose)
+                splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads,self.args.verbose,self.__getpid__())
 
                 if __name__ == '__main__':
 
@@ -128,7 +133,7 @@ Commands:
                                              self.args.gap_open,
                                              self.args.gap_ext, self.args.nhits, self.args.cut_off, self.args.min_sc,
                                              self.args.merge_fraction, self.args.interval_probability, self.args.output,
-                                             self.args.threads, splitted[core],lock,self.args.split,self.args.ratio,self.args.verbose)
+                                             self.args.threads, splitted[core],lock,self.args.split,self.args.ratio,self.args.verbose,self.__getpid__())
 
                         processes.append(object)
 
@@ -145,7 +150,7 @@ Commands:
                     for p in jobs:
                         p.join()
 
-                    output = merge_final_output("%s" % self.args.output, begin,self.args.split,self.args.directory,self.args.merge_fraction)
+                    output = merge_final_output("%s" % self.args.output, begin,self.args.split,self.args.directory,self.args.merge_fraction,self.__getpid__())
 
 
                     # compute coverage statistics
@@ -661,6 +666,8 @@ Commands:
 
 
 if __name__ == '__main__':
-    circle_map()
+
+    run = circle_map()
+    pid = run.__getpid__()
     #clean
-    os.system("rm -rf temp_files_%s" % os.getpid())
+    os.system("rm -rf temp_files_%s" % pid)

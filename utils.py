@@ -197,7 +197,7 @@ def genome_alignment_from_cigar(sa_cigar):
 
 
 
-def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose):
+def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid):
     """Function that takes as input a bam file and returns a merged bed file of the genome covered by the bam, it will create
     and index too"""
 
@@ -267,7 +267,7 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose):
     #from bam to BedGraph
 
     sp.call("bedtools genomecov -bg -ibam %s | sort -k 1,1 -k2,2n | mergeBed > temp_files_%s/peaks.bed" %
-            (input_bam_name,os.getpid()),shell=True)
+            (input_bam_name,pid),shell=True)
 
 
     return(sorted_bam)
@@ -1068,12 +1068,12 @@ def iteration_merge(only_discordants,results,fraction):
 
 
 
-def merge_final_output(results,begin,splits,dir,fraction):
+def merge_final_output(results,begin,splits,dir,fraction,pid):
 
 
     print("Writting final output to disk")
 
-    os.chdir("temp_files_%s/" % os.getpid())
+    os.chdir("temp_files_%s/" % pid)
 
     # multiply *2 for reciprocal overlap +1 to check chromosome
     norm_fraction = (fraction*2)+1
@@ -1123,11 +1123,11 @@ def merge_final_output(results,begin,splits,dir,fraction):
     return(filtered_output)
 
 
-def write_to_disk(partial_bed,output,locker,dir):
+def write_to_disk(partial_bed,output,locker,dir,pid):
 
 
     locker.acquire()
-    os.chdir("%s/temp_files_%s/" % (dir,os.getpid()))
+    os.chdir("%s/temp_files_%s/" % (dir,pid))
     output_bed = bt.BedTool('%s' % output)
     writer_bed = output_bed.cat(partial_bed,postmerge=False)
     print("Writting to disk %s circles" % len(writer_bed))
@@ -1135,7 +1135,7 @@ def write_to_disk(partial_bed,output,locker,dir):
     os.chdir("%s" % dir)
     locker.release()
 
-def start_realign(circle_bam,output,threads,verbose):
+def start_realign(circle_bam,output,threads,verbose,pid):
     """a"""
 
     begin = time.time()
@@ -1146,11 +1146,11 @@ def start_realign(circle_bam,output,threads,verbose):
 
     eccdna_bam = ps.AlignmentFile("%s" % circle_bam, "rb")
 
-    sp.call("mkdir temp_files_%s" % os.getpid(), shell=True)
+    sp.call("mkdir temp_files_%s" % pid, shell=True)
 
 
 
-    sorted_bam = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose)
+    sorted_bam = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose,pid)
 
 
 
@@ -1159,22 +1159,22 @@ def start_realign(circle_bam,output,threads,verbose):
 
     print("\nSplitting coverage file to cores\n")
 
-    command = [" cd temp_files_%s ; bedtools split -n %s -p splitted -i peaks.bed ; cd .." % (os.getpid(),threads)]
+    command = [" cd temp_files_%s ; bedtools split -n %s -p splitted -i peaks.bed ; cd .." % (pid,threads)]
     sp.call(command, shell=True)
-    os.chdir("temp_files_%s" % os.getpid())
+    os.chdir("temp_files_%s" % pid)
     sp.call("touch %s" % output, shell=True)
     os.chdir("../")
 
     #this releases from tmp file the unmerged and peak file
     bt.cleanup()
-    splitted = [bt.BedTool(file) for file in glob.glob("temp_files_%s/splitted*bed" % os.getpid())]
+    splitted = [bt.BedTool(file) for file in glob.glob("temp_files_%s/splitted*bed" % pid)]
 
     return(splitted,sorted_bam,begin)
 
 
 
 
-def check_size_and_write(results,only_discortants,output,lock,directory,fraction):
+def check_size_and_write(results,only_discortants,output,lock,directory,fraction,pid):
 
 
     if sys.getsizeof(results) < 100000000:
@@ -1186,7 +1186,7 @@ def check_size_and_write(results,only_discortants,output,lock,directory,fraction
         partial_bed = iteration_merge(only_discortants, results,fraction)
 
         print("Writting %s circular intervals to disk" % len(partial_bed))
-        write_to_disk(partial_bed,output,lock,directory)
+        write_to_disk(partial_bed,output,lock,directory,pid)
 
         return(True)
 

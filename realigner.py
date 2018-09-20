@@ -15,7 +15,7 @@ class realignment:
 
     def __init__(self, input_bam,qname_bam,sorted_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
                  insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,min_soft_clipped_length,overlap_frac,
-                 interval_p_cut, output_name,ncores,circle_peaks,locker,split,ratio,verbose):
+                 interval_p_cut, output_name,ncores,circle_peaks,locker,split,ratio,verbose,pid):
         #I/O
         self.ecc_dna = input_bam
         self.qname_bam = qname_bam
@@ -59,6 +59,10 @@ class realignment:
         #this two parameters don't work on this class. They are here for printing the parameters
         self.split = split
         self.ratio = ratio
+
+        #for instances running on the same directoiry
+
+        self.pid = pid
 
 
 
@@ -133,7 +137,7 @@ class realignment:
         for index,interval in self.peaks.iterrows():
             
 
-            if check_size_and_write(results,only_discordants,self.output,self.lock,self.directory,self.overlap_fraction) == True:
+            if check_size_and_write(results,only_discordants,self.output,self.lock,self.directory,self.overlap_fraction,self.pid) == True:
                 results = []
                 only_discordants = []
 
@@ -355,7 +359,7 @@ class realignment:
 
 
 
-        write_to_disk(output,self.output,self.lock,self.directory)
+        write_to_disk(output,self.output,self.lock,self.directory,self.pid)
 
 
 
