@@ -1249,3 +1249,32 @@ def merge_bed(discordants_pd):
     chr_overlap = (discordants_pd.chrom == discordants_pd.shift().chrom)
     #if both bools are succesful returns a 2
     return ((overlap * 1 + chr_overlap * 1).lt(2).cumsum())
+
+def assign_discordants(split_bed,discordant_bed):
+
+
+    if len(discordant_bed) > 0:
+        assigned_splits = []
+        for i in split_bed:
+            discordants = 0
+            for j in discordant_bed:
+                if i[0] == j[0]:
+                    if i[1] < j[1] and i[2] > j[2]:
+                        discordants +=1
+
+            i.append(discordants)
+            assigned_splits.append(i)
+
+        return (assigned_splits)
+
+    else:
+        assigned_splits = []
+        for i in split_bed:
+            i.append(0)
+            assigned_splits.append(i)
+        return (assigned_splits)
+
+
+
+
+

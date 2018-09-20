@@ -319,11 +319,9 @@ class realignment:
     
                     #second pass to add discordant read info
                     if len(iteration_results) > 0:
-    
-                        for each_results in iteration_results:
-                            #append number of discordants in the sc/sa interval
-                            each_results.append(disorcordants_per_it)
-                            results.append(each_results)
+
+                        results = results + assign_discordants(iteration_results,iteration_discordants)
+
     
                     elif len(iteration_discordants) > 0:
                             discordant_bed = pd.DataFrame.from_records(iteration_discordants,columns=['chrom','start','end','read']).sort_values(['chrom','start','end'])
@@ -337,6 +335,7 @@ class realignment:
 
 
             except BaseException as e:
+
 
                 if self.verbose < 2:
 
@@ -354,20 +353,4 @@ class realignment:
 
         #Write process output to disk
         output = iteration_merge(only_discordants,results,self.overlap_fraction)
-
-
-
-
-
         write_to_disk(output,self.output,self.lock,self.directory,self.pid)
-
-
-
-
-
-
-
-
-
-
-
