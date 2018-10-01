@@ -541,7 +541,6 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
         candidate_mates_dataframe = pd.DataFrame.from_records(bed_prior, columns=labels)
 
         read_types = candidate_mates_dataframe.read_type.unique()
-
         orientation = candidate_mates_dataframe.orientation.unique()
 
 
@@ -591,41 +590,80 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
         extended = []
 
 
-        for index,interval in candidate_mates.iterrows():
+        #if argmax is turn on interval_p is 0
+        if interval_p_cutoff == 0:
+            #argmax(probability)
 
-            if interval['probability']/sum >= interval_p_cutoff:
-
+            candidate_mates =  candidate_mates.loc[candidate_mates['probability'] == candidate_mates['probability'].max()]
+            for item,row in candidate_mates.iterrows():
                 if ('LR' in orientation) or ('L' and 'R' in orientation):
 
 
-                    start = interval['start'] - interval_extension
+                    start = row['start'] - interval_extension
 
-                    end = interval['end'] + interval_extension
+                    end = row['end'] + interval_extension
 
                     if start < 0:
-                        extended.append([interval['chrom'], str(0), int(round(end))])
+                        extended.append([row['chrom'], str(0), int(round(end))])
 
                     else:
-                        extended.append([interval['chrom'], int(round(start)), int(round(end))])
+                        extended.append([row['chrom'], int(round(start)), int(round(end))])
 
                 elif 'L' in orientation:
 
-                    start = interval['start'] - interval_extension
+                    start = row['start'] - interval_extension
 
                     if start < 0:
-                        extended.append([interval['chrom'], str(0), interval.end])
+                        extended.append([row['chrom'], str(0), row['end']])
 
                     else:
-                        extended.append([interval['chrom'], int(round(start)), interval.end])
+                        extended.append([row['chrom'], int(round(start)), row['end']])
 
                 elif 'R' in orientation:
 
-                    end = interval['end'] + interval_extension
+                    end = row['end'] + interval_extension
 
-                    extended.append([interval['chrom'], interval['start'], int(round(end))])
+                    extended.append([row['chrom'], row['start'], int(round(end))])
+
+                return (pd.DataFrame.from_records(extended, columns=['chrom', 'start', 'end']))
+
+        else:
+
+            for index,interval in candidate_mates.iterrows():
+
+                if interval['probability']/sum >= interval_p_cutoff:
+
+                    if ('LR' in orientation) or ('L' and 'R' in orientation):
 
 
-        return(pd.DataFrame.from_records(extended,columns=['chrom','start','end']))
+                        start = interval['start'] - interval_extension
+
+                        end = interval['end'] + interval_extension
+
+                        if start < 0:
+                            extended.append([interval['chrom'], str(0), int(round(end))])
+
+                        else:
+                            extended.append([interval['chrom'], int(round(start)), int(round(end))])
+
+                    elif 'L' in orientation:
+
+                        start = interval['start'] - interval_extension
+
+                        if start < 0:
+                            extended.append([interval['chrom'], str(0), interval['end']])
+
+                        else:
+                            extended.append([interval['chrom'], int(round(start)), interval['end']])
+
+                    elif 'R' in orientation:
+
+                        end = interval['end'] + interval_extension
+
+                        extended.append([interval['chrom'], interval['start'], int(round(end))])
+
+
+            return(pd.DataFrame.from_records(extended,columns=['chrom','start','end']))
 
 
     except BaseException as e:
