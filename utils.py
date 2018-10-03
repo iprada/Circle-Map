@@ -1025,11 +1025,12 @@ def realignment_probability(hit_dict,interval_length):
 
     best_hit = hit_dict['alignments'][1][2]
 
+    #this might be included on the denominator
     regularizer = (interval_length * phred_to_prob(hit_dict['mapq_prior']))/(1- phred_to_prob(hit_dict['mapq_prior']))
 
 
 
-    posterior = 2**best_hit/(np.sum((2**value[2]) for key,value in hit_dict['alignments'].items()) + regularizer)
+    posterior = 2**best_hit/(np.sum((2**value[2]) for key,value in hit_dict['alignments'].items())+regularizer)
 
     return(posterior)
 

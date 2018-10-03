@@ -258,7 +258,7 @@ class realignment:
                                             else:
     
     
-                                                if realignment_probability(realignment_dict,interval_length) >= (1 - self.prob_cutoff):
+                                                if realignment_probability(realignment_dict,interval_length) >= self.prob_cutoff:
     
                                                     # here I have to retrieve the nucleotide mapping positions. Which should be the
                                                     # the left sampling pysam coordinate - edlib coordinates
