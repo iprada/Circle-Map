@@ -266,8 +266,8 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid):
 
     #from bam to BedGraph
 
-    sp.call("bedtools genomecov -bg -ibam %s | sort -k 1,1 -k2,2n | mergeBed > temp_files_%s/peaks.bed" %
-            (input_bam_name,pid),shell=True)
+    sp.call("bedtools genomecov -bg -ibam %s | sort -T temp_files_%s -k 1,1 -k2,2n | mergeBed > temp_files_%s/peaks.bed" %
+            (input_bam_name,pid,pid),shell=True)
 
 
     return(sorted_bam)
