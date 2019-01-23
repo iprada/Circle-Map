@@ -17,6 +17,7 @@ from utils import merge_final_output,filter_by_ratio
 from coverage import coverage
 import multiprocessing as mp
 import pybedtools as bt
+from simulations import sim_ecc_reads
 
 
 
@@ -38,23 +39,24 @@ class circle_map:
 Author= Inigo Prada-Luengo
 version=1.0
 contact= https://github.com/iprada/Circle-Map/issues
-The Regenberg laboratory
 
 The Circle-Map suite
 
 Commands:
 
-   ReadExtractor     Extracts the reads indicating extrachromosomal circular DNA structural variants
+   ReadExtractor   Extracts the reads indicating extrachromosomal circular DNA structural variants
    Realign         Realign the soft-clipped reads and identify circular DNA
    Repeats         Identify eccDNA coming from repeat regions
+   Simulate        Simulate eccDNA from the genome
+   
 ''')
         subparsers = self.parser.add_subparsers()
 
         self.readextractor = subparsers.add_parser(
             name="ReadExtractor",
             description='Extracts the reads indicating extrachromosomal circular DNA structural variants',
-            prog="CircleMap ReadExtractor",
-            usage='''CircleMap ReadExtractor [options]
+            prog="Circle-Map ReadExtractor",
+            usage='''Circle-Map ReadExtractor [options]
 
                      Author= Inigo Prada-Luengo
                      version=1.0
@@ -67,8 +69,8 @@ Commands:
         self.realigner = subparsers.add_parser(
             name="Realign",
             description='Realigns the soft-clipped reads and indentifies circular DNA',
-            prog="CircleMap Realign",
-            usage='''CircleMap Realign [options]
+            prog="Circle-Map Realign",
+            usage='''Circle-Map Realign [options]
 
                              Author= Inigo Prada-Luengo
                              version=1.0
@@ -81,7 +83,7 @@ Commands:
         self.repeats = subparsers.add_parser(
             name="Repeats",
             description='Identify cluster of reads with two alignments',
-            prog="CircleMap Reepeats",
+            prog="CircleMap Repeats",
             usage='''CircleMap Repeats [options]
 
                              Author= Inigo Prada-Luengo
@@ -89,6 +91,19 @@ Commands:
                              contact= https://github.com/iprada/Circle-Map/issues
                              The Regenberg laboratory
                              '''
+
+        )
+        self.simulate = subparsers.add_parser(
+            name="Simulate",
+            description='Simulate eccDNA NGS datastes',
+            prog="CircleMap Reepeats",
+            usage='''CircleMap Simulate [options]
+
+                                     Author= Inigo Prada-Luengo
+                                     version=1.0
+                                     contact= https://github.com/iprada/Circle-Map/issues
+                                     The Regenberg laboratory
+                                     '''
 
         )
 
@@ -186,10 +201,43 @@ Commands:
                 filtered_output = filter_by_ratio(output, self.args.ratio)
                 filtered_output.saveas("%s" % self.args.output)
 
+            elif sys.argv[1] == "Simulate":
+                self.subprogram = self.args_simulate()
+                self.args = self.subprogram.parse_args(sys.argv[2:])
+
+                lock = mp.Lock()
 
 
+                paired_end_fastq_1 = open("%s_1.fastq" % self.args.base_name, "w")
+                paired_end_fastq_2 = open("%s_2.fastq" % self.args.base_name, "w")
 
+                if __name__ == '__main__':
+                    manager = mp.Manager()
+                    #Shared memory object
+                    circle_dict = manager.dict()
+                    jobs = []
+                    # init the processes
+                    for i in range(self.args.processes):
+                        p = mp.Process(target=sim_ecc_reads, args=(self.args.g,self.args.read_length,self.args.directory,
+                                                                   int(round(self.args.read_number/self.args.processes)),
+                                                                   self.args.base_name,
+                                                                   self.args.mean_insert_size,self.args.error,
+                                                                   self.args.mean_coverage,lock,i,circle_dict,
+                                                                   paired_end_fastq_1,paired_end_fastq_2,))
+                        jobs.append(p)
+                        p.start()
+                    # kill the process
+                    for p in jobs:
+                        p.join()
+                    print(circle_dict.values()[0])
+                    bt.BedTool((circle_dict.values()[0])).saveas(self.args.output)
 
+            else:
+                self.parser.print_help()
+                time.sleep(0.01)
+                sys.stderr.write("\nWrong argument given to Circle-Map"
+                                 "\nExiting\n")
+                sys.exit(1)
 
 
     def args_readextractor(self):
@@ -205,12 +253,12 @@ Commands:
 
 
         required.add_argument('-i', metavar='', help="Input: query name sorted bam file")
-        required.add_argument('-o', '--output', metavar='',
-                              help="Ouput: Reads indicating circular DNA structural variants",
-                              default="circle_%s" % sys.argv[sys.argv.index("-i") + 1])
 
 
-        if "-i" and "-o" in sys.argv:
+        if "-i" in sys.argv:
+            optional.add_argument('-o', '--output', metavar='',
+                                  help="Ouput: Reads indicating circular DNA structural variants",
+                                  default="circle_%s" % sys.argv[sys.argv.index("-i") + 1])
 
 
             optional.add_argument('-dir', '--directory',metavar='',
@@ -242,6 +290,8 @@ Commands:
                                   choices=[1, 2, 3],default=3)
 
         else:
+            optional.add_argument('-o', '--output', metavar='',
+                                  help="Ouput: Reads indicating circular DNA structural variants")
 
             optional.add_argument('-dir', '--directory', metavar='',help="Working directory, default is the working directory",
                                   default=os.getcwd())
@@ -660,6 +710,78 @@ Commands:
 
         return(parser)
 
+    def args_simulate(self):
+
+        parser = self.simulate
+
+        parser._action_groups.pop()
+        required = parser.add_argument_group('required arguments')
+        optional = parser.add_argument_group('optional arguments')
+        # prefixing the argument with -- means it's optional
+        # input and output
+
+        if "-g" in sys.argv:
+            required.add_argument('-g', metavar='',
+                                  help="Genome fasta file (Needs to be indexed with samtools faidx)")
+            optional.add_argument('-o','--output', default='simulated.bed',
+                                  help="Output file name")
+            optional.add_argument('-N', '--read-number',type=int,metavar='',
+                                  help="Number of reads to simulate")
+
+            optional.add_argument('-dir', '--directory', metavar='',
+                                  help="Working directory, default is the working directory",
+                                  default=os.getcwd())
+            optional.add_argument('-b', '--base-name', metavar='',default='simulated',
+                                  help="Fastq output basename")
+            optional.add_argument('-r', '--read-length', metavar='',type=int,default=150,
+                                  help="Read length to simulate")
+            optional.add_argument('-m', '--mean-insert-size', metavar='',type=int,default=300,
+                                  help="Mean of the insert size distribution")
+            optional.add_argument('-e', '--error', action='store_true',
+                                  help="Introduce sequencing errors ( Uses ART on the background)")
+            optional.add_argument('-c', '--mean-coverage',metavar='',type=int,default=30,
+                                  help="Mean sequencing coverage within the eccDNA coordinates")
+            optional.add_argument('-p', '--processes', metavar='',type=int,default=1,
+                                  help="Mean sequencing coverage within the eccDNA coordinates")
+        else:
+            required.add_argument('-g', metavar='',
+                                  help="Genome fasta file (Needs to be indexed with samtools faidx)")
+            optional.add_argument('-o','--output',default='simulated.bed',
+                                  help="Output file name")
+            optional.add_argument('-N', '--read-number',type=int,metavar='',
+                                  help="Number of reads to simulate")
+
+            optional.add_argument('-dir', '--directory', metavar='',
+                                  help="Working directory, default is the working directory",
+                                  default=os.getcwd())
+            optional.add_argument('-b', '--base-name', metavar='',default='simulated',
+                                  help="Fastq output basename")
+            optional.add_argument('-r', '--read-length', metavar='',type=int,default=150,
+                                  help="Read length to simulate")
+            optional.add_argument('-m', '--mean-insert', metavar='',type=int,default=300,
+                                  help="Mean of the insert size distribution")
+            optional.add_argument('-e', '--error', action='store_true',
+                                  help="Introduce sequencing errors ( Uses ART on the background)")
+            optional.add_argument('-c', '--mean-coverage', metavar='',type=int,default=30,
+                                  help="Mean sequencing coverage within the eccDNA coordinates")
+            optional.add_argument('-p', '--processes', metavar='',type=int,default=1,
+                                  help="Number of parallel processes to use")
+
+            parser.print_help()
+
+            time.sleep(0.01)
+            sys.stderr.write("\nNo input input given to Repeats, be sure that you are providing the flag '-i'"
+                             "\nExiting\n")
+            sys.exit(1)
+
+
+        if len(sys.argv[2:]) == 0:
+            parser.print_help()
+            time.sleep(0.01)
+            sys.stderr.write("\nNo arguments given to Simulate. Exiting\n")
+            sys.exit(1)
+
+        return(parser)
 
 
 
