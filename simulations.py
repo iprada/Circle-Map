@@ -9,6 +9,7 @@ from Bio.Alphabet import generic_dna
 import sys
 import pybedtools as bt
 import time
+import subprocess as sp
 
 def sim_ecc_reads(genome_fasta,read_length,directory,reads,fastq,insert_size,errors,mean_cov,locker,process,sim_circles,paired_end_fastq_1,paired_end_fastq_2):
     """Function that takes as arguments a genome fasta file, weights each chromosome based on the length
@@ -96,7 +97,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,fastq,insert_size,err
 
         #create class object outside the loop
         new_read = sim_paired_end(i, insert_size, genome_fasta, chr, chr_pos_start,
-                                  chr_pos_end, read_length, circle_number)
+                                  chr_pos_end, read_length, circle_number,process)
 
         #simulation rounds
         for each_sim in range(0,round(int(rounds_of_sim))):
@@ -142,7 +143,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,fastq,insert_size,err
                         i += 1
                         # sim the first read of the list
                         new_read = sim_paired_end(i, insert_size, genome_fasta, chr, chr_pos_start,
-                                                  chr_pos_end, read_length, circle_number)
+                                                  chr_pos_end, read_length, circle_number,process)
                         get_seq = new_read.simulate_read()
                         simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
                                                                                get_seq[2])
@@ -190,7 +191,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,fastq,insert_size,err
                         i += 1
                         #sim the first read of the list
                         new_read = sim_paired_end(i, insert_size, genome_fasta, chr, chr_pos_start,
-                                                  chr_pos_end, read_length, circle_number)
+                                                  chr_pos_end, read_length, circle_number,process)
                         get_seq = new_read.simulate_read()
                         simulated_reads = sim_paired_end.simulate_perfect_read(new_read, get_seq[0], get_seq[1],
                                                                                get_seq[2])
@@ -215,7 +216,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,fastq,insert_size,err
 class sim_paired_end:
 
     #init the class
-    def __init__(self,read_number,insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_length,circle_id):
+    def __init__(self,read_number,insert_size,genome_fa,chr,chr_pos_start,chr_pos_end,read_length,circle_id,process):
         self.read_number = read_number
         self.insert_size = insert_size
         self.genome_fa = genome_fa
@@ -224,6 +225,7 @@ class sim_paired_end:
         self.chr_pos_end = chr_pos_end
         self.read_length = read_length
         self.circle_id = circle_id
+        self.process = process
 
     def simulate_read(self):
         """Function that simulates perfect paired-end reads"""
@@ -334,30 +336,32 @@ class sim_paired_end:
         left_id = common_id + "space" + left_read_id
 
         # attemp to use art to simulate the quality scores and the error rate
-
-        left_fasta = open("left_read.fa", "w")
+        #create a one read genome
+        left_fasta = open("left_read_%s.fa" % self.process, "w")
         left_fasta.write(">" + left_id + "\n" + str(left_read) + "\n")
         # sim the read with art
         left_fasta.close()
-        os.system("art_illumina -ss HS25 -nf 0 -i left_read.fa -l %s -f 1 -o left > output" % self.read_length)
-        with open("left.fq", 'r') as left:
+        sp.call("art_illumina -q -na -ss HS25 -nf 0 -i left_read_%s.fa -l %s -f 1 -o left%s" %
+                (self.process,self.read_length,self.process),shell=True,stdout=sp.DEVNULL, stderr=sp.STDOUT)
+        with open("left%s.fq" % self.process, 'r') as left:
             left_read = left.read().replace('space', '   ').replace('1:N:0:CGCTGTG-1', '1:N:0:CGCTGTG')
+
 
         left_record = SeqIO.read(StringIO(left_read), "fastq")
         # get the reverse complement of the right read
         right_read = Seq(right_read, generic_dna)
         right_read = right_read.reverse_complement()
 
-        right_fasta = open("right_read.fa", "w")
+        right_fasta = open("right_read_%s.fa" % self.process, "w")
         right_fasta.write(">" + right_id + "\n" + str(right_read) + "\n")
         right_fasta.close()
         # sim the read with art
-        os.system("art_illumina -ss HS25  -nf 0 -i right_read.fa -l %s -f 1 -o right > output" % self.read_length)
-        with open("right.fq", 'r') as right:
+        sp.call("art_illumina -na -q -ss HS25  -nf 0 -i right_read_%s.fa -l %s -f 1 -o right%s" %
+                (self.process,self.read_length,self.process),shell=True,stdout=sp.DEVNULL, stderr=sp.STDOUT)
+        with open("right%s.fq" % self.process, 'r') as right:
             right_read = right.read().replace('space', '   ').replace('1:N:0:CGCTGTG-1', '2:N:0:CGCTGTG')
 
         right_record = SeqIO.read(StringIO(right_read), "fastq")
-
         return (left_record, right_record)
 
 

@@ -720,14 +720,13 @@ Commands:
         # prefixing the argument with -- means it's optional
         # input and output
 
-        if "-g" in sys.argv:
+        if "-g" and "-N" in sys.argv:
             required.add_argument('-g', metavar='',
                                   help="Genome fasta file (Needs to be indexed with samtools faidx)")
+            required.add_argument('-N', '--read-number', type=int, metavar='',
+                                  help="Number of reads to simulate")
             optional.add_argument('-o','--output', default='simulated.bed',
                                   help="Output file name")
-            optional.add_argument('-N', '--read-number',type=int,metavar='',
-                                  help="Number of reads to simulate")
-
             optional.add_argument('-dir', '--directory', metavar='',
                                   help="Working directory, default is the working directory",
                                   default=os.getcwd())
@@ -746,11 +745,10 @@ Commands:
         else:
             required.add_argument('-g', metavar='',
                                   help="Genome fasta file (Needs to be indexed with samtools faidx)")
+            required.add_argument('-N', '--read-number', type=int, metavar='',
+                                  help="Number of reads to simulate")
             optional.add_argument('-o','--output',default='simulated.bed',
                                   help="Output file name")
-            optional.add_argument('-N', '--read-number',type=int,metavar='',
-                                  help="Number of reads to simulate")
-
             optional.add_argument('-dir', '--directory', metavar='',
                                   help="Working directory, default is the working directory",
                                   default=os.getcwd())
@@ -770,7 +768,7 @@ Commands:
             parser.print_help()
 
             time.sleep(0.01)
-            sys.stderr.write("\nNo input input given to Repeats, be sure that you are providing the flag '-i'"
+            sys.stderr.write("\nNo input input given to Simulate, be sure that you are providing the flags '-g' and '-N'"
                              "\nExiting\n")
             sys.exit(1)
 
