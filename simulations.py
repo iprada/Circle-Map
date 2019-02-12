@@ -11,10 +11,11 @@ import pybedtools as bt
 import time
 import subprocess as sp
 
-def sim_ecc_reads(genome_fasta,read_length,directory,reads,fastq,insert_size,errors,mean_cov,locker,process,sim_circles,paired_end_fastq_1,paired_end_fastq_2):
+def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq,insert_size,errors,mean_cov,locker,process,sim_circles,paired_end_fastq_1,paired_end_fastq_2,skipped,correct):
     """Function that takes as arguments a genome fasta file, weights each chromosome based on the length
     and simulates single end eccDNA reads
-     """
+    """
+
 
     # Get the length of the chromosomes and store them in a sequence dictionary
     chromosomes = {}
@@ -51,13 +52,16 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,fastq,insert_size,err
     set_of_right_reads = []
 
     circle_number = 0
-    i = 0
+    n_of_reads = 0
 
     begin = time.time()
     #simulated reads
-    while i < reads + 1:
+    while n_of_reads < reads + 1:
+
 
         #sample weighted chromosome
+        #set random seed, important for paralell
+        np.random.seed()
         chr = np.random.choice(contig_list, p=weights)
 
         # decide ecDNA length
@@ -90,125 +94,142 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,fastq,insert_size,err
             chr_pos_end = chromosomes[chr]
         else:
             chr_pos_end = chr_pos_start + circle_length
-
+            
+        #if user of provides regions to exclude, check within it is on the region. and skip it
+        if exclude_regions != None and bt.BedTool(exclude_regions).sort().any_hits(bt.Interval(chr,chr_pos_start,chr_pos_end)) != 0:
+            #hit in a gap region
+            # shared memory object between processes. It is use to track the number of skipped circles
+            with skipped.get_lock():
+                skipped.value+=1
+            continue
+        else:
+            #shared memory object between processes. It is use to track the number of correctly simulated circles
+            with correct.get_lock():
+                correct.value+=1
         #save each circle positions, so that then I can check true circles
 
-        first_line = [chr, chr_pos_start, chr_pos_end]
 
-        #create class object outside the loop
-        new_read = sim_paired_end(i, insert_size, genome_fasta, chr, chr_pos_start,
-                                  chr_pos_end, read_length, circle_number,process)
+            first_line = [chr, chr_pos_start, chr_pos_end]
 
-        #simulation rounds
-        for each_sim in range(0,round(int(rounds_of_sim))):
+            #create class object outside the loop
+            new_read = sim_paired_end(n_of_reads, insert_size, genome_fasta, chr, chr_pos_start,
+                                      chr_pos_end, read_length, circle_number,process)
 
-
-            if errors == True:
+            #simulation rounds
+            for each_sim in range(0,round(int(rounds_of_sim))):
 
 
+                if errors == True:
 
-                if ((i + 1) / 10000).is_integer() == False:
-                    try:
 
-                        # sim the read
-                        get_seq = new_read.simulate_read()
-                        # put it in fastq format
-                        simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
-                                                                               get_seq[2])
-                        # save the read
-                        set_of_left_reads.append(simulated_reads[0])
-                        set_of_right_reads.append(simulated_reads[1])
-                        i += 1
 
-                    except BaseException as e:
-                        print(e)
-                        pass
+                    if ((n_of_reads + 1) / 10000).is_integer() == False:
+                        try:
 
-                else:
-                    try:
-                        # simulate reads and save to disk
-                        get_seq = new_read.simulate_read()
-                        simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
-                                                                               get_seq[2])
-                        set_of_left_reads.append(simulated_reads[0])
-                        set_of_right_reads.append(simulated_reads[1])
+                            # sim the read
+                            get_seq = new_read.simulate_read()
+                            # put it in fastq format
+                            simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
+                                                                                   get_seq[2])
+                            # save the read
+                            set_of_left_reads.append(simulated_reads[0])
+                            set_of_right_reads.append(simulated_reads[1])
+                            n_of_reads += 1
+                            print(n_of_reads)
 
-                        # save to disk
-                        locker.acquire()
-                        print("Process %s: writting to disk 10000 reads" % process )
-                        SeqIO.write(set_of_left_reads, paired_end_fastq_1, "fastq")
-                        SeqIO.write(set_of_right_reads, paired_end_fastq_2, "fastq")
-                        locker.release()
+                        except BaseException as e:
+                            print("I catched the following exception:",e)
+                            pass
 
-                        i += 1
-                        # sim the first read of the list
-                        new_read = sim_paired_end(i, insert_size, genome_fasta, chr, chr_pos_start,
-                                                  chr_pos_end, read_length, circle_number,process)
-                        get_seq = new_read.simulate_read()
-                        simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
-                                                                               get_seq[2])
+                    else:
+                        try:
+                            # simulate reads and save to disk
+                            get_seq = new_read.simulate_read()
+                            simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
+                                                                                   get_seq[2])
+                            set_of_left_reads.append(simulated_reads[0])
+                            set_of_right_reads.append(simulated_reads[1])
 
-                        set_of_left_reads = [simulated_reads[0]]
-                        set_of_right_reads = [simulated_reads[1]]
-                        i += 1
-                    except BaseException as e:
-                        print(e)
-                        pass
+                            # save to disk
+                            locker.acquire()
+                            print("Process %s: writting to disk 10000 reads" % process )
+                            SeqIO.write(set_of_left_reads, paired_end_fastq_1, "fastq")
+                            SeqIO.write(set_of_right_reads, paired_end_fastq_2, "fastq")
+                            locker.release()
 
-            else:
+                            n_of_reads += 1
+                            # sim the first read of the list
+                            new_read = sim_paired_end(n_of_reads, insert_size, genome_fasta, chr, chr_pos_start,
+                                                      chr_pos_end, read_length, circle_number,process)
+                            get_seq = new_read.simulate_read()
+                            simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
+                                                                                   get_seq[2])
 
-                if ((i + 1) / 10000).is_integer() == False:
-                    try:
-                        #sim the read
-                        get_seq = new_read.simulate_read()
-                        #put it in fastq format
-                        simulated_reads = sim_paired_end.simulate_perfect_read(new_read,get_seq[0], get_seq[1], get_seq[2])
-                        #save the read
-                        set_of_left_reads.append(simulated_reads[0])
-                        set_of_right_reads.append(simulated_reads[1])
-                        i +=1
-
-                    except BaseException as e:
-                        print(e)
-                        pass
+                            set_of_left_reads = [simulated_reads[0]]
+                            set_of_right_reads = [simulated_reads[1]]
+                            n_of_reads += 1
+                        except BaseException as e:
+                            print("I catched the following exception:",e)
+                            pass
 
                 else:
-                    try:
-                        #simulate reads and save to disk
-                        get_seq = new_read.simulate_read()
-                        simulated_reads = sim_paired_end.simulate_perfect_read(new_read, get_seq[0], get_seq[1],
-                                                                               get_seq[2])
-                        set_of_left_reads.append(simulated_reads[0])
-                        set_of_right_reads.append(simulated_reads[1])
 
-                        #save to disk
-                        locker.acquire()
-                        print("Process %s: writting to disk 10000 reads" % process)
-                        SeqIO.write(set_of_left_reads,paired_end_fastq_1 , "fastq")
-                        SeqIO.write(set_of_right_reads, paired_end_fastq_2, "fastq")
-                        locker.release()
+                    if ((n_of_reads + 1) / 10000).is_integer() == False:
+                        try:
+                            #sim the read
+                            get_seq = new_read.simulate_read()
+                            #put it in fastq format
+                            simulated_reads = sim_paired_end.simulate_perfect_read(new_read,get_seq[0], get_seq[1], get_seq[2])
+                            #save the read
+                            set_of_left_reads.append(simulated_reads[0])
+                            set_of_right_reads.append(simulated_reads[1])
+                            n_of_reads +=1
 
-                        i += 1
-                        #sim the first read of the list
-                        new_read = sim_paired_end(i, insert_size, genome_fasta, chr, chr_pos_start,
-                                                  chr_pos_end, read_length, circle_number,process)
-                        get_seq = new_read.simulate_read()
-                        simulated_reads = sim_paired_end.simulate_perfect_read(new_read, get_seq[0], get_seq[1],
-                                                                               get_seq[2])
+                        except BaseException as e:
+                            print("I catched the following exception:",e)
 
-                        set_of_left_reads = [simulated_reads[0]]
-                        set_of_right_reads = [simulated_reads[1]]
-                        i +=1
-                    except BaseException as e:
-                        print(e)
-                        pass
+                            pass
+
+                    else:
+                        try:
+                            #simulate reads and save to disk
+                            get_seq = new_read.simulate_read()
+                            simulated_reads = sim_paired_end.simulate_perfect_read(new_read, get_seq[0], get_seq[1],
+                                                                                   get_seq[2])
+                            set_of_left_reads.append(simulated_reads[0])
+                            set_of_right_reads.append(simulated_reads[1])
+
+                            #save to disk
+                            locker.acquire()
+                            print("Process %s: writting to disk 10000 reads" % process)
+                            SeqIO.write(set_of_left_reads,paired_end_fastq_1 , "fastq")
+                            SeqIO.write(set_of_right_reads, paired_end_fastq_2, "fastq")
+                            locker.release()
+
+                            n_of_reads += 1
+                            #sim the first read of the list
+                            new_read = sim_paired_end(n_of_reads, insert_size, genome_fasta, chr, chr_pos_start,
+                                                      chr_pos_end, read_length, circle_number,process)
+                            get_seq = new_read.simulate_read()
+                            simulated_reads = sim_paired_end.simulate_perfect_read(new_read, get_seq[0], get_seq[1],
+                                                                                   get_seq[2])
+
+                            set_of_left_reads = [simulated_reads[0]]
+                            set_of_right_reads = [simulated_reads[1]]
+                            n_of_reads +=1
+                        except BaseException as e:
+                            print("I catched the following exception:",e)
+                            pass
 
 
 
 
 
-        circle_bed.append(first_line)
-    sim_circles[i] = circle_bed
+            circle_bed.append(first_line)
+
+    #shared memory between the processes.This is a list that every process will rate the simulated circles
+    for element in circle_bed:
+        sim_circles.append(element)
 
 
 

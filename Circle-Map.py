@@ -202,6 +202,7 @@ Commands:
                 filtered_output.saveas("%s" % self.args.output)
 
             elif sys.argv[1] == "Simulate":
+                print("Simulating eccDNA like reads")
                 self.subprogram = self.args_simulate()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
 
@@ -214,23 +215,29 @@ Commands:
                 if __name__ == '__main__':
                     manager = mp.Manager()
                     #Shared memory object
-                    circle_dict = manager.dict()
+                    circle_list = manager.list()
+                    skipped_circles = mp.Value('i',0)
+                    correct_circles = mp.Value('i', 0)
                     jobs = []
                     # init the processes
+
                     for i in range(self.args.processes):
                         p = mp.Process(target=sim_ecc_reads, args=(self.args.g,self.args.read_length,self.args.directory,
                                                                    int(round(self.args.read_number/self.args.processes)),
-                                                                   self.args.base_name,
+                                                                   self.args.skip_region,self.args.base_name,
                                                                    self.args.mean_insert_size,self.args.error,
-                                                                   self.args.mean_coverage,lock,i,circle_dict,
-                                                                   paired_end_fastq_1,paired_end_fastq_2,))
+                                                                   self.args.mean_coverage,lock,i,circle_list,
+                                                                   paired_end_fastq_1,paired_end_fastq_2,skipped_circles,correct_circles,))
                         jobs.append(p)
                         p.start()
                     # kill the process
                     for p in jobs:
                         p.join()
-                    print(circle_dict.values()[0])
-                    bt.BedTool((circle_dict.values()[0])).saveas(self.args.output)
+                    print("Skipped %s circles, that overlapped the provided regions to exclude" % skipped_circles.value)
+                    print("Simulated %s circles across %s parallel processes" % (correct_circles.value,self.args.processes))
+                    print("Writting to disk bed file containing the simulated circle coordinates")
+
+                    bt.BedTool(list(circle_list)).saveas(self.args.output)
 
             else:
                 self.parser.print_help()
@@ -732,6 +739,8 @@ Commands:
                                   default=os.getcwd())
             optional.add_argument('-b', '--base-name', metavar='',default='simulated',
                                   help="Fastq output basename")
+            optional.add_argument('-s', '--skip-region', metavar='', default=None,
+                                  help="Regions of the genome to skip the simulation. The input needs to be in bed format")
             optional.add_argument('-r', '--read-length', metavar='',type=int,default=150,
                                   help="Read length to simulate")
             optional.add_argument('-m', '--mean-insert-size', metavar='',type=int,default=300,
@@ -754,6 +763,8 @@ Commands:
                                   default=os.getcwd())
             optional.add_argument('-b', '--base-name', metavar='',default='simulated',
                                   help="Fastq output basename")
+            optional.add_argument('-s', '--skip-region', metavar='', default=None,
+                                  help="Regions of the genome to skip the simulation. The input needs to be in bed format")
             optional.add_argument('-r', '--read-length', metavar='',type=int,default=150,
                                   help="Read length to simulate")
             optional.add_argument('-m', '--mean-insert', metavar='',type=int,default=300,
