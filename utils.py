@@ -1210,6 +1210,32 @@ def start_realign(circle_bam,output,threads,verbose,pid):
 
     return(splitted,sorted_bam,begin)
 
+def start_simulate(pid):
+    """Function for starting Circle-Map simulate"""
+
+    print("\nRunning Circle-Map Simulate\n")
+
+
+    sp.call("mkdir temp_files_%s" % pid, shell=True)
+
+
+    return(pid)
+
+def mutate(genome,pid,indel,snp,java_mem):
+    """Function that takes as input the path of the genome,the indel ans substitution rate, and it will create a sinthetic
+    genome introducing random mutations on the fasta sequence and providing a vcf"""
+
+    print("Introducing mutations in the fasta genome")
+    print("\t Indel rate: %s" % indel)
+    print("\t Substitution rate: %s" % snp)
+    sp.call("mutate.sh %s in=%s out=temp_files_%s/mutated.fa subrate=%s indelrate=%s" % (java_mem,genome,pid,snp,indel),shell=True)
+
+    print("Simulating reads")
+
+    return(None)
+
+
+
 
 
 

@@ -10,8 +10,12 @@ import sys
 import pybedtools as bt
 import time
 import subprocess as sp
+import warnings
 
-def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq,insert_size,errors,mean_cov,locker,process,sim_circles,paired_end_fastq_1,paired_end_fastq_2,skipped,correct):
+
+def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq,insert_size,errors,mean_cov,locker,
+                  process,sim_circles,paired_end_fastq_1,paired_end_fastq_2,skipped,correct,ins_rate1,ins_rate2,del_rate1,
+                  del_rate2,sim_pid):
     """Function that takes as arguments a genome fasta file, weights each chromosome based on the length
     and simulates single end eccDNA reads
     """
@@ -123,109 +127,137 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
 
 
 
-                    if ((n_of_reads + 1) / 10000).is_integer() == False:
-                        try:
+                    if (((n_of_reads + 1) / 10000).is_integer() == False) or (n_of_reads != reads):
 
-                            # sim the read
-                            get_seq = new_read.simulate_read()
-                            # put it in fastq format
-                            simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
-                                                                                   get_seq[2])
+                        # sim the read
+                        get_seq = new_read.simulate_read()
+                        # put it in fastq format
+                        simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
+                                                                               get_seq[2],ins_rate1,ins_rate2,del_rate1,
+                                                                                   del_rate2,sim_pid)
+                        if simulated_reads != None:
                             # save the read
+                            assert len(set_of_left_reads) == len(set_of_right_reads)
                             set_of_left_reads.append(simulated_reads[0])
                             set_of_right_reads.append(simulated_reads[1])
+                            assert len(set_of_left_reads) == len(set_of_right_reads)
                             n_of_reads += 1
-                            print(n_of_reads)
 
-                        except BaseException as e:
-                            print("I catched the following exception:",e)
-                            pass
+                        else:
+                            continue
+
+
+
 
                     else:
-                        try:
-                            # simulate reads and save to disk
-                            get_seq = new_read.simulate_read()
-                            simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
-                                                                                   get_seq[2])
-                            set_of_left_reads.append(simulated_reads[0])
-                            set_of_right_reads.append(simulated_reads[1])
 
-                            # save to disk
-                            locker.acquire()
-                            print("Process %s: writting to disk 10000 reads" % process )
-                            SeqIO.write(set_of_left_reads, paired_end_fastq_1, "fastq")
-                            SeqIO.write(set_of_right_reads, paired_end_fastq_2, "fastq")
-                            locker.release()
+                        # simulate reads and save to disk
+                        get_seq = new_read.simulate_read()
+                        simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
+                                                                               get_seq[2],ins_rate1,ins_rate2,del_rate1,
+                                                                                   del_rate2,sim_pid)
+                        set_of_left_reads.append(simulated_reads[0])
+                        set_of_right_reads.append(simulated_reads[1])
 
-                            n_of_reads += 1
-                            # sim the first read of the list
-                            new_read = sim_paired_end(n_of_reads, insert_size, genome_fasta, chr, chr_pos_start,
-                                                      chr_pos_end, read_length, circle_number,process)
-                            get_seq = new_read.simulate_read()
-                            simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
-                                                                                   get_seq[2])
+                        # save to disk
+                        assert len(set_of_left_reads) == len(set_of_right_reads)
+                        locker.acquire()
+                        print("Process %s: writting to disk 10000 reads" % process )
+                        fastq_1 = open(paired_end_fastq_1, "a")
+                        SeqIO.write(set_of_left_reads,fastq_1, "fastq")
+                        fastq_1.close()
+                        fastq_2 = open(paired_end_fastq_2, "a")
+                        SeqIO.write(set_of_right_reads,fastq_2, "fastq")
+                        fastq_2.close()
+                        locker.release()
+                        assert len(set_of_left_reads) == len(set_of_right_reads)
 
-                            set_of_left_reads = [simulated_reads[0]]
-                            set_of_right_reads = [simulated_reads[1]]
-                            n_of_reads += 1
-                        except BaseException as e:
-                            print("I catched the following exception:",e)
-                            pass
+                        n_of_reads += 1
+                        # sim the first read of the list
+                        new_read = sim_paired_end(n_of_reads, insert_size, genome_fasta, chr, chr_pos_start,
+                                                  chr_pos_end, read_length, circle_number,process)
+                        get_seq = new_read.simulate_read()
+                        simulated_reads = sim_paired_end.simulate_read_with_errors(new_read, get_seq[0], get_seq[1],
+                                                                               get_seq[2],ins_rate1,ins_rate2,del_rate1,
+                                                                                   del_rate2,sim_pid)
+                        assert len(set_of_left_reads) == len(set_of_right_reads)
+                        set_of_left_reads = [simulated_reads[0]]
+                        set_of_right_reads = [simulated_reads[1]]
+                        assert len(set_of_left_reads) == len(set_of_right_reads)
+                        n_of_reads += 1
+
 
                 else:
 
-                    if ((n_of_reads + 1) / 10000).is_integer() == False:
-                        try:
-                            #sim the read
-                            get_seq = new_read.simulate_read()
-                            #put it in fastq format
-                            simulated_reads = sim_paired_end.simulate_perfect_read(new_read,get_seq[0], get_seq[1], get_seq[2])
-                            #save the read
-                            set_of_left_reads.append(simulated_reads[0])
-                            set_of_right_reads.append(simulated_reads[1])
-                            n_of_reads +=1
+                    if ((n_of_reads + 1) / 10000).is_integer() == False or n_of_reads == reads:
 
-                        except BaseException as e:
-                            print("I catched the following exception:",e)
+                        #sim the read
+                        get_seq = new_read.simulate_read()
+                        #put it in fastq format
+                        simulated_reads = sim_paired_end.simulate_perfect_read(new_read,get_seq[0], get_seq[1], get_seq[2])
+                        #save the read
+                        set_of_left_reads.append(simulated_reads[0])
+                        set_of_right_reads.append(simulated_reads[1])
+                        n_of_reads +=1
 
-                            pass
+
 
                     else:
-                        try:
-                            #simulate reads and save to disk
-                            get_seq = new_read.simulate_read()
-                            simulated_reads = sim_paired_end.simulate_perfect_read(new_read, get_seq[0], get_seq[1],
-                                                                                   get_seq[2])
-                            set_of_left_reads.append(simulated_reads[0])
-                            set_of_right_reads.append(simulated_reads[1])
+                        #simulate reads and save to disk
+                        get_seq = new_read.simulate_read()
+                        simulated_reads = sim_paired_end.simulate_perfect_read(new_read, get_seq[0], get_seq[1],
+                                                                               get_seq[2])
+                        set_of_left_reads.append(simulated_reads[0])
+                        set_of_right_reads.append(simulated_reads[1])
 
-                            #save to disk
-                            locker.acquire()
-                            print("Process %s: writting to disk 10000 reads" % process)
-                            SeqIO.write(set_of_left_reads,paired_end_fastq_1 , "fastq")
-                            SeqIO.write(set_of_right_reads, paired_end_fastq_2, "fastq")
-                            locker.release()
+                        #save to disk
+                        locker.acquire()
+                        assert len(set_of_left_reads) == len(set_of_right_reads)
+                        print("Process %s: writting to disk 10000 reads" % process)
+                        fastq_1 = open(paired_end_fastq_1, "a")
+                        SeqIO.write(set_of_left_reads, fastq_1, "fastq")
+                        fastq_1.close()
+                        fastq_2 = open(paired_end_fastq_2, "a")
+                        SeqIO.write(set_of_right_reads, fastq_2, "fastq")
+                        fastq_2.close()
+                        assert len(set_of_left_reads) == len(set_of_right_reads)
+                        locker.release()
 
-                            n_of_reads += 1
-                            #sim the first read of the list
-                            new_read = sim_paired_end(n_of_reads, insert_size, genome_fasta, chr, chr_pos_start,
-                                                      chr_pos_end, read_length, circle_number,process)
-                            get_seq = new_read.simulate_read()
-                            simulated_reads = sim_paired_end.simulate_perfect_read(new_read, get_seq[0], get_seq[1],
-                                                                                   get_seq[2])
 
-                            set_of_left_reads = [simulated_reads[0]]
-                            set_of_right_reads = [simulated_reads[1]]
-                            n_of_reads +=1
-                        except BaseException as e:
-                            print("I catched the following exception:",e)
-                            pass
+
+                        n_of_reads += 1
+                        #sim the first read of the list
+                        new_read = sim_paired_end(n_of_reads, insert_size, genome_fasta, chr, chr_pos_start,
+                                                  chr_pos_end, read_length, circle_number,process)
+                        get_seq = new_read.simulate_read()
+                        simulated_reads = sim_paired_end.simulate_perfect_read(new_read, get_seq[0], get_seq[1],
+                                                                               get_seq[2])
+
+                        assert len(set_of_left_reads) == len(set_of_right_reads)
+                        set_of_left_reads = [simulated_reads[0]]
+                        set_of_right_reads = [simulated_reads[1]]
+                        assert len(set_of_left_reads) == len(set_of_right_reads)
+                        n_of_reads +=1
 
 
 
 
 
             circle_bed.append(first_line)
+
+    # last save to disk
+
+    locker.acquire()
+    fastq_1 = open(paired_end_fastq_1, "a")
+    SeqIO.write(set_of_left_reads, fastq_1, "fastq")
+    fastq_1.close()
+    fastq_2 = open(paired_end_fastq_2, "a")
+    SeqIO.write(set_of_right_reads, fastq_2, "fastq")
+    fastq_2.close()
+    locker.release()
+
+
+
 
     #shared memory between the processes.This is a list that every process will rate the simulated circles
     for element in circle_bed:
@@ -348,9 +380,13 @@ class sim_paired_end:
         return (left_record, right_record)
 
 
-    def simulate_read_with_errors(self,right_read, left_read, common_id):
+    def simulate_read_with_errors(self,right_read, left_read, common_id,ins_rate1,ins_rate2,del_rate1,
+                                                                                       del_rate2,pid):
         # put all together
         # unique identifiers for right and left reads
+        dir = os.getcwd()
+        os.chdir("temp_files_%s" % pid)
+
         right_read_id = "2:N:0:CGCTGTG"
         right_id = common_id + "space" + right_read_id
         left_read_id = "1:N:0:CGCTGTG"
@@ -358,32 +394,52 @@ class sim_paired_end:
 
         # attemp to use art to simulate the quality scores and the error rate
         #create a one read genome
-        left_fasta = open("left_read_%s.fa" % self.process, "w")
+        left_fasta = open("left_read_%s.fa" % (self.process), "w")
         left_fasta.write(">" + left_id + "\n" + str(left_read) + "\n")
         # sim the read with art
         left_fasta.close()
-        sp.call("art_illumina -q -na -ss HS25 -nf 0 -i left_read_%s.fa -l %s -f 1 -o left%s" %
-                (self.process,self.read_length,self.process),shell=True,stdout=sp.DEVNULL, stderr=sp.STDOUT)
-        with open("left%s.fq" % self.process, 'r') as left:
+
+        sp.call("art_illumina -q -na -ss HS25  -ir %s -ir2 %s -dr %s -dr2 %s -nf 0 -i left_read_%s.fa -l %s -f 1 -o left%s" %
+                (ins_rate1,ins_rate2,del_rate1,del_rate2,self.process,self.read_length,self.process),
+                shell=True,stdout=sp.DEVNULL, stderr=sp.STDOUT)
+
+
+        with open("left%s.fq" % (self.process), 'r') as left:
             left_read = left.read().replace('space', '   ').replace('1:N:0:CGCTGTG-1', '1:N:0:CGCTGTG')
 
 
-        left_record = SeqIO.read(StringIO(left_read), "fastq")
+
+
         # get the reverse complement of the right read
         right_read = Seq(right_read, generic_dna)
         right_read = right_read.reverse_complement()
 
-        right_fasta = open("right_read_%s.fa" % self.process, "w")
+        right_fasta = open("right_read_%s.fa" % (self.process), "w")
         right_fasta.write(">" + right_id + "\n" + str(right_read) + "\n")
         right_fasta.close()
         # sim the read with art
-        sp.call("art_illumina -na -q -ss HS25  -nf 0 -i right_read_%s.fa -l %s -f 1 -o right%s" %
-                (self.process,self.read_length,self.process),shell=True,stdout=sp.DEVNULL, stderr=sp.STDOUT)
-        with open("right%s.fq" % self.process, 'r') as right:
+
+        sp.call("art_illumina -na -q -ss HS25  -ir %s -ir2 %s -dr %s -dr2 %s -nf 0 -i right_read_%s.fa -l %s -f 1 -o right%s" %
+                (ins_rate1,ins_rate2,del_rate1,del_rate2,self.process,self.read_length,self.process),
+                shell=True,stdout=sp.DEVNULL, stderr=sp.STDOUT)
+
+        with open("right%s.fq" % (self.process), 'r') as right:
             right_read = right.read().replace('space', '   ').replace('1:N:0:CGCTGTG-1', '2:N:0:CGCTGTG')
 
-        right_record = SeqIO.read(StringIO(right_read), "fastq")
-        return (left_record, right_record)
+        #sometimes the reading fails. I introduce this to capture it
+        try:
+
+            right_record = SeqIO.read(StringIO(right_read), "fastq")
+            left_record = SeqIO.read(StringIO(left_read), "fastq")
+            os.chdir(dir)
+            return (left_record, right_record)
+        except ValueError as v:
+
+            warnings.warn('Catched ValueError in a sampling round. Skipping')
+            os.chdir(dir)
+            return(None)
+
+
 
 
 

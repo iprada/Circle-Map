@@ -1,6 +1,6 @@
 #!/home/iprada//bin/miniconda/bin/python3.6
 from __future__ import division
-from utils import start_realign
+
 #Author Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
@@ -13,7 +13,7 @@ import pandas as pd
 from extract_circle_SV_reads import readExtractor
 from realigner import realignment
 from repeats import repeat
-from utils import merge_final_output,filter_by_ratio
+from utils import merge_final_output,filter_by_ratio,start_realign,start_simulate,mutate
 from coverage import coverage
 import multiprocessing as mp
 import pybedtools as bt
@@ -202,7 +202,7 @@ Commands:
                 filtered_output.saveas("%s" % self.args.output)
 
             elif sys.argv[1] == "Simulate":
-                print("Simulating eccDNA like reads")
+                sim_pid = start_simulate(self.__getpid__())
                 self.subprogram = self.args_simulate()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
 
@@ -211,6 +211,13 @@ Commands:
 
                 paired_end_fastq_1 = open("%s_1.fastq" % self.args.base_name, "w")
                 paired_end_fastq_2 = open("%s_2.fastq" % self.args.base_name, "w")
+                paired_end_fastq_1.close()
+                paired_end_fastq_2.close()
+
+                #mutate
+
+                if self.args.variants == True:
+                    mutate(self.args.g,sim_pid,self.args.Indels,self.args.substitution,self.args.java_memory)
 
                 if __name__ == '__main__':
                     manager = mp.Manager()
@@ -227,7 +234,9 @@ Commands:
                                                                    self.args.skip_region,self.args.base_name,
                                                                    self.args.mean_insert_size,self.args.error,
                                                                    self.args.mean_coverage,lock,i,circle_list,
-                                                                   paired_end_fastq_1,paired_end_fastq_2,skipped_circles,correct_circles,))
+                                                                   "%s_1.fastq" % self.args.base_name,"%s_2.fastq" % self.args.base_name,skipped_circles,
+                                                                   correct_circles,self.args.insRate,self.args.insRate2,self.args.delRate,
+                                                                   self.args.delRate2,sim_pid,))
                         jobs.append(p)
                         p.start()
                     # kill the process
@@ -745,12 +754,41 @@ Commands:
                                   help="Read length to simulate")
             optional.add_argument('-m', '--mean-insert-size', metavar='',type=int,default=300,
                                   help="Mean of the insert size distribution")
-            optional.add_argument('-e', '--error', action='store_true',
-                                  help="Introduce sequencing errors ( Uses ART on the background)")
             optional.add_argument('-c', '--mean-coverage',metavar='',type=int,default=30,
                                   help="Mean sequencing coverage within the eccDNA coordinates")
             optional.add_argument('-p', '--processes', metavar='',type=int,default=1,
                                   help="Mean sequencing coverage within the eccDNA coordinates")
+
+
+            optional.add_argument('-v', '--variants', action='store_true',
+                                  help="If set to true, introduce mutations in the reference genome prior to simulating"
+                                       "reads.")
+            optional.add_argument('-S', '--substitution', metavar='', type=float, default=0.0001,
+                                  help="Fraction of base substitutions to introduce on the genome. Default: 0.0001")
+
+            optional.add_argument('-I', '--Indels', metavar='', type=float, default=0.001,
+                                  help="Fraction of indels to introduce on the genome. Default: 0.001")
+            optional.add_argument('-J', '--java_memory', metavar='', type=str, default="-Xmx16g",
+                                  help="Java memory allocation, required for mutating the genome. Default: -Xmx16g")
+
+
+
+
+
+            optional.add_argument('-e', '--error', action='store_true',
+                                  help="Introduce sequencing errors ( Uses ART on the background)")
+
+            optional.add_argument('-i', '--instrument', metavar='', type=str, default="HS25",
+                                  help="Illumina sequecing instrument to simulate reads from (Default HiSeq 2500)")
+
+            optional.add_argument('-ir', '--insRate', metavar='', type=float, default=0.00009,
+                                  help="the first-read insertion rate (default: 0.00009)")
+            optional.add_argument('-ir2', '--insRate2', metavar='', type=float, default=0.00015,
+                                  help="the second-read insertion rate (default: 0.00015)")
+            optional.add_argument('-dr', '--delRate', metavar='', type=float, default=0.00011,
+                                  help="the first-read deletion rate (default:  0.00011)")
+            optional.add_argument('-dr2', '--delRate2', metavar='', type=float, default=0.00023,
+                                  help="the second-read deletion rate (default: 0.00023)")
         else:
             required.add_argument('-g', metavar='',
                                   help="Genome fasta file (Needs to be indexed with samtools faidx)")
@@ -769,12 +807,39 @@ Commands:
                                   help="Read length to simulate")
             optional.add_argument('-m', '--mean-insert', metavar='',type=int,default=300,
                                   help="Mean of the insert size distribution")
-            optional.add_argument('-e', '--error', action='store_true',
-                                  help="Introduce sequencing errors ( Uses ART on the background)")
+
+
             optional.add_argument('-c', '--mean-coverage', metavar='',type=int,default=30,
                                   help="Mean sequencing coverage within the eccDNA coordinates")
+
             optional.add_argument('-p', '--processes', metavar='',type=int,default=1,
                                   help="Number of parallel processes to use")
+
+            optional.add_argument('-v', '--variants', action='store_true',
+                                  help="If set to true, introduce mutations in the reference genome prior to simulating"
+                                       "reads.")
+            optional.add_argument('-S', '--substitution', metavar='', type=float, default=0.0001,
+                                  help="Fraction of base substitutions to introduce on the genome. Default: 0.0001")
+
+            optional.add_argument('-I', '--Indels', metavar='', type=float, default=0.001,
+                                  help="Fraction of indels to introduce on the genome. Default: 0.001")
+            optional.add_argument('-J', '--java_memory', metavar='', type=str, default="-Xmx16g",
+                                  help="Java memory allocation, required for mutating the genome. Default: -Xmx16g")
+
+
+            optional.add_argument('-e', '--error', action='store_true',
+                                  help="Introduce sequencing errors ( Uses ART on the background)")
+
+            optional.add_argument('-i', '--instrument', metavar='', type=str, default="HS25",
+                                  help="Illumina sequecing instrument to simulate reads from (Default HiSeq 2500)")
+            optional.add_argument('-ir', '--insRate', metavar='', type=float, default=0.00009,
+                                  help="the first-read insertion rate (default: 0.00009). Requires -e")
+            optional.add_argument('-ir2', '--insRate2', metavar='', type=float, default=0.00015,
+                                  help="the second-read insertion rate (default: 0.00015). Requires -e")
+            optional.add_argument('-dr', '--delRate', metavar='', type=float, default=0.00011,
+                                  help="the first-read deletion rate (default:  0.00011). Requires -e")
+            optional.add_argument('-dr2', '--delRate2', metavar='', type=float, default=0.00023,
+                                  help="the second-read deletion rate (default: 0.00023). Requires -e")
 
             parser.print_help()
 
@@ -802,3 +867,4 @@ if __name__ == '__main__':
     pid = run.__getpid__()
     #clean
     os.system("rm -rf temp_files_%s" % pid)
+
