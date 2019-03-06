@@ -56,7 +56,10 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
     set_of_right_reads = []
 
     circle_number = 0
+    #reads simulated by a process
     n_of_reads = 0
+    #
+    n_of_reads_it = 0
 
     begin = time.time()
     #simulated reads
@@ -127,7 +130,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
 
 
 
-                    if (((n_of_reads + 1) / 10000).is_integer() == False) or (n_of_reads != reads):
+                    if (n_of_reads_it+1) !=100000:
 
                         # sim the read
                         get_seq = new_read.simulate_read()
@@ -142,6 +145,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
                             set_of_right_reads.append(simulated_reads[1])
                             assert len(set_of_left_reads) == len(set_of_right_reads)
                             n_of_reads += 1
+                            n_of_reads_it += 1
 
                         else:
                             continue
@@ -173,6 +177,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
                         assert len(set_of_left_reads) == len(set_of_right_reads)
 
                         n_of_reads += 1
+                        n_of_reads_it += 1
                         # sim the first read of the list
                         new_read = sim_paired_end(n_of_reads, insert_size, genome_fasta, chr, chr_pos_start,
                                                   chr_pos_end, read_length, circle_number,process)
@@ -185,11 +190,12 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
                         set_of_right_reads = [simulated_reads[1]]
                         assert len(set_of_left_reads) == len(set_of_right_reads)
                         n_of_reads += 1
+                        n_of_reads_it = 1
 
 
                 else:
 
-                    if ((n_of_reads + 1) / 10000).is_integer() == False or n_of_reads == reads:
+                    if (n_of_reads_it+1) != 100000:
 
                         #sim the read
                         get_seq = new_read.simulate_read()
@@ -199,6 +205,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
                         set_of_left_reads.append(simulated_reads[0])
                         set_of_right_reads.append(simulated_reads[1])
                         n_of_reads +=1
+                        n_of_reads_it += 1
 
 
 
@@ -226,6 +233,8 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
 
 
                         n_of_reads += 1
+                        n_of_reads_it += 1
+
                         #sim the first read of the list
                         new_read = sim_paired_end(n_of_reads, insert_size, genome_fasta, chr, chr_pos_start,
                                                   chr_pos_end, read_length, circle_number,process)
@@ -238,6 +247,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
                         set_of_right_reads = [simulated_reads[1]]
                         assert len(set_of_left_reads) == len(set_of_right_reads)
                         n_of_reads +=1
+                        n_of_reads_it = 1
 
 
 
