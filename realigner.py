@@ -15,8 +15,9 @@ class realignment:
 
     def __init__(self, input_bam,qname_bam,sorted_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
                  insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,min_soft_clipped_length,overlap_frac,
-                 interval_p_cut, output_name,ncores,circle_peaks,locker,split,ratio,verbose,pid):
+                 interval_p_cut, output_name,ncores,circle_peaks,locker,split,ratio,verbose,pid,edit_distance):
         #I/O
+        self.edit_distance = edit_distance
         self.ecc_dna = input_bam
         self.qname_bam = qname_bam
         self.sorted_bam = ps.AlignmentFile(sorted_bam, "rb")
@@ -258,7 +259,7 @@ class realignment:
                                             else:
     
     
-                                                if realignment_probability(realignment_dict,interval_length) >= self.prob_cutoff:
+                                                if realignment_probability(realignment_dict,interval_length) >= self.prob_cutoff and realignment_dict['alignments'][1][3] < self.edit_distance:
     
                                                     # here I have to retrieve the nucleotide mapping positions. Which should be the
                                                     # the left sampling pysam coordinate - edlib coordinates

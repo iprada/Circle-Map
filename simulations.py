@@ -74,7 +74,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
         # decide ecDNA length
 
         #sample circle length
-        circle_length = rd.randint(150,100000)
+        circle_length = rd.randint(150,10000)
 
 
         # linear decrease in coverage based on circle length
@@ -130,7 +130,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
 
 
 
-                    if (n_of_reads_it+1) !=100000:
+                    if (n_of_reads_it+1) !=1000:
 
                         # sim the read
                         get_seq = new_read.simulate_read()
@@ -178,6 +178,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
 
                         n_of_reads += 1
                         n_of_reads_it += 1
+
                         # sim the first read of the list
                         new_read = sim_paired_end(n_of_reads, insert_size, genome_fasta, chr, chr_pos_start,
                                                   chr_pos_end, read_length, circle_number,process)
@@ -195,7 +196,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
 
                 else:
 
-                    if (n_of_reads_it+1) != 100000:
+                    if (n_of_reads_it+1) != 10000:
 
                         #sim the read
                         get_seq = new_read.simulate_read()

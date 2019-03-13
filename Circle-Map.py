@@ -1,6 +1,4 @@
-#!/home/iprada//bin/miniconda/bin/python3.6
-from __future__ import division
-
+#!/home/iprada/bin/miniconda3/bin/python3.6
 #Author Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
@@ -132,7 +130,8 @@ Commands:
 
 
                 os.chdir(self.args.directory)
-                splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads,self.args.verbose,self.__getpid__())
+                splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads,
+                                                          self.args.verbose,self.__getpid__(),self.args.clustering_dist)
 
                 if __name__ == '__main__':
 
@@ -148,7 +147,8 @@ Commands:
                                              self.args.gap_open,
                                              self.args.gap_ext, self.args.nhits, self.args.cut_off, self.args.min_sc,
                                              self.args.merge_fraction, self.args.interval_probability, self.args.output,
-                                             self.args.threads, splitted[core],lock,self.args.split,self.args.ratio,self.args.verbose,self.__getpid__())
+                                             self.args.threads, splitted[core],lock,self.args.split,
+                                             self.args.ratio,self.args.verbose,self.__getpid__(),self.args.edit_distance)
 
                         processes.append(object)
 
@@ -229,6 +229,7 @@ Commands:
                     # init the processes
 
                     for i in range(self.args.processes):
+
                         p = mp.Process(target=sim_ecc_reads, args=(self.args.g,self.args.read_length,self.args.directory,
                                                                    int(round(self.args.read_number/self.args.processes)),
                                                                    self.args.skip_region,self.args.base_name,
@@ -414,6 +415,9 @@ Commands:
             alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
                                            help="Minimum mapping quality allowed in the supplementary alignments. Default: 20",
                                            default=20)
+            alignment_options.add_argument('-d', '--edit_distance', type=int, metavar='',
+                                           help="Maximum edit distance allowed for the highest scoring realignment. Default (10)",
+                                           default=10)
 
 
             #insert size
@@ -440,6 +444,9 @@ Commands:
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
                                   help="Skip intervals where the probability of been the mate is less than the cutoff. Default: 0.01",
                                   default=0.01)
+            interval.add_argument('-K', '--clustering_dist', type=int, metavar='',
+                                  help="Merge reads with variation that are k nucleotides appart",
+                                  default=300)
 
             #When to call a circle
 
@@ -517,6 +524,9 @@ Commands:
             alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
                                            help="Minimum mapping quality allowed in the supplementary alignments. Default: 20",
                                            default=20)
+            alignment_options.add_argument('-d', '--edit_distance', type=int, metavar='',
+                                           help="Maximum edit distance allowed for the highest scoring realignment. Default (10)",
+                                           default=10)
 
             # insert size
 
@@ -542,6 +552,9 @@ Commands:
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
                                   help="Skip intervals where the probability of been the mate is less than the cutoff. Default: 0.01",
                                   default=0.99)
+            interval.add_argument('-K', '--clustering_dist', type=int, metavar='',
+                                  help="Merge reads with variation that are k nucleotides appart",
+                                  default=300)
 
             # When to call a circle
 

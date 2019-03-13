@@ -197,7 +197,7 @@ def genome_alignment_from_cigar(sa_cigar):
 
 
 
-def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid):
+def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
     """Function that takes as input a bam file and returns a merged bed file of the genome covered by the bam, it will create
     and index too"""
 
@@ -266,8 +266,8 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid):
 
     #from bam to BedGraph
 
-    sp.call("bedtools genomecov -bg -ibam %s | sort -T temp_files_%s -k 1,1 -k2,2n | mergeBed > temp_files_%s/peaks.bed" %
-            (input_bam_name,pid,pid),shell=True)
+    sp.call("bedtools genomecov -bg -ibam %s | sort -T temp_files_%s -k 1,1 -k2,2n | mergeBed -d %s > temp_files_%s/peaks.bed" %
+            (input_bam_name,pid,clusters,pid),shell=True)
 
 
     return(sorted_bam)
@@ -631,7 +631,8 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
 
             for index,interval in candidate_mates.iterrows():
 
-                if interval['probability']/sum >= interval_p_cutoff:
+                #small pseudocount to denominator to avoid div by zero
+                if interval['probability']/(sum+0.00000001) >= interval_p_cutoff:
 
                     if ('LR' in orientation) or ('L' and 'R' in orientation):
 
@@ -871,7 +872,7 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
                         min_score = score
 
 
-                    top_hits[hits] = (location,alignment['cigar'],score)
+                    top_hits[hits] = (location,alignment['cigar'],score,alignment['editDistance'])
 
             else:
                 # the search was exaustive
@@ -899,7 +900,7 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
                     if score < min_score:
                         min_score = score
 
-                    top_hits[hits] = (location,alignment['cigar'],score)
+                    top_hits[hits] = (location,alignment['cigar'],score,alignment['editDistance'])
 
             else:
 
@@ -1174,7 +1175,7 @@ def write_to_disk(partial_bed,output,locker,dir,pid):
     os.chdir("%s" % dir)
     locker.release()
 
-def start_realign(circle_bam,output,threads,verbose,pid):
+def start_realign(circle_bam,output,threads,verbose,pid,clusters):
     """a"""
 
     begin = time.time()
@@ -1189,7 +1190,7 @@ def start_realign(circle_bam,output,threads,verbose,pid):
 
 
 
-    sorted_bam = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose,pid)
+    sorted_bam = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose,pid,clusters)
 
 
 
