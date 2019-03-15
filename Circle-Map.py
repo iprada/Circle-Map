@@ -148,7 +148,7 @@ Commands:
                                              self.args.gap_ext, self.args.nhits, self.args.cut_off, self.args.min_sc,
                                              self.args.merge_fraction, self.args.interval_probability, self.args.output,
                                              self.args.threads, splitted[core],lock,self.args.split,
-                                             self.args.ratio,self.args.verbose,self.__getpid__(),self.args.edit_distance)
+                                             self.args.ratio,self.args.verbose,self.__getpid__(),self.args.edit_distance_fraction)
 
                         processes.append(object)
 
@@ -415,9 +415,9 @@ Commands:
             alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
                                            help="Minimum mapping quality allowed in the supplementary alignments. Default: 20",
                                            default=20)
-            alignment_options.add_argument('-d', '--edit_distance', type=int, metavar='',
-                                           help="Maximum edit distance allowed for the highest scoring realignment. Default (10)",
-                                           default=10)
+            alignment_options.add_argument('-d', '--edit_distance_fraction', type=float, metavar='',
+                                           help="Fraction of the read that can be edited in the realignment. Default (0.2)",
+                                           default=0.2)
 
 
             #insert size
@@ -524,9 +524,9 @@ Commands:
             alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
                                            help="Minimum mapping quality allowed in the supplementary alignments. Default: 20",
                                            default=20)
-            alignment_options.add_argument('-d', '--edit_distance', type=int, metavar='',
-                                           help="Maximum edit distance allowed for the highest scoring realignment. Default (10)",
-                                           default=10)
+            alignment_options.add_argument('-d', '--edit_distance-fraction', type=float, metavar='',
+                                           help="Fraction of the read that can be edited in the realignment. Default (0.2)",
+                                           default=0.2)
 
             # insert size
 

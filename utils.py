@@ -1340,6 +1340,9 @@ def assign_discordants(split_bed,discordant_bed):
             assigned_splits.append(i)
         return (assigned_splits)
 
+def adaptative_myers_k(sc_len,edit_frac):
+    """Calculate the edit distance allowed as a function of the read length"""
+    return(np.ceil(sc_len*edit_frac))
 
 
 

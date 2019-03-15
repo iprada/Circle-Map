@@ -15,9 +15,9 @@ class realignment:
 
     def __init__(self, input_bam,qname_bam,sorted_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
                  insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,min_soft_clipped_length,overlap_frac,
-                 interval_p_cut, output_name,ncores,circle_peaks,locker,split,ratio,verbose,pid,edit_distance):
+                 interval_p_cut, output_name,ncores,circle_peaks,locker,split,ratio,verbose,pid,edit_distance_frac):
         #I/O
-        self.edit_distance = edit_distance
+        self.edit_distance_frac = edit_distance_frac
         self.ecc_dna = input_bam
         self.qname_bam = qname_bam
         self.sorted_bam = ps.AlignmentFile(sorted_bam, "rb")
@@ -257,9 +257,11 @@ class realignment:
                                                 continue
     
                                             else:
+                                                #calc edit distance allowed
+                                                edits_allowed = adaptative_myers_k(sc_len, self.edit_distance_frac)
     
     
-                                                if realignment_probability(realignment_dict,interval_length) >= self.prob_cutoff and realignment_dict['alignments'][1][3] < self.edit_distance:
+                                                if realignment_probability(realignment_dict,interval_length) >= self.prob_cutoff and realignment_dict['alignments'][1][3] <= edits_allowed:
     
                                                     # here I have to retrieve the nucleotide mapping positions. Which should be the
                                                     # the left sampling pysam coordinate - edlib coordinates
