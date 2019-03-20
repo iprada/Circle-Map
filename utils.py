@@ -1078,7 +1078,8 @@ def merge_fraction(chrom1,x1,x2,chrom2,y1,y2):
 
 def iteration_merge(only_discordants,results,fraction):
     """finction that merges the results of every iteration"""
-    norm_fraction = (fraction * 2) + 1
+
+    norm_fraction = 3
 
     discordant_bed = bt.BedTool(only_discordants)
     unparsed_bed = bt.BedTool(results)
@@ -1088,6 +1089,7 @@ def iteration_merge(only_discordants,results,fraction):
         names=['chrom', 'start', 'end', 'read', 'iteration', 'discordants'])
 
     unparsed_pd = unparsed_pd.sort_values(['iteration','chrom','start','end']).reset_index()
+
 
 
     grouped = unparsed_pd.groupby(merge_fraction(unparsed_pd.iteration.shift(), unparsed_pd.start.shift(),
@@ -1119,6 +1121,14 @@ def merge_final_output(results,begin,splits,dir,fraction,pid):
     norm_fraction = (fraction*2)+1
 
     unparsed_bed = bt.BedTool(results)
+
+    first_parsing = []
+
+    for interval in unparsed_bed:
+        if int(interval[4]) >= splits:
+            first_parsing.append(interval)
+
+    unparsed_bed = bt.BedTool(first_parsing)
 
 
     unparsed_pd = unparsed_bed.to_dataframe(
@@ -1343,6 +1353,38 @@ def assign_discordants(split_bed,discordant_bed):
 def adaptative_myers_k(sc_len,edit_frac):
     """Calculate the edit distance allowed as a function of the read length"""
     return(np.ceil(sc_len*edit_frac))
+
+def non_colinearity(read,mate_interval):
+    """Input a read and the mate interval in the graph. The function checks whether the alignment would be linear (splicing)
+    or colinear. Will return false, in order to not attemp realignment. This is mainly thought for skipping deletions and
+    RNA splicing"""
+
+    #check left soft-clipped
+    if read.cigar[0][0] == 4:
+        #graph needs to be upstream or looping to itself
+        if mate_interval.start > read.pos:
+            return (True)
+        elif read.pos < mate_interval.end:
+            #looping to itself
+            return (True)
+        else:
+            return (False)
+    #check right softclipped
+    if read.cigar[-1][0] == 4:
+    # graph needs to be downstream or looping to itself
+        if mate_interval.end < read.pos:
+            return (True)
+        elif read.pos > mate_interval.start:
+            #looping to itself
+            return (True)
+        else:
+            return (False)
+
+
+
+
+
+
 
 
 

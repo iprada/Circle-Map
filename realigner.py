@@ -243,59 +243,64 @@ class realignment:
                                     else:
                                         #sc length
                                         sc_len = len(get_longest_soft_clipped_bases(read)['seq'])
+
+                                        if non_colinearity(read,mate_interval) == True:
     
     
-                                        if sc_len >= self.min_sc_length:
-                                        #realignment
-    
-                                            realignment_dict = realign(read,self.n_hits,plus_coding_interval,minus_coding_interval,
-                                                                       plus_base_freqs,minus_base_freqs,self.gap_open,self.gap_ext,self.verbose)
-    
-    
-                                            if realignment_dict == None:
-    
-                                                continue
-    
-                                            else:
-                                                #calc edit distance allowed
-                                                edits_allowed = adaptative_myers_k(sc_len, self.edit_distance_frac)
-    
-    
-                                                if realignment_probability(realignment_dict,interval_length) >= self.prob_cutoff and realignment_dict['alignments'][1][3] <= edits_allowed:
-    
-                                                    # here I have to retrieve the nucleotide mapping positions. Which should be the
-                                                    # the left sampling pysam coordinate - edlib coordinates
-    
-                                                    read_end = rightmost_from_read(read)
-    
-    
-                                                    soft_clip_start = mate_interval['start']+ int(realignment_dict['alignments'][1][0][0])
-    
-                                                    soft_clip_end = mate_interval['start'] + int(realignment_dict['alignments'][1][0][1])
-    
-    
-    
-    
-                                                    # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
-                                                    if read.reference_start < mate_interval['start'] + int(
-                                                            realignment_dict['alignments'][1][0][0]):
-    
-                                                        iteration_results.append([interval['chrom'], read.reference_start, soft_clip_end+1, read.qname,iteration])
-    
-                                                    elif read.reference_start + mate_interval['start'] + int(
-                                                            realignment_dict['alignments'][1][0][0]):
-    
-                                                        iteration_results.append([interval['chrom'], soft_clip_start, read_end, read.qname,iteration])
-    
-                                                    else:
-                                                        # uninformative read
-                                                        continue
-    
-    
-    
-                                                else:
+                                            if sc_len >= self.min_sc_length:
+                                            #realignment
+
+                                                realignment_dict = realign(read,self.n_hits,plus_coding_interval,minus_coding_interval,
+                                                                           plus_base_freqs,minus_base_freqs,self.gap_open,self.gap_ext,self.verbose)
+
+
+                                                if realignment_dict == None:
+
                                                     continue
-    
+
+                                                else:
+                                                    #calc edit distance allowed
+                                                    edits_allowed = adaptative_myers_k(sc_len, self.edit_distance_frac)
+
+
+                                                    if realignment_probability(realignment_dict,interval_length) >= self.prob_cutoff and realignment_dict['alignments'][1][3] <= edits_allowed:
+
+                                                        # here I have to retrieve the nucleotide mapping positions. Which should be the
+                                                        # the left sampling pysam coordinate - edlib coordinates
+
+                                                        read_end = rightmost_from_read(read)
+
+
+                                                        soft_clip_start = mate_interval['start']+ int(realignment_dict['alignments'][1][0][0])
+
+                                                        soft_clip_end = mate_interval['start'] + int(realignment_dict['alignments'][1][0][1])
+
+
+
+
+                                                        # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
+                                                        if read.reference_start < mate_interval['start'] + int(
+                                                                realignment_dict['alignments'][1][0][0]):
+
+                                                            iteration_results.append([interval['chrom'], read.reference_start, soft_clip_end+1, read.qname,iteration])
+
+                                                        elif read.reference_start + mate_interval['start'] + int(
+                                                                realignment_dict['alignments'][1][0][0]):
+
+                                                            iteration_results.append([interval['chrom'], soft_clip_start, read_end, read.qname,iteration])
+
+                                                        else:
+                                                            # uninformative read
+                                                            continue
+
+
+
+                                                    else:
+                                                        continue
+                                        else:
+
+                                            continue
+
                                 else:
                                     continue
                             else:
