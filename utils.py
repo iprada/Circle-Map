@@ -1,4 +1,4 @@
-#!/home/iprada/bin/miniconda3/bin/python3.6
+#!/isdata/kroghgrp/xsh723/bin/miniconda3/bin/python
 #Author: Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
@@ -269,6 +269,18 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
     sp.call("bedtools genomecov -bg -ibam %s | sort -T temp_files_%s -k 1,1 -k2,2n | mergeBed -d %s > temp_files_%s/peaks.bed" %
             (input_bam_name,pid,clusters,pid),shell=True)
 
+    split_peaks = []
+    for interval in bt.BedTool("temp_files_%s/peaks.bed" % pid):
+
+        if int(interval[2])-int(interval[1])>500:
+            w_start = int(interval[1])
+            while w_start < int(interval[2]):
+                splitted = [interval.chrom,str(w_start),str(w_start+300)]
+                w_start+=300
+                split_peaks.append(splitted)
+        else:
+            split_peaks.append(interval)
+    bt.BedTool(split_peaks).saveas("temp_files_%s/peaks.bed" % pid)
 
     return(sorted_bam)
 
@@ -1078,28 +1090,37 @@ def iteration_merge(only_discordants,results,fraction):
 
     norm_fraction = 3
 
-    discordant_bed = bt.BedTool(only_discordants)
+    parsed_discordants = []
+    for interval in parsed_discordants:
+        interval.append(0)
+        parsed_discordants.append(interval)
+
+
+    discordant_bed = bt.BedTool(parsed_discordants)
     unparsed_bed = bt.BedTool(results)
 
 
+
+
     unparsed_pd = unparsed_bed.to_dataframe(
-        names=['chrom', 'start', 'end', 'read', 'iteration', 'discordants'])
+        names=['chrom', 'start', 'end', 'read', 'iteration','score', 'discordants'])
 
     unparsed_pd = unparsed_pd.sort_values(['iteration','chrom','start','end']).reset_index()
-
 
 
     grouped = unparsed_pd.groupby(merge_fraction(unparsed_pd.iteration.shift(), unparsed_pd.start.shift(),
                                            unparsed_pd.end.shift(), unparsed_pd.iteration,
                                            unparsed_pd.start,
                                            unparsed_pd.end).lt(norm_fraction).cumsum()).agg(
-        {'chrom': 'first', 'start': 'min', 'end': 'max', 'discordants': 'max', 'read': 'nunique'})
+        {'chrom': 'first', 'start': 'min', 'end': 'max', 'discordants': 'max', 'read': 'nunique','score':'sum'})
 
     bedtool_output = bt.BedTool.from_dataframe(grouped)
 
 
 
+
     bed_to_write = bedtool_output.cat(discordant_bed, postmerge=False)
+
 
     return(bed_to_write)
 
@@ -1129,7 +1150,7 @@ def merge_final_output(results,begin,splits,dir,fraction,pid):
 
 
     unparsed_pd = unparsed_bed.to_dataframe(
-        names=['chrom', 'start', 'end', 'discordants', 'sc'])
+        names=['chrom', 'start', 'end', 'discordants', 'sc','score'])
 
 
 
@@ -1138,7 +1159,7 @@ def merge_final_output(results,begin,splits,dir,fraction,pid):
     final_output = second_merging_round.groupby(
         merge_fraction(second_merging_round.chrom.shift(), second_merging_round.start.shift(),
                      second_merging_round.end.shift(),second_merging_round.chrom,second_merging_round.start,second_merging_round.end).lt(norm_fraction).cumsum()).agg(
-        {'chrom': 'first', 'start': 'min', 'end': 'max', 'discordants' : 'max', 'sc': 'sum'})
+        {'chrom': 'first', 'start': 'min', 'end': 'max', 'discordants' : 'max', 'sc': 'sum','score':'sum'})
 
     unfiltered_output = bt.BedTool.from_dataframe(final_output)
 

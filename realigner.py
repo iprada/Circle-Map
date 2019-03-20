@@ -8,6 +8,7 @@ from Bio.Seq import Seq
 import time
 from utils import *
 import pandas as pd
+import traceback
 
 
 class realignment:
@@ -207,6 +208,7 @@ class realignment:
     
                                         #check realignment from SA tag
                                         support = circle_from_SA(read, self.mapq_cutoff, mate_interval)
+
     
     
                                         if support is  None:
@@ -215,6 +217,8 @@ class realignment:
                                         else:
     
                                             if support['support'] == True:
+
+                                                score = len(get_longest_soft_clipped_bases(read)['seq'])*  (1-phred_to_prob(int(read.get_tag('SA').split(',')[4])))
     
                                                 #compute mapping positions
     
@@ -227,25 +231,26 @@ class realignment:
                                                 # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
                                                 if read.reference_start < support['leftmost']:
     
-                                                    iteration_results.append([interval['chrom'],read.reference_start,(supplementary_end-1),read.qname,iteration])
+                                                    iteration_results.append([interval['chrom'],read.reference_start,(supplementary_end-1),read.qname,iteration,str(round(score,2))])
     
                                                 elif read.reference_start > support['leftmost']:
     
                                                     iteration_results.append(
-                                                        [interval['chrom'], (support['leftmost']-1), read_end, read.qname,iteration])
+                                                        [interval['chrom'], (support['leftmost']-1), read_end, read.qname,iteration,str(round(score,2))])
     
                                                 else:
                                                     #uninformative read
                                                     continue
     
-    
+
     
                                     else:
                                         #sc length
                                         sc_len = len(get_longest_soft_clipped_bases(read)['seq'])
 
+
                                         if non_colinearity(read,mate_interval) == True:
-    
+
     
                                             if sc_len >= self.min_sc_length:
                                             #realignment
@@ -261,9 +266,9 @@ class realignment:
                                                 else:
                                                     #calc edit distance allowed
                                                     edits_allowed = adaptative_myers_k(sc_len, self.edit_distance_frac)
+                                                    prob = realignment_probability(realignment_dict,interval_length)
 
-
-                                                    if realignment_probability(realignment_dict,interval_length) >= self.prob_cutoff and realignment_dict['alignments'][1][3] <= edits_allowed:
+                                                    if prob >= self.prob_cutoff and realignment_dict['alignments'][1][3] <= edits_allowed:
 
                                                         # here I have to retrieve the nucleotide mapping positions. Which should be the
                                                         # the left sampling pysam coordinate - edlib coordinates
@@ -275,19 +280,19 @@ class realignment:
 
                                                         soft_clip_end = mate_interval['start'] + int(realignment_dict['alignments'][1][0][1])
 
-
+                                                        score = sc_len*prob
 
 
                                                         # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
                                                         if read.reference_start < mate_interval['start'] + int(
                                                                 realignment_dict['alignments'][1][0][0]):
 
-                                                            iteration_results.append([interval['chrom'], read.reference_start, soft_clip_end+1, read.qname,iteration])
+                                                            iteration_results.append([interval['chrom'], read.reference_start, soft_clip_end+1, read.qname,iteration,str(round(score,2))])
 
                                                         elif read.reference_start + mate_interval['start'] + int(
                                                                 realignment_dict['alignments'][1][0][0]):
 
-                                                            iteration_results.append([interval['chrom'], soft_clip_start, read_end, read.qname,iteration])
+                                                            iteration_results.append([interval['chrom'], soft_clip_start, read_end, read.qname,iteration,str(round(score,2))])
 
                                                         else:
                                                             # uninformative read
@@ -327,7 +332,6 @@ class realignment:
     
                     #second pass to add discordant read info
                     if len(iteration_results) > 0:
-
                         results = results + assign_discordants(iteration_results,iteration_discordants)
 
     
@@ -346,10 +350,12 @@ class realignment:
 
 
                 if self.verbose < 2:
+                    traceback.print_exc(file=sys.stdout)
 
                     warnings.warn(
                         "Failed on interval %s due to the error %s" % (
                             str(interval), str(e)))
+
                 else:
                     continue
 

@@ -1,4 +1,4 @@
-#!/home/iprada/bin/miniconda3/bin/python3.6
+#!/isdata/kroghgrp/xsh723/bin/miniconda3/bin/python
 #Author Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
