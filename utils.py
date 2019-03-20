@@ -956,19 +956,19 @@ def pssm(seq_prob,seq_nucl,edlib_cigar,base_freqs,gap_open,gap_extend,verbose):
 
                 if seq_nucl[nucleotide] == 'A':
 
-                    seq_prob[nucleotide] = np.log2((1 - seq_prob[nucleotide])/base_freqs['A'])
+                    seq_prob[nucleotide] = np.log2((1 - (seq_prob[nucleotide]*base_freqs['A']))/base_freqs['A'])
 
                 elif seq_nucl[nucleotide] == 'T':
 
-                    seq_prob[nucleotide] = np.log2((1 - seq_prob[nucleotide]) / base_freqs['T'])
+                    seq_prob[nucleotide] = np.log2((1 - (seq_prob[nucleotide]*base_freqs['T'])) / base_freqs['T'])
 
                 elif seq_nucl[nucleotide] == 'C':
 
-                    seq_prob[nucleotide] = np.log2((1 - seq_prob[nucleotide]) / base_freqs['C'])
+                    seq_prob[nucleotide] = np.log2((1 - (seq_prob[nucleotide]*base_freqs['C'])) / base_freqs['C'])
 
                 elif seq_nucl[nucleotide] == 'G':
 
-                    seq_prob[nucleotide] = np.log2((1 - seq_prob[nucleotide]) / base_freqs['G'])
+                    seq_prob[nucleotide] = np.log2((1 - (seq_prob[nucleotide]*base_freqs['G'])) / base_freqs['G'])
 
 
 
@@ -984,22 +984,22 @@ def pssm(seq_prob,seq_nucl,edlib_cigar,base_freqs,gap_open,gap_extend,verbose):
                 if seq_nucl[nucleotide] == 'A':
 
                     seq_prob[nucleotide] = np.log2(
-                        (seq_prob[nucleotide]/((np.sum(value for key, value in base_freqs.items() if key != 'A'))*4))/base_freqs['A'])
+                        (seq_prob[nucleotide]*base_freqs['A']/((np.sum(value for key, value in base_freqs.items() if key != 'A'))*3))/base_freqs['A'])
 
                 elif seq_nucl[nucleotide] == 'T':
 
                     seq_prob[nucleotide] = np.log2(
-                        (seq_prob[nucleotide]/((np.sum(value for key, value in base_freqs.items() if key != 'A'))*4))/base_freqs['T'])
+                        (seq_prob[nucleotide]*base_freqs['T']/((np.sum(value for key, value in base_freqs.items() if key != 'T'))*3))/base_freqs['T'])
 
                 elif seq_nucl[nucleotide] == 'G':
 
                     seq_prob[nucleotide] = np.log2(
-                        (seq_prob[nucleotide]/((np.sum(value for key, value in base_freqs.items() if key != 'A'))*4))/base_freqs['G'])
+                        (seq_prob[nucleotide]*base_freqs['G']/((np.sum(value for key, value in base_freqs.items() if key != 'G'))*3))/base_freqs['G'])
 
                 elif seq_nucl[nucleotide] == 'C':
 
                     seq_prob[nucleotide] = np.log2(
-                        (seq_prob[nucleotide]/((np.sum(value for key, value in base_freqs.items() if key != 'A'))*4))/base_freqs['C'])
+                        (seq_prob[nucleotide]*base_freqs['C']/((np.sum(value for key, value in base_freqs.items() if key != 'C'))*3))/base_freqs['C'])
 
                 elif seq_nucl[nucleotide] == 'N':
 
@@ -1028,9 +1028,6 @@ def realignment_probability(hit_dict,interval_length):
 
     #this might be included on the denominator
     regularizer = (interval_length * phred_to_prob(hit_dict['mapq_prior']))/(1- phred_to_prob(hit_dict['mapq_prior']))
-
-
-
     posterior = 2**best_hit/(np.sum((2**value[2]) for key,value in hit_dict['alignments'].items())+regularizer)
 
     return(posterior)
