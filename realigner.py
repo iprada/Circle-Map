@@ -1,4 +1,4 @@
-#!/isdata/kroghgrp/xsh723/scratch/anaconda/bin/python3.6
+#!/home/iprada/bin/miniconda3/bin/python3.6
 from __future__ import division
 
 
@@ -51,6 +51,7 @@ class realignment:
 
         self.overlap_fraction = overlap_frac
         self.output = output_name
+
 
         #regular options
         self.cores = ncores
@@ -116,14 +117,8 @@ class realignment:
 
 
         # compute insert size distribution
-        print("Computing insert size and standard deviation from %s F1R2 reads with a mapping quality of %s" %
-              (self.insert_sample_size,self.insert_size_mapq))
 
         insert_metrics = insert_size_dist(self.insert_sample_size,self.insert_size_mapq,self.qname_bam)
-
-
-
-        print("The computed insert size is %f with a standard deviation of %s" % (insert_metrics[0],insert_metrics[1]))
 
 
         #define realignment extension interval

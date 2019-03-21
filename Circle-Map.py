@@ -1,4 +1,4 @@
-#!/isdata/kroghgrp/xsh723/bin/miniconda3/bin/python
+#!/home/iprada/bin/miniconda3/bin/python3.6
 #Author Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
@@ -42,10 +42,10 @@ The Circle-Map suite
 
 Commands:
 
-   ReadExtractor   Extracts the reads indicating extrachromosomal circular DNA structural variants
-   Realign         Realign the soft-clipped reads and identify circular DNA
-   Repeats         Identify eccDNA coming from repeat regions
-   Simulate        Simulate eccDNA from the genome
+   ReadExtractor   Extracts the reads indicating extrachromosomal eccDNA structural variants
+   Realign         Realign the soft-clipped reads and identify eccDNA
+   Repeats         Identify eccDNA formed from repeat regions
+   Simulate        Simulate eccDNA from a reference genome
    
 ''')
         subparsers = self.parser.add_subparsers()
@@ -148,7 +148,8 @@ Commands:
                                              self.args.gap_ext, self.args.nhits, self.args.cut_off, self.args.min_sc,
                                              self.args.merge_fraction, self.args.interval_probability, self.args.output,
                                              self.args.threads, splitted[core],lock,self.args.split,
-                                             self.args.ratio,self.args.verbose,self.__getpid__(),self.args.edit_distance_fraction)
+                                             self.args.ratio,self.args.verbose,self.__getpid__(),
+                                             self.args.edit_distance_fraction)
 
                         processes.append(object)
 
@@ -165,7 +166,8 @@ Commands:
                     for p in jobs:
                         p.join()
 
-                    output = merge_final_output("%s" % self.args.output, begin,self.args.split,self.args.directory,self.args.merge_fraction,self.__getpid__())
+                    output = merge_final_output("%s" % self.args.output, begin,self.args.split,self.args.directory,
+                                                self.args.merge_fraction,self.__getpid__(),self.args.split_quality)
 
 
                     # compute coverage statistics
@@ -377,32 +379,31 @@ Commands:
         io_options.add_argument('-i', metavar='', help="Input: bam file containing the reads extracted by ReadExtractor")
         io_options.add_argument('-qbam', metavar='',help="Input: query name sorted bam file")
         io_options.add_argument('-sbam', metavar='', help="Input: coordinate sorted bam file")
-        io_options.add_argument('-fasta', metavar='', help="Input: file contaning the genome fasta")
+        io_options.add_argument('-fasta', metavar='', help="Input: Reference genome fasta file")
 
 
 
 
         if "-i" and "-qbam" and "-fasta" in sys.argv:
-
             #output
 
-            io_options.add_argument('-c', metavar='', help="Genome Coverage file",default=None)
+
 
             io_options.add_argument('-o','--output', metavar='', help="Output filename",
                                     default="circle_%s.bed" % sys.argv[sys.argv.index("-i") + 1])
 
             #alignment
             alignment_options.add_argument('-n', '--nhits', type=int, metavar='',
-                                  help="Number of alignment to compute the probability of the realignment. Default: 10",
-                                  default=10)
+                                  help="Number of realignment attempts. Default: 100",
+                                  default=100)
 
             alignment_options.add_argument('-p', '--cut_off', type=float, metavar='',
                                            help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.99",
                                            default=0.99)
 
             alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
-                                           help="Minimum soft-clipped length to attempt the realignment. Default: 14",
-                                           default=14)
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 8",
+                                           default=8)
 
             alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
                                            help="Gap open penalty in the position specific scoring matrix. Default: 17",
@@ -415,9 +416,14 @@ Commands:
             alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
                                            help="Minimum mapping quality allowed in the supplementary alignments. Default: 20",
                                            default=20)
-            alignment_options.add_argument('-d', '--edit_distance_fraction', type=float, metavar='',
-                                           help="Fraction of the read that can be edited in the realignment. Default (0.2)",
+
+            alignment_options.add_argument('-d', '--edit_distance-fraction', type=float, metavar='',
+                                           help="Maximum edit distance fraction allowed in the first realignment. Default (0.2)",
                                            default=0.2)
+
+            alignment_options.add_argument('-Q', '--split_quality', type=float, metavar='',
+                                           help="Minium split score to output an interval. Default (50.0)",
+                                           default=50.0)
 
 
             #insert size
@@ -427,7 +433,7 @@ Commands:
                                            default=60)
 
             i_size_estimate.add_argument('-sd', '--std', type=int, metavar='',
-                                         help="Number of standard deviations of the insert size to extend the intervals. Default 4",
+                                         help="Standard deviations of the insert size to extend the intervals. Default 4",
                                          default=4)
 
 
@@ -438,16 +444,15 @@ Commands:
             #Interval options
 
             interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
-                                         help="Fraction to merge the SC and SA called intervals. Default 0.95",
+                                         help="Merge intervals reciprocally overlapping by a fraction. Default 0.95",
                                          default=0.95)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
-                                  help="Skip intervals where the probability of been the mate is less than the cutoff. Default: 0.01",
+                                  help="Skip edges of the graph with a probability below the threshold. Default: 0.01",
                                   default=0.01)
             interval.add_argument('-K', '--clustering_dist', type=int, metavar='',
-                                  help="Merge reads with variation that are k nucleotides appart",
-                                  default=300)
-
+                                  help="Cluster reads that are K nucleotides appart in the same node. Default: 0",
+                                  default=0)
             #When to call a circle
 
             out_decision.add_argument('-S', '--split', type=int, metavar='',
@@ -455,7 +460,7 @@ Commands:
                                          default=2)
 
             out_decision.add_argument('-r', '--ratio', type=float, metavar='',
-                                      help="Minimum in/out required ratio. Default: 0.0",
+                                      help="Minimum in/out required coverage ratio. Default: 0.0",
                                       default=0.0)
 
             # coverage metrics
@@ -472,7 +477,7 @@ Commands:
                                           default=0)
 
             coverage_metrics.add_argument('-E', '--extension', type=int, metavar='',
-                                          help="Number of bases inside the eccDNA coordinates to compute the ratio. Default: 100",
+                                          help="Number of bases inside the eccDNA breakpoint coordinates to compute the ratio. Default: 100",
                                           default=100)
 
 
@@ -496,22 +501,19 @@ Commands:
 
             #output
 
-            io_options.add_argument('-c', metavar='', help="Genome Coverage file", default=None)
-
             io_options.add_argument('-o', metavar='', help="Output filename")
 
-
             alignment_options.add_argument('-n', '--nhits', type=int, metavar='',
-                                           help="Number of alignment to compute the probability of the realignment. Default: 10",
-                                           default=10)
+                                           help="Number of realignment attempts. Default: 100",
+                                           default=100)
 
             alignment_options.add_argument('-p', '--cut_off', type=float, metavar='',
                                            help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.99",
                                            default=0.99)
 
             alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
-                                           help="Minimum soft-clipped length to attempt the realignment. Default: 14",
-                                           default=14)
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 8",
+                                           default=8)
 
             alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
                                            help="Gap open penalty in the position specific scoring matrix. Default: 17",
@@ -524,9 +526,14 @@ Commands:
             alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
                                            help="Minimum mapping quality allowed in the supplementary alignments. Default: 20",
                                            default=20)
+
             alignment_options.add_argument('-d', '--edit_distance-fraction', type=float, metavar='',
-                                           help="Fraction of the read that can be edited in the realignment. Default (0.2)",
+                                           help="Maximum edit distance fraction allowed in the first realignment. Default (0.2)",
                                            default=0.2)
+
+            alignment_options.add_argument('-Q', '--split_quality', type=float, metavar='',
+                                           help="Minium split score to output an interval. Default (50.0)",
+                                           default=50.0)
 
             # insert size
 
@@ -535,7 +542,7 @@ Commands:
                                          default=60)
 
             i_size_estimate.add_argument('-sd', '--std', type=int, metavar='',
-                                         help="Number of standard deviations of the insert size to extend the intervals. Default 4",
+                                         help="Standard deviations of the insert size to extend the intervals. Default 4",
                                          default=4)
 
             i_size_estimate.add_argument('-s', '--sample_size', type=int, metavar='',
@@ -544,17 +551,16 @@ Commands:
 
             # Interval options
 
-
             interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
-                                        help="Fraction to merge the SC and SA called intervals. Default 0.95",
-                                        default=0.95)
+                                  help="Merge intervals reciprocally overlapping by a fraction. Default 0.95",
+                                  default=0.95)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
-                                  help="Skip intervals where the probability of been the mate is less than the cutoff. Default: 0.01",
-                                  default=0.99)
+                                  help="Skip edges of the graph with a probability below the threshold. Default: 0.01",
+                                  default=0.01)
             interval.add_argument('-K', '--clustering_dist', type=int, metavar='',
-                                  help="Merge reads with variation that are k nucleotides appart",
-                                  default=300)
+                                  help="Cluster reads that are K nucleotides appart in the same node. Default: 0",
+                                  default=0)
 
             # When to call a circle
 
@@ -563,7 +569,7 @@ Commands:
                                       default=2)
 
             out_decision.add_argument('-r', '--ratio', type=float, metavar='',
-                                      help="Minimum in/out required ratio. Default: 0.0",
+                                      help="Minimum in/out required coverage ratio. Default: 0.0",
                                       default=0.0)
 
             # coverage metrics
@@ -581,7 +587,7 @@ Commands:
                                           default=0)
 
             coverage_metrics.add_argument('-E', '--extension', type=int, metavar='',
-                                          help="Number of bases inside the eccDNA coordinates to compute the ratio. Default: 100",
+                                          help="Number of bases inside the eccDNA breakpoint coordinates to compute the ratio. Default: 100",
                                           default=100)
 
 

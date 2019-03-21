@@ -1,4 +1,4 @@
-#!/isdata/kroghgrp/xsh723/bin/miniconda3/bin/python
+#!/home/iprada/bin/miniconda3/bin/python3.6
 #Author: Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
@@ -15,6 +15,7 @@ import glob
 import time
 import sys
 from scipy import stats as st
+import random
 
 
 
@@ -280,6 +281,8 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
                 split_peaks.append(splitted)
         else:
             split_peaks.append(interval)
+    #randomize list order to win speed
+    random.shuffle(split_peaks)
     bt.BedTool(split_peaks).saveas("temp_files_%s/peaks.bed" % pid)
 
     return(sorted_bam)
@@ -644,6 +647,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
             for index,interval in candidate_mates.iterrows():
 
                 #small pseudocount to denominator to avoid div by zero
+
                 if interval['probability']/(sum+0.00000001) >= interval_p_cutoff:
 
                     if ('LR' in orientation) or ('L' and 'R' in orientation):
@@ -1128,7 +1132,7 @@ def iteration_merge(only_discordants,results,fraction):
 
 
 
-def merge_final_output(results,begin,splits,dir,fraction,pid):
+def merge_final_output(results,begin,splits,dir,fraction,pid,score):
 
 
     print("Writting final output to disk")
@@ -1141,10 +1145,12 @@ def merge_final_output(results,begin,splits,dir,fraction,pid):
     unparsed_bed = bt.BedTool(results)
 
     first_parsing = []
-
     for interval in unparsed_bed:
         if int(interval[4]) >= splits:
             first_parsing.append(interval)
+
+
+
 
     unparsed_bed = bt.BedTool(first_parsing)
 
@@ -1210,7 +1216,7 @@ def start_realign(circle_bam,output,threads,verbose,pid,clusters):
 
     print("\nRunning Circle-Map realign\n")
 
-    print("Computing genome coverage from the structural variant reads\n")
+    print("Clustering structural variant reads\n")
 
     eccdna_bam = ps.AlignmentFile("%s" % circle_bam, "rb")
 
