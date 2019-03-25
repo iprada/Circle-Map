@@ -16,7 +16,8 @@ class realignment:
 
     def __init__(self, input_bam,qname_bam,sorted_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
                  insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,min_soft_clipped_length,overlap_frac,
-                 interval_p_cut, output_name,ncores,circle_peaks,locker,split,ratio,verbose,pid,edit_distance_frac):
+                 interval_p_cut, output_name,ncores,circle_peaks,locker,split,ratio,verbose,pid,edit_distance_frac,
+                 remap_splits,only_discordants):
         #I/O
         self.edit_distance_frac = edit_distance_frac
         self.ecc_dna = input_bam
@@ -34,6 +35,8 @@ class realignment:
         self.min_sc_length = min_soft_clipped_length
         self.mapq_cutoff = mapq_cutoff
         self.interval_p = interval_p_cut
+        self.remap = remap_splits
+        self.only_discordants = only_discordants
 
         # affine gap scoring options
         self.gap_open = gap_open
@@ -144,7 +147,7 @@ class realignment:
     
     
                 #find out the prior distribution (mate alignment positions).
-                candidate_mates = get_mate_intervals(self.ecc_dna,interval,self.mapq_cutoff,self.verbose)
+                candidate_mates = get_mate_intervals(self.ecc_dna,interval,self.mapq_cutoff,self.verbose,self.only_discordants)
     
     
     
@@ -198,7 +201,7 @@ class realignment:
                                 if read.mapq >= self.mapq_cutoff:
     
                                     # no need to realignment
-                                    if read.has_tag('SA'):
+                                    if read.has_tag('SA') and self.remap != True:
     
     
                                         #check realignment from SA tag
@@ -262,7 +265,6 @@ class realignment:
                                                     #calc edit distance allowed
                                                     edits_allowed = adaptative_myers_k(sc_len, self.edit_distance_frac)
                                                     prob = realignment_probability(realignment_dict,interval_length)
-
                                                     if prob >= self.prob_cutoff and realignment_dict['alignments'][1][3] <= edits_allowed:
 
                                                         # here I have to retrieve the nucleotide mapping positions. Which should be the
@@ -346,7 +348,6 @@ class realignment:
 
                 if self.verbose < 2:
                     traceback.print_exc(file=sys.stdout)
-
                     warnings.warn(
                         "Failed on interval %s due to the error %s" % (
                             str(interval), str(e)))

@@ -44,7 +44,6 @@ class coverage:
         coverage_dict = {}
         for interval in merged_bed:
 
-            print(interval)
 
             if interval.start - self.ext < 0:
                 start = 0
@@ -77,8 +76,6 @@ class coverage:
 
         output = []
         for key,value in cov_dict.items():
-
-            print(key)
 
 
             overlaps = bt.BedTool(self.bed.all_hits(key))
@@ -153,4 +150,3 @@ class coverage:
                 output.append(interval)
 
         return(bt.BedTool(output))
-

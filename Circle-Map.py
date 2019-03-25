@@ -5,6 +5,7 @@
 
 import argparse
 import sys
+
 import os
 import time
 import pandas as pd
@@ -12,10 +13,12 @@ from extract_circle_SV_reads import readExtractor
 from realigner import realignment
 from repeats import repeat
 from utils import merge_final_output,filter_by_ratio,start_realign,start_simulate,mutate
-from coverage import coverage
+from Coverage import coverage
 import multiprocessing as mp
 import pybedtools as bt
 from simulations import sim_ecc_reads
+import subprocess as sp
+import glob
 
 
 
@@ -133,6 +136,9 @@ Commands:
                 splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads,
                                                           self.args.verbose,self.__getpid__(),self.args.clustering_dist)
 
+
+
+
                 if __name__ == '__main__':
 
                     lock = mp.Lock()
@@ -149,7 +155,7 @@ Commands:
                                              self.args.merge_fraction, self.args.interval_probability, self.args.output,
                                              self.args.threads, splitted[core],lock,self.args.split,
                                              self.args.ratio,self.args.verbose,self.__getpid__(),
-                                             self.args.edit_distance_fraction)
+                                             self.args.edit_distance_fraction,self.args.remap_splits,self.args.only_discordants)
 
                         processes.append(object)
 
@@ -170,15 +176,18 @@ Commands:
                                                 self.args.merge_fraction,self.__getpid__(),self.args.split_quality)
 
 
+
                     # compute coverage statistics
 
                     if self.args.no_coverage == False:
 
-                        coverage_object = coverage(self.args.sbam,output,self.args.bases,self.args.cmapq,self.args.extension,self.args.directory)
+                        coverage_object = coverage(self.args.sbam,output,
+                                                   self.args.bases,self.args.cmapq,self.args.extension,self.args.directory)
                         coverage_dict, header_dict = coverage_object.get_wg_coverage()
+
                         output = coverage_object.compute_coverage(coverage_dict, header_dict)
                         filtered_output = filter_by_ratio(output,self.args.ratio)
-                        filtered_output.saveas("%s" % self.args.output)
+                        filtered_output.to_csv(r'%s' % self.args.output, header=None, index=None, sep='\t', mode='w')
 
                     else:
                         output.saveas("%s" % self.args.output)
@@ -202,6 +211,7 @@ Commands:
                 output = coverage_object.compute_coverage(coverage_dict, header_dict)
                 filtered_output = filter_by_ratio(output, self.args.ratio)
                 filtered_output.saveas("%s" % self.args.output)
+
 
             elif sys.argv[1] == "Simulate":
                 sim_pid = start_simulate(self.__getpid__())
@@ -229,6 +239,7 @@ Commands:
                     correct_circles = mp.Value('i', 0)
                     jobs = []
                     # init the processes
+
 
                     for i in range(self.args.processes):
 
@@ -398,32 +409,35 @@ Commands:
                                   default=100)
 
             alignment_options.add_argument('-p', '--cut_off', type=float, metavar='',
-                                           help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.99",
-                                           default=0.99)
+                                           help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.999",
+                                           default=0.999)
 
             alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
                                            help="Minimum soft-clipped length to attempt the realignment. Default: 8",
                                            default=8)
 
             alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
-                                           help="Gap open penalty in the position specific scoring matrix. Default: 17",
-                                           default=17)
+                                           help="Gap open penalty in the position specific scoring matrix. Default: 5",
+                                           default=5)
 
             alignment_options.add_argument('-e', '--gap_ext', type=int, metavar='',
-                                           help="Gap extension penalty in the position specific scoring matrix. Default: 5",
-                                           default=5)
+                                           help="Gap extension penalty in the position specific scoring matrix. Default: 1",
+                                           default=1)
 
             alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
                                            help="Minimum mapping quality allowed in the supplementary alignments. Default: 20",
                                            default=20)
 
             alignment_options.add_argument('-d', '--edit_distance-fraction', type=float, metavar='',
-                                           help="Maximum edit distance fraction allowed in the first realignment. Default (0.2)",
-                                           default=0.2)
+                                           help="Maximum edit distance fraction allowed in the first realignment. Default (0.04)",
+                                           default=0.05)
 
             alignment_options.add_argument('-Q', '--split_quality', type=float, metavar='',
-                                           help="Minium split score to output an interval. Default (50.0)",
-                                           default=50.0)
+                                           help="Minium split score to output an interval. Default (20.0)",
+                                           default=10.0)
+
+            alignment_options.add_argument('-R', '--remap_splits', help="Remap probabilistacally the split reads",
+                                           action='store_true')
 
 
             #insert size
@@ -444,15 +458,18 @@ Commands:
             #Interval options
 
             interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
-                                         help="Merge intervals reciprocally overlapping by a fraction. Default 0.95",
+                                         help="Merge intervals reciprocally overlapping by a fraction. Default 0.8",
                                          default=0.95)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
-                                  help="Skip edges of the graph with a probability below the threshold. Default: 0.01",
-                                  default=0.01)
+                                  help="Skip edges of the graph with a probability below the threshold. Default: 0 (Most probable path)",
+                                  default=0)
             interval.add_argument('-K', '--clustering_dist', type=int, metavar='',
                                   help="Cluster reads that are K nucleotides appart in the same node. Default: 0",
                                   default=0)
+
+            interval.add_argument('-D', '--only_discordants',help="Use only discordant reads to build the graph",
+                                           action='store_false')
             #When to call a circle
 
             out_decision.add_argument('-S', '--split', type=int, metavar='',
@@ -504,24 +521,24 @@ Commands:
             io_options.add_argument('-o', metavar='', help="Output filename")
 
             alignment_options.add_argument('-n', '--nhits', type=int, metavar='',
-                                           help="Number of realignment attempts. Default: 100",
-                                           default=100)
+                                           help="Number of realignment attempts. Default: 10",
+                                           default=10)
 
             alignment_options.add_argument('-p', '--cut_off', type=float, metavar='',
-                                           help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.99",
-                                           default=0.99)
+                                           help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.999",
+                                           default=0.999)
 
             alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
                                            help="Minimum soft-clipped length to attempt the realignment. Default: 8",
                                            default=8)
 
             alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
-                                           help="Gap open penalty in the position specific scoring matrix. Default: 17",
-                                           default=17)
+                                           help="Gap open penalty in the position specific scoring matrix. Default: 5",
+                                           default=5)
 
             alignment_options.add_argument('-e', '--gap_ext', type=int, metavar='',
-                                           help="Gap extension penalty in the position specific scoring matrix. Default: 5",
-                                           default=5)
+                                           help="Gap extension penalty in the position specific scoring matrix. Default: 1",
+                                           default=1)
 
             alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
                                            help="Minimum mapping quality allowed in the supplementary alignments. Default: 20",
@@ -529,11 +546,13 @@ Commands:
 
             alignment_options.add_argument('-d', '--edit_distance-fraction', type=float, metavar='',
                                            help="Maximum edit distance fraction allowed in the first realignment. Default (0.2)",
-                                           default=0.2)
+                                           default=0.05)
 
             alignment_options.add_argument('-Q', '--split_quality', type=float, metavar='',
-                                           help="Minium split score to output an interval. Default (50.0)",
-                                           default=50.0)
+                                           help="Minium split score to output an interval. Default (10.0)",
+                                           default=10.0)
+            alignment_options.add_argument('-R', '--remap_splits',help="Remap probabilistacally bwa-mem split reads",
+                                  action='store_true')
 
             # insert size
 
@@ -552,15 +571,17 @@ Commands:
             # Interval options
 
             interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
-                                  help="Merge intervals reciprocally overlapping by a fraction. Default 0.95",
+                                  help="Merge intervals reciprocally overlapping by a fraction. Default 0.8",
                                   default=0.95)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
-                                  help="Skip edges of the graph with a probability below the threshold. Default: 0.01",
-                                  default=0.01)
+                                  help="Skip edges of the graph with a probability below the threshold. Default: 0 (Most probable path)",
+                                  default=0)
             interval.add_argument('-K', '--clustering_dist', type=int, metavar='',
                                   help="Cluster reads that are K nucleotides appart in the same node. Default: 0",
                                   default=0)
+            interval.add_argument('-D', '--only_discordants', help="Use only discordant reads to build the graph",
+                                  action='store_true')
 
             # When to call a circle
 
