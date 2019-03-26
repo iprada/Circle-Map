@@ -1,4 +1,4 @@
-#!/home/iprada/bin/miniconda3/bin/python3.6
+#!/isdata/kroghgrp/xsh723/bin/miniconda3/bin/python
 #Author: Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
@@ -1101,7 +1101,7 @@ def merge_fraction(chrom1,x1,x2,chrom2,y1,y2):
     return(pd.Series(chrom1 == chrom2) + pd.Series(two_overlap_one.clip(0)) + pd.Series(one_overlap_two.clip(0)))
 
 
-def iteration_merge(only_discordants,results,fraction):
+def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af):
     """finction that merges the results of every iteration"""
 
     norm_fraction = 3
@@ -1114,6 +1114,7 @@ def iteration_merge(only_discordants,results,fraction):
 
     discordant_bed = bt.BedTool(parsed_discordants)
     unparsed_bed = bt.BedTool(results)
+    print("filtering %s intervals" % len(unparsed_bed))
 
 
 
@@ -1135,20 +1136,37 @@ def iteration_merge(only_discordants,results,fraction):
 
 
 
-    bed_to_write = bedtool_output.cat(discordant_bed, postmerge=False)
+    allele_free = bedtool_output.cat(discordant_bed, postmerge=False)
+    write = []
+    for interval in allele_free:
+        if (int(interval[4])) >= splits and float(interval[5]) > score:
+            start_cov = bam.count_coverage(contig=interval.chrom,
+                                           start=int(interval.start), stop=int(interval.start) + sc_len,
+                                           quality_threshold=0,read_callback='nofilter')
+
+            end_cov = bam.count_coverage(contig=interval.chrom,
+                                         start=int(interval.end) - sc_len, stop=int(interval.end),
+                                         quality_threshold=0,read_callback='nofilter')
+            start_cov_mean = np.mean(np.array([start_cov[0], start_cov[1], start_cov[2], start_cov[3]]).sum(axis=0))
+            end_cov_mean = np.mean(np.array([end_cov[0], end_cov[1], end_cov[2], end_cov[3]]).sum(axis=0))
+
+            circle_af = (int(interval[4])*2) / ((start_cov_mean+end_cov_mean)/2)
+            if circle_af >=af:
+                write.append(interval)
 
 
+    bed_to_write = bt.BedTool(write)
     return(bed_to_write)
 
 
 
 
 
-def merge_final_output(results,begin,splits,dir,fraction,pid,score):
+def merge_final_output(bam,results,begin,splits,dir,fraction,pid,score,af,sc_len):
 
 
-    print("Writting final output to disk")
-
+    print("Calculating allele frequencies")
+    bam = ps.AlignmentFile(bam, "rb")
     os.chdir("temp_files_%s/" % pid)
 
     # multiply *2 for reciprocal overlap +1 to check chromosome
@@ -1156,15 +1174,10 @@ def merge_final_output(results,begin,splits,dir,fraction,pid,score):
 
     unparsed_bed = bt.BedTool(results)
 
-    first_parsing = []
-    for interval in unparsed_bed:
-        if (int(interval[4])) >= splits and float(interval[5]) > score:
-            first_parsing.append(interval)
 
 
 
-
-    unparsed_bed = bt.BedTool(first_parsing)
+    print("Writting final output to disk")
 
 
     unparsed_pd = unparsed_bed.to_dataframe(

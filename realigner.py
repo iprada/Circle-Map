@@ -17,7 +17,7 @@ class realignment:
     def __init__(self, input_bam,qname_bam,sorted_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
                  insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,min_soft_clipped_length,overlap_frac,
                  interval_p_cut, output_name,ncores,circle_peaks,locker,split,ratio,verbose,pid,edit_distance_frac,
-                 remap_splits,only_discordants):
+                 remap_splits,only_discordants,splits,score,af):
         #I/O
         self.edit_distance_frac = edit_distance_frac
         self.ecc_dna = input_bam
@@ -37,6 +37,9 @@ class realignment:
         self.interval_p = interval_p_cut
         self.remap = remap_splits
         self.only_discordants = only_discordants
+        self.split = splits
+        self.score = score
+        self.af= af
 
         # affine gap scoring options
         self.gap_open = gap_open
@@ -355,12 +358,11 @@ class realignment:
                 else:
                     continue
 
-
-
-
-
+        file_name = self.ecc_dna.filename
         self.ecc_dna.close()
 
         #Write process output to disk
-        output = iteration_merge(only_discordants,results,self.overlap_fraction)
+        output = iteration_merge(only_discordants,results,
+                                 self.overlap_fraction,self.split,self.score,self.min_sc_length,self.sorted_bam,self.af)
         write_to_disk(output,self.output,self.lock,self.directory,self.pid)
+        return(None)

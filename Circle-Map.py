@@ -1,4 +1,4 @@
-#!/home/iprada/bin/miniconda3/bin/python3.6
+#!/isdata/kroghgrp/xsh723/bin/miniconda3/bin/python
 #Author Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
@@ -155,7 +155,9 @@ Commands:
                                              self.args.merge_fraction, self.args.interval_probability, self.args.output,
                                              self.args.threads, splitted[core],lock,self.args.split,
                                              self.args.ratio,self.args.verbose,self.__getpid__(),
-                                             self.args.edit_distance_fraction,self.args.remap_splits,self.args.only_discordants)
+                                             self.args.edit_distance_fraction,self.args.remap_splits,
+                                             self.args.only_discordants,self.args.split,self.args.split_quality,
+                                             self.args.allele_frequency)
 
                         processes.append(object)
 
@@ -172,8 +174,9 @@ Commands:
                     for p in jobs:
                         p.join()
 
-                    output = merge_final_output("%s" % self.args.output, begin,self.args.split,self.args.directory,
-                                                self.args.merge_fraction,self.__getpid__(),self.args.split_quality)
+                    output = merge_final_output(self.args.sbam,self.args.output, begin,self.args.split,self.args.directory,
+                                                self.args.merge_fraction,self.__getpid__(),
+                                                self.args.split_quality,0.99,self.args.min_sc)
 
 
 
@@ -470,6 +473,9 @@ Commands:
 
             interval.add_argument('-D', '--only_discordants',help="Use only discordant reads to build the graph",
                                            action='store_false')
+            interval.add_argument('-F', '--allele_frequency', type=float, metavar='',
+                                  help="Minimum allele frequency required to report the circle interval. Default (0.01)",
+                                  default=0.01)
             #When to call a circle
 
             out_decision.add_argument('-S', '--split', type=int, metavar='',
@@ -582,6 +588,10 @@ Commands:
                                   default=0)
             interval.add_argument('-D', '--only_discordants', help="Use only discordant reads to build the graph",
                                   action='store_true')
+            interval.add_argument('-F', '--allele_frequency', type=float, metavar='',
+                                  help="Minimum allele frequency required to report the circle interval. Default (0.01)",
+                                  default=0.01)
+
 
             # When to call a circle
 
