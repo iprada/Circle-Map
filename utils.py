@@ -1368,11 +1368,11 @@ def filter_by_ratio(eccdna_bed,cutoff):
             circle_list.append([row['chrom'],row['start'],row['end'],row['discordants'],row['soft-clipped'],
                              row['score'],row['mean'],row['std'],row['start_ratio'],row['end_ratio'],row['continuity']])
 
-    #output = pd.DataFrame.from_records(
-    #    filtered,columns=['chrom', 'start', 'end', 'discordants', 'soft-clipped', 'score', 'mean','std',
-    #                      'start_ratio','end_ratio','continuity'])
+    output = pd.DataFrame.from_records(
+        filtered,columns=['chrom', 'start', 'end', 'discordants', 'soft-clipped', 'score', 'mean','std',
+                          'start_ratio','end_ratio','continuity'])
 
-    return(None)
+    return(output)
 
 
 def merge_bed(discordants_pd):

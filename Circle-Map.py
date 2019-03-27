@@ -1,4 +1,4 @@
-#!/isdata/kroghgrp/xsh723/bin/miniconda3/bin/python
+#!/home/iprada/bin/miniconda3/bin/python
 #Author Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
@@ -474,8 +474,8 @@ Commands:
             interval.add_argument('-D', '--only_discordants',help="Use only discordant reads to build the graph",
                                            action='store_false')
             interval.add_argument('-F', '--allele_frequency', type=float, metavar='',
-                                  help="Minimum allele frequency required to report the circle interval. Default (0.01)",
-                                  default=0.01)
+                                  help="Minimum allele frequency required to report the circle interval. Default (0.1)",
+                                  default=0.1)
             #When to call a circle
 
             out_decision.add_argument('-S', '--split', type=int, metavar='',
@@ -589,8 +589,8 @@ Commands:
             interval.add_argument('-D', '--only_discordants', help="Use only discordant reads to build the graph",
                                   action='store_true')
             interval.add_argument('-F', '--allele_frequency', type=float, metavar='',
-                                  help="Minimum allele frequency required to report the circle interval. Default (0.01)",
-                                  default=0.01)
+                                  help="Minimum allele frequency required to report the circle interval. Default (0.1)",
+                                  default=0.1)
 
 
             # When to call a circle
