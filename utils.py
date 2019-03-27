@@ -283,7 +283,7 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
             split_peaks.append([interval.chrom,str(interval.start),str(interval.end)])
 
     #randomize list order to win speed
-    random.shuffle(split_peaks)
+    #random.shuffle(split_peaks)
     bt.BedTool(split_peaks).saveas("temp_files_%s/peaks.bed" % pid)
 
     return(sorted_bam,split_peaks)
