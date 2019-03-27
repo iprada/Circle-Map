@@ -1,18 +1,18 @@
-#!/home/iprada/bin/miniconda3/bin/python
+#!/isdata/kroghgrp/xsh723/bin/miniconda3/bin/python
 #Author Inigo Prada Luengo
 #email: inigo.luengo@bio.ku.dk
 
 
 import argparse
 import sys
-
+from functools import partial
 import os
 import time
 import pandas as pd
 from extract_circle_SV_reads import readExtractor
 from realigner import realignment
 from repeats import repeat
-from utils import merge_final_output,filter_by_ratio,start_realign,start_simulate,mutate
+from utils import merge_final_output,filter_by_ratio,start_realign,start_simulate,mutate,insert_size_dist
 from Coverage import coverage
 import multiprocessing as mp
 import pybedtools as bt
@@ -136,48 +136,43 @@ Commands:
                 splitted,sorted_bam,begin = start_realign(self.args.i,self.args.output,self.args.threads,
                                                           self.args.verbose,self.__getpid__(),self.args.clustering_dist)
 
+                sorted_bam.close()
+                metrics = insert_size_dist(self.args.sample_size,self.args.insert_mapq,self.args.qbam)
 
 
 
                 if __name__ == '__main__':
 
-                    lock = mp.Lock()
+                    m = mp.Manager()
 
-                    processes = []
+                    lock = m.Lock()
 
-                    for core in range(0,self.args.threads):
+                    object = realignment(self.args.i, self.args.qbam, self.args.sbam, self.args.fasta,
+                                         self.args.directory,
+                                         self.args.mapq,
+                                         self.args.insert_mapq, self.args.std, self.args.sample_size,
+                                         self.args.gap_open,
+                                         self.args.gap_ext, self.args.nhits, self.args.cut_off, self.args.min_sc,
+                                         self.args.merge_fraction, self.args.interval_probability, self.args.output,
+                                         self.args.threads, self.args.allele_frequency, lock, self.args.split,
+                                         self.args.ratio, self.args.verbose, self.__getpid__(),
+                                         self.args.edit_distance_fraction, self.args.remap_splits,
+                                         self.args.only_discordants, self.args.split, self.args.split_quality,metrics)
 
-                        object = realignment(sorted_bam, self.args.qbam,self.args.sbam, self.args.fasta, self.args.directory,
-                                             self.args.mapq,
-                                             self.args.insert_mapq, self.args.std, self.args.sample_size,
-                                             self.args.gap_open,
-                                             self.args.gap_ext, self.args.nhits, self.args.cut_off, self.args.min_sc,
-                                             self.args.merge_fraction, self.args.interval_probability, self.args.output,
-                                             self.args.threads, splitted[core],lock,self.args.split,
-                                             self.args.ratio,self.args.verbose,self.__getpid__(),
-                                             self.args.edit_distance_fraction,self.args.remap_splits,
-                                             self.args.only_discordants,self.args.split,self.args.split_quality,
-                                             self.args.allele_frequency)
+                    pool = mp.Pool(processes=self.args.threads)
+                    exits = pool.imap_unordered(object.realign,splitted)
+                    pool.close()
+                    for res in exits:
+                        if res[0] == 1:
+                            print("A process failed")
+                            print(res[1])
+                            pool.terminate()
+                            break
 
-                        processes.append(object)
-
-                    jobs = []
-                    # init the processes
-
-                    processes[0].print_parameters()
-                    for i in range(0,len(processes)):
-
-                        p = mp.Process(target=processes[i].realign)
-                        jobs.append(p)
-                        p.start()
-                    # kill the process
-                    for p in jobs:
-                        p.join()
-
-                    output = merge_final_output(self.args.sbam,self.args.output, begin,self.args.split,self.args.directory,
-                                                self.args.merge_fraction,self.__getpid__(),
-                                                self.args.split_quality,0.99,self.args.min_sc)
-
+                    pool.join()
+                    output = merge_final_output(self.args.sbam, self.args.output, begin, self.args.split,
+                                                self.args.directory,
+                                                self.args.merge_fraction, self.__getpid__())
 
 
                     # compute coverage statistics

@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9287c7d2-cbcd-4614-81dd-4e370f4e8f20" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/Circle-Map.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Circle-Map.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Circle-Map.py" beforeDir="false" afterPath="$PROJECT_DIR$/Circle-Map.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/realigner.py" beforeDir="false" afterPath="$PROJECT_DIR$/realigner.py" afterDir="false" />
@@ -17,20 +15,14 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/realigner.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="316">
-              <caret line="361" column="28" lean-forward="true" selection-start-line="361" selection-start-column="28" selection-end-line="361" selection-end-column="28" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="235">
-              <caret line="1148" column="56" selection-start-line="1148" selection-start-column="56" selection-end-line="1148" selection-end-column="56" />
+            <state relative-caret-position="626">
+              <caret line="1257" lean-forward="true" selection-start-line="1257" selection-end-line="1257" />
+              <folding>
+                <element signature="e#112#130#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -44,11 +36,26 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Circle-Map.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="310">
-              <caret line="346" column="27" lean-forward="true" selection-start-line="346" selection-start-column="27" selection-end-line="346" selection-end-column="27" />
+            <state relative-caret-position="525">
+              <caret line="170" selection-start-line="170" selection-end-line="170" />
+              <folding>
+                <element signature="e#112#127#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/show_speed.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="270">
+              <caret line="19" column="37" selection-start-line="19" selection-start-column="37" selection-end-line="19" selection-end-column="37" />
+              <folding>
+                <element signature="e#0#28#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -77,6 +84,15 @@
           </provider>
         </entry>
       </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/realigner.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="405">
+              <caret line="78" lean-forward="true" selection-start-line="78" selection-end-line="78" />
+            </state>
+          </provider>
+        </entry>
+      </file>
     </leaf>
   </component>
   <component name="FileTemplateManagerImpl">
@@ -88,11 +104,7 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>phred_</find>
-      <find>assign_disco</find>
-      <find>realignment_probab</find>
       <find>phred</find>
-      <find>iteration</find>
       <find>assign</find>
       <find>get_log</find>
       <find>try</find>
@@ -101,7 +113,27 @@
       <find>print</find>
       <find>af</find>
       <find>self</find>
+      <find>threads</find>
+      <find>core</find>
+      <find>splitted</find>
+      <find>self.peaks</find>
+      <find>retunr</find>
+      <find>write_to_disk</find>
+      <find>self.ecc_dna</find>
+      <find>sorted_bam</find>
       <find>merge</find>
+      <find>write_to</find>
+      <find>final</find>
+      <find>partial</find>
+      <find>iteration_merge</find>
+      <find>insert</find>
+      <find>writting</find>
+      <find>writ</find>
+      <find>iteration</find>
+      <find>bt.BedTool</find>
+      <find>filtered</find>
+      <find>merge_final</find>
+      <find>split</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -111,17 +143,18 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/test_af.py" />
-        <option value="$PROJECT_DIR$/utils.py" />
+        <option value="$PROJECT_DIR$/show_speed.py" />
         <option value="$PROJECT_DIR$/Circle-Map.py" />
         <option value="$PROJECT_DIR$/realigner.py" />
+        <option value="$PROJECT_DIR$/utils.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
     <option name="x" value="1920" />
-    <option name="y" value="31" />
-    <option name="width" value="1280" />
-    <option name="height" value="657" />
+    <option name="y" value="142" />
+    <option name="width" value="1920" />
+    <option name="height" value="1018" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -158,7 +191,28 @@
       </list>
     </option>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.show_speed">
+    <configuration name="show_speed" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="Circle-Map" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/show_speed.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="test_af" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="Circle-Map" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -182,6 +236,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.show_speed" />
         <item itemvalue="Python.test_af" />
       </list>
     </recent_temporary>
@@ -200,14 +255,15 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1920" y="31" width="1280" height="657" extended-state="0" />
+    <frame x="1920" y="142" width="1920" height="1018" extended-state="0" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.120730735" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.080042124" />
       <window_info id="Structure" order="1" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.3285968" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.2795203" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -232,6 +288,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/show_speed.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="270">
+          <caret line="19" column="37" selection-start-line="19" selection-start-column="37" selection-end-line="19" selection-end-column="37" />
+          <folding>
+            <element signature="e#0#28#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/Coverage.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
@@ -252,24 +318,30 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Circle-Map.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="525">
+          <caret line="170" selection-start-line="170" selection-end-line="170" />
+          <folding>
+            <element signature="e#112#127#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/realigner.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="316">
-          <caret line="361" column="28" lean-forward="true" selection-start-line="361" selection-start-column="28" selection-end-line="361" selection-end-column="28" />
+        <state relative-caret-position="405">
+          <caret line="78" lean-forward="true" selection-start-line="78" selection-end-line="78" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="235">
-          <caret line="1148" column="56" selection-start-line="1148" selection-start-column="56" selection-end-line="1148" selection-end-column="56" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Circle-Map.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="310">
-          <caret line="346" column="27" lean-forward="true" selection-start-line="346" selection-start-column="27" selection-end-line="346" selection-end-column="27" />
+        <state relative-caret-position="626">
+          <caret line="1257" lean-forward="true" selection-start-line="1257" selection-end-line="1257" />
+          <folding>
+            <element signature="e#112#130#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

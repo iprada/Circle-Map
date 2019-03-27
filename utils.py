@@ -280,12 +280,13 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
                 w_start+=300
                 split_peaks.append(splitted)
         else:
-            split_peaks.append(interval)
+            split_peaks.append([interval.chrom,str(interval.start),str(interval.end)])
+
     #randomize list order to win speed
-    #random.shuffle(split_peaks)
+    random.shuffle(split_peaks)
     bt.BedTool(split_peaks).saveas("temp_files_%s/peaks.bed" % pid)
 
-    return(sorted_bam)
+    return(sorted_bam,split_peaks)
 
 
 def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants):
@@ -1154,18 +1155,16 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
             if circle_af >=af:
                 write.append(interval)
 
-
-    bed_to_write = bt.BedTool(write)
-    return(bed_to_write)
+    return(bt.BedTool(write))
 
 
 
 
 
-def merge_final_output(bam,results,begin,splits,dir,fraction,pid,score,af,sc_len):
+def merge_final_output(bam,results,begin,splits,dir,fraction,pid):
 
 
-    print("Calculating allele frequencies")
+
     bam = ps.AlignmentFile(bam, "rb")
     os.chdir("temp_files_%s/" % pid)
 
@@ -1229,7 +1228,6 @@ def write_to_disk(partial_bed,output,locker,dir,pid):
     os.chdir("%s/temp_files_%s/" % (dir,pid))
     output_bed = bt.BedTool('%s' % output)
     writer_bed = output_bed.cat(partial_bed,postmerge=False)
-    print("Writting to disk %s Intervals" % len(writer_bed))
     writer_bed.saveas('%s' % output)
     os.chdir("%s" % dir)
     locker.release()
@@ -1249,24 +1247,21 @@ def start_realign(circle_bam,output,threads,verbose,pid,clusters):
 
 
 
-    sorted_bam = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose,pid,clusters)
+    sorted_bam,peaks = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose,pid,clusters)
 
 
-
+    splitted = [peaks[x:x+200] for x in range(0, len(peaks),200)]
 
     # split to cores
 
     print("\nSplitting coverage file to cores\n")
 
-    command = [" cd temp_files_%s ; bedtools split -n %s -p splitted -i peaks.bed ; cd .." % (pid,threads)]
-    sp.call(command, shell=True)
     os.chdir("temp_files_%s" % pid)
     sp.call("touch %s" % output, shell=True)
     os.chdir("../")
 
     #this releases from tmp file the unmerged and peak file
     bt.cleanup()
-    splitted = [bt.BedTool(file) for file in glob.glob("temp_files_%s/splitted*bed" % pid)]
 
     return(splitted,sorted_bam,begin)
 
@@ -1368,8 +1363,7 @@ def filter_by_ratio(eccdna_bed,cutoff):
             circle_list.append([row['chrom'],row['start'],row['end'],row['discordants'],row['soft-clipped'],
                              row['score'],row['mean'],row['std'],row['start_ratio'],row['end_ratio'],row['continuity']])
 
-    output = pd.DataFrame.from_records(
-        filtered,columns=['chrom', 'start', 'end', 'discordants', 'soft-clipped', 'score', 'mean','std',
+    output = pd.DataFrame.from_records(circle_list,columns=['chrom', 'start', 'end', 'discordants', 'soft-clipped', 'score', 'mean','std',
                           'start_ratio','end_ratio','continuity'])
 
     return(output)

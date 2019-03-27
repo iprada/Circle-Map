@@ -16,16 +16,15 @@ class realignment:
 
     def __init__(self, input_bam,qname_bam,sorted_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
                  insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,min_soft_clipped_length,overlap_frac,
-                 interval_p_cut, output_name,ncores,circle_peaks,locker,split,ratio,verbose,pid,edit_distance_frac,
-                 remap_splits,only_discordants,splits,score,af):
+                 interval_p_cut, output_name,ncores,af,locker,split,ratio,verbose,pid,edit_distance_frac,
+                 remap_splits,only_discordants,splits,score,insert_size):
         #I/O
         self.edit_distance_frac = edit_distance_frac
-        self.ecc_dna = input_bam
+        self.ecc_dna_str = input_bam
         self.qname_bam = qname_bam
-        self.sorted_bam = ps.AlignmentFile(sorted_bam, "rb")
+        self.sorted_bam_str = sorted_bam
         self.directory = directory
-        self.genome_fa = ps.FastaFile(genome_fasta)
-        self.peaks = circle_peaks.to_dataframe(names=['chrom','start','end'])
+        self.genome_fa = genome_fasta
 
         #realignment parameters
 
@@ -40,6 +39,7 @@ class realignment:
         self.split = splits
         self.score = score
         self.af= af
+        self.insert = insert_size
 
         # affine gap scoring options
         self.gap_open = gap_open
@@ -111,258 +111,275 @@ class realignment:
 
 
 
-    def realign(self):
+    def realign(self,peaks):
         """Function that will iterate trough the bam file containing reads indicating eccDNA structural variants and
         will output a bed file containing the soft-clipped reads, the discordant and the coverage within the interval"""
 
-        begin = time.time()
+        #open files for every process
+        try:
+
+            sorted_bam = ps.AlignmentFile(self.sorted_bam_str, "rb")
+            self.genome_fa = ps.FastaFile(self.genome_fa)
+            ecc_dna = ps.AlignmentFile(self.ecc_dna_str,"rb")
+
+            begin = time.time()
+            print("processing %s clusters" % len(peaks) )
+            peaks_pd = bt.BedTool(peaks).to_dataframe(names=['chrom', 'start', 'end'])
 
 
 
 
 
 
-        # compute insert size distribution
+            # compute insert size distribution
 
-        insert_metrics = insert_size_dist(self.insert_sample_size,self.insert_size_mapq,self.qname_bam)
-
-
-        #define realignment extension interval
-        extension = insert_metrics[0] + self.std_extenstion*insert_metrics[1]
+            insert_metrics = self.insert
 
 
-        iteration = 0
+            #define realignment extension interval
+            extension = insert_metrics[0] + self.std_extenstion*insert_metrics[1]
 
 
-        results = []
-        only_discordants = []
-
-        for index,interval in self.peaks.iterrows():
-            
-
-            if check_size_and_write(results,only_discordants,self.output,self.lock,self.directory,self.overlap_fraction,self.pid) == True:
-                results = []
-                only_discordants = []
-
-            try:
+            iteration = 0
 
 
-    
-    
-                #find out the prior distribution (mate alignment positions).
-                candidate_mates = get_mate_intervals(self.ecc_dna,interval,self.mapq_cutoff,self.verbose,self.only_discordants)
-    
-    
-    
-    
-                #check that the output is not empty
-                if len(candidate_mates) > 0:
-    
-    
-                    # sort merge and extend
-                    realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p,
-                                                                              self.verbose)
-    
-    
-    
-    
-    
-    
-                    if realignment_interval_extended is None:
-                        continue
-    
-    
-    
-                    iteration_results = []
-                    iteration_discordants = []
-                    disorcordants_per_it = 0
-                    for index,mate_interval in realignment_interval_extended.iterrows():
-    
-                        iteration += 1
-    
-    
-    
-                        #sample realignment intervals
-                        #fasta file fetch is 1 based that why I do +1
-    
-                        plus_coding_interval = self.genome_fa.fetch(mate_interval['chrom'],mate_interval['start']+1,mate_interval['end']+1).upper()
-                        interval_length = len(plus_coding_interval)
-                        minus_coding_interval = str(Seq(plus_coding_interval).complement())
-    
-                        # precompute the denominators of the error model. They will be constants for every interval
-                        plus_base_freqs = background_freqs(plus_coding_interval)
-                        minus_base_freqs = {'T':plus_base_freqs['A'],'A':plus_base_freqs['T'],
-                                            'C':plus_base_freqs['G'],'G':plus_base_freqs['C']}
-    
-    
-                        #note that I am getting the reads of the interval. Not the reads of the mates
-                        for read in self.ecc_dna.fetch(interval['chrom'],interval['start'],interval['end'],multiple_iterators=True):
-    
-    
-                            if is_soft_clipped(read):
-    
-                                if read.mapq >= self.mapq_cutoff:
-    
-                                    # no need to realignment
-                                    if read.has_tag('SA') and self.remap != True:
-    
-    
-                                        #check realignment from SA tag
-                                        support = circle_from_SA(read, self.mapq_cutoff, mate_interval)
-
-    
-    
-                                        if support is  None:
-                                            continue
-    
-                                        else:
-    
-                                            if support['support'] == True:
-
-                                                score = len(get_longest_soft_clipped_bases(read)['seq'])*  (1-phred_to_prob(int(read.get_tag('SA').split(',')[4])))
-    
-                                                #compute mapping positions
-    
-                                                read_end = rightmost_from_read(read)
-    
-                                                supplementary_end = rightmost_from_sa(support['leftmost'],support['cigar'])
-    
-    
-    
-                                                # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
-                                                if read.reference_start < support['leftmost']:
-    
-                                                    iteration_results.append([interval['chrom'],read.reference_start,(supplementary_end-1),read.qname,iteration,str(round(score,2))])
-    
-                                                elif read.reference_start > support['leftmost']:
-    
-                                                    iteration_results.append(
-                                                        [interval['chrom'], (support['leftmost']-1), read_end, read.qname,iteration,str(round(score,2))])
-    
-                                                else:
-                                                    #uninformative read
-                                                    continue
-    
-
-    
-                                    else:
-                                        #sc length
-                                        sc_len = len(get_longest_soft_clipped_bases(read)['seq'])
+            results = []
+            only_discordants = []
 
 
-                                        if non_colinearity(read,mate_interval) == True:
 
-    
-                                            if sc_len >= self.min_sc_length:
-                                            #realignment
-
-                                                realignment_dict = realign(read,self.n_hits,plus_coding_interval,minus_coding_interval,
-                                                                           plus_base_freqs,minus_base_freqs,self.gap_open,self.gap_ext,self.verbose)
+            for index,interval in peaks_pd.iterrows():
 
 
-                                                if realignment_dict == None:
+                if check_size_and_write(results,only_discordants,self.output,self.lock,self.directory,self.overlap_fraction,self.pid) == True:
+                    results = []
+                    only_discordants = []
 
-                                                    continue
-
-                                                else:
-                                                    #calc edit distance allowed
-                                                    edits_allowed = adaptative_myers_k(sc_len, self.edit_distance_frac)
-                                                    prob = realignment_probability(realignment_dict,interval_length)
-                                                    if prob >= self.prob_cutoff and realignment_dict['alignments'][1][3] <= edits_allowed:
-
-                                                        # here I have to retrieve the nucleotide mapping positions. Which should be the
-                                                        # the left sampling pysam coordinate - edlib coordinates
-
-                                                        read_end = rightmost_from_read(read)
+                try:
 
 
-                                                        soft_clip_start = mate_interval['start']+ int(realignment_dict['alignments'][1][0][0])
-
-                                                        soft_clip_end = mate_interval['start'] + int(realignment_dict['alignments'][1][0][1])
-
-                                                        score = sc_len*prob
 
 
-                                                        # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
-                                                        if read.reference_start < mate_interval['start'] + int(
-                                                                realignment_dict['alignments'][1][0][0]):
-
-                                                            iteration_results.append([interval['chrom'], read.reference_start, soft_clip_end+1, read.qname,iteration,str(round(score,2))])
-
-                                                        elif read.reference_start + mate_interval['start'] + int(
-                                                                realignment_dict['alignments'][1][0][0]):
-
-                                                            iteration_results.append([interval['chrom'], soft_clip_start, read_end, read.qname,iteration,str(round(score,2))])
-
-                                                        else:
-                                                            # uninformative read
-                                                            continue
+                    #find out the prior distribution (mate alignment positions).
+                    candidate_mates = get_mate_intervals(ecc_dna,interval,self.mapq_cutoff,self.verbose,self.only_discordants)
 
 
+
+
+                    #check that the output is not empty
+                    if len(candidate_mates) > 0:
+
+
+                        # sort merge and extend
+                        realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p,
+                                                                                  self.verbose)
+
+
+
+
+
+
+                        if realignment_interval_extended is None:
+                            continue
+
+
+
+                        iteration_results = []
+                        iteration_discordants = []
+                        disorcordants_per_it = 0
+                        for index,mate_interval in realignment_interval_extended.iterrows():
+
+                            iteration += 1
+
+
+
+                            #sample realignment intervals
+                            #fasta file fetch is 1 based that why I do +1
+
+                            plus_coding_interval = self.genome_fa.fetch(mate_interval['chrom'],mate_interval['start']+1,mate_interval['end']+1).upper()
+                            interval_length = len(plus_coding_interval)
+                            minus_coding_interval = str(Seq(plus_coding_interval).complement())
+
+                            # precompute the denominators of the error model. They will be constants for every interval
+                            plus_base_freqs = background_freqs(plus_coding_interval)
+                            minus_base_freqs = {'T':plus_base_freqs['A'],'A':plus_base_freqs['T'],
+                                                'C':plus_base_freqs['G'],'G':plus_base_freqs['C']}
+
+
+                            #note that I am getting the reads of the interval. Not the reads of the mates
+                            for read in ecc_dna.fetch(interval['chrom'],interval['start'],interval['end'],multiple_iterators=True):
+
+
+                                if is_soft_clipped(read):
+
+                                    if read.mapq >= self.mapq_cutoff:
+
+                                        # no need to realignment
+                                        if read.has_tag('SA') and self.remap != True:
+
+
+                                            #check realignment from SA tag
+                                            support = circle_from_SA(read, self.mapq_cutoff, mate_interval)
+
+
+
+                                            if support is  None:
+                                                continue
+
+                                            else:
+
+                                                if support['support'] == True:
+
+                                                    score = len(get_longest_soft_clipped_bases(read)['seq'])*  (1-phred_to_prob(int(read.get_tag('SA').split(',')[4])))
+
+                                                    #compute mapping positions
+
+                                                    read_end = rightmost_from_read(read)
+
+                                                    supplementary_end = rightmost_from_sa(support['leftmost'],support['cigar'])
+
+
+
+                                                    # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
+                                                    if read.reference_start < support['leftmost']:
+
+                                                        iteration_results.append([interval['chrom'],read.reference_start,(supplementary_end-1),read.qname,iteration,str(round(score,2))])
+
+                                                    elif read.reference_start > support['leftmost']:
+
+                                                        iteration_results.append(
+                                                            [interval['chrom'], (support['leftmost']-1), read_end, read.qname,iteration,str(round(score,2))])
 
                                                     else:
+                                                        #uninformative read
                                                         continue
+
+
+
                                         else:
+                                            #sc length
+                                            sc_len = len(get_longest_soft_clipped_bases(read)['seq'])
 
-                                            continue
 
+                                            if non_colinearity(read,mate_interval) == True:
+
+
+                                                if sc_len >= self.min_sc_length:
+                                                #realignment
+
+                                                    realignment_dict = realign(read,self.n_hits,plus_coding_interval,minus_coding_interval,
+                                                                               plus_base_freqs,minus_base_freqs,self.gap_open,self.gap_ext,self.verbose)
+
+
+                                                    if realignment_dict == None:
+
+                                                        continue
+
+                                                    else:
+                                                        #calc edit distance allowed
+                                                        edits_allowed = adaptative_myers_k(sc_len, self.edit_distance_frac)
+                                                        prob = realignment_probability(realignment_dict,interval_length)
+                                                        if prob >= self.prob_cutoff and realignment_dict['alignments'][1][3] <= edits_allowed:
+
+                                                            # here I have to retrieve the nucleotide mapping positions. Which should be the
+                                                            # the left sampling pysam coordinate - edlib coordinates
+
+                                                            read_end = rightmost_from_read(read)
+
+
+                                                            soft_clip_start = mate_interval['start']+ int(realignment_dict['alignments'][1][0][0])
+
+                                                            soft_clip_end = mate_interval['start'] + int(realignment_dict['alignments'][1][0][1])
+
+                                                            score = sc_len*prob
+
+
+                                                            # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
+                                                            if read.reference_start < mate_interval['start'] + int(
+                                                                    realignment_dict['alignments'][1][0][0]):
+
+                                                                iteration_results.append([interval['chrom'], read.reference_start, soft_clip_end+1, read.qname,iteration,str(round(score,2))])
+
+                                                            elif read.reference_start + mate_interval['start'] + int(
+                                                                    realignment_dict['alignments'][1][0][0]):
+
+                                                                iteration_results.append([interval['chrom'], soft_clip_start, read_end, read.qname,iteration,str(round(score,2))])
+
+                                                            else:
+                                                                # uninformative read
+                                                                continue
+
+
+
+                                                        else:
+                                                            continue
+                                            else:
+
+                                                continue
+
+                                    else:
+                                        continue
                                 else:
-                                    continue
-                            else:
-                                #discordant reads
-                                #R2F1 oriented when iterating trough R2
-                                if read.is_reverse == True and read.mate_is_reverse == False:
-                                    if read.is_read2:
-                                        if read.reference_start < read.next_reference_start:
-                                            # discordant read
-                                            disorcordants_per_it +=1
-                                            iteration_discordants.append([interval['chrom'],read.reference_start,read.next_reference_start + read.infer_query_length(),read.qname])
-    
-    
-    
-    
-                                #R2F1 when iterating trough F1
-                                elif read.is_reverse == False and read.mate_is_reverse ==  True:
-                                    if read.is_read2 == False:
-                                        if read.next_reference_start < read.reference_start:
-                                            disorcordants_per_it +=1
-                                            iteration_discordants.append([interval['chrom'], read.next_reference_start,read.reference_start+read.infer_query_length(),
-                                                                          read.qname])
-    
-    
-                    #second pass to add discordant read info
-                    if len(iteration_results) > 0:
-                        results = results + assign_discordants(iteration_results,iteration_discordants)
-
-    
-                    elif len(iteration_discordants) > 0:
-                            discordant_bed = pd.DataFrame.from_records(iteration_discordants,columns=['chrom','start','end','read']).sort_values(['chrom','start','end'])
-
-                            discordant_bed = discordant_bed.groupby(merge_bed(discordant_bed)).agg(
-                                {'chrom': 'first', 'start': 'first', 'end': 'last', 'read': 'count'})
-
-    
-                            for index,disc_interval in discordant_bed.iterrows():
-                                only_discordants.append([disc_interval['chrom'],disc_interval['start'],disc_interval['end'],disc_interval['read'],0])
+                                    #discordant reads
+                                    #R2F1 oriented when iterating trough R2
+                                    if read.is_reverse == True and read.mate_is_reverse == False:
+                                        if read.is_read2:
+                                            if read.reference_start < read.next_reference_start:
+                                                # discordant read
+                                                disorcordants_per_it +=1
+                                                iteration_discordants.append([interval['chrom'],read.reference_start,read.next_reference_start + read.infer_query_length(),read.qname])
 
 
-            except BaseException as e:
 
 
-                if self.verbose < 2:
-                    traceback.print_exc(file=sys.stdout)
-                    warnings.warn(
-                        "Failed on interval %s due to the error %s" % (
-                            str(interval), str(e)))
+                                    #R2F1 when iterating trough F1
+                                    elif read.is_reverse == False and read.mate_is_reverse ==  True:
+                                        if read.is_read2 == False:
+                                            if read.next_reference_start < read.reference_start:
+                                                disorcordants_per_it +=1
+                                                iteration_discordants.append([interval['chrom'], read.next_reference_start,read.reference_start+read.infer_query_length(),
+                                                                              read.qname])
 
-                else:
-                    continue
 
-        file_name = self.ecc_dna.filename
-        self.ecc_dna.close()
+                        #second pass to add discordant read info
+                        if len(iteration_results) > 0:
+                            results = results + assign_discordants(iteration_results,iteration_discordants)
 
-        #Write process output to disk
-        output = iteration_merge(only_discordants,results,
-                                 self.overlap_fraction,self.split,self.score,self.min_sc_length,self.sorted_bam,self.af)
-        write_to_disk(output,self.output,self.lock,self.directory,self.pid)
-        return(None)
+
+                        elif len(iteration_discordants) > 0:
+                                discordant_bed = pd.DataFrame.from_records(iteration_discordants,columns=['chrom','start','end','read']).sort_values(['chrom','start','end'])
+
+                                discordant_bed = discordant_bed.groupby(merge_bed(discordant_bed)).agg(
+                                    {'chrom': 'first', 'start': 'first', 'end': 'last', 'read': 'count'})
+
+
+                                for index,disc_interval in discordant_bed.iterrows():
+                                    only_discordants.append([disc_interval['chrom'],disc_interval['start'],disc_interval['end'],disc_interval['read'],0])
+
+
+                except BaseException as e:
+
+
+                    if self.verbose < 2:
+                        traceback.print_exc(file=sys.stdout)
+                        warnings.warn(
+                            "Failed on interval %s due to the error %s" % (
+                                str(interval), str(e)))
+
+                    else:
+                        continue
+
+
+            ecc_dna.close()
+
+            #Write process output to disk
+            output = iteration_merge(only_discordants,results,
+                                     self.overlap_fraction,self.split,self.score,self.min_sc_length,sorted_bam,self.af)
+
+            write_to_disk(output, self.output, self.lock, self.directory, self.pid)
+
+
+        except:
+            return(1,traceback.print_exc(file=sys.stdout))
+
+        return([0,0])
