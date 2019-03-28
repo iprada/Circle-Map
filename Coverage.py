@@ -25,7 +25,7 @@ class coverage:
 
 
     def get_wg_coverage(self):
-        """Function that takes as input a sorted bam and a merged bam of the circles in the whole genome and returns a numpy
+        """Generator that takes as input a sorted bam and a merged bam of the circles in the whole genome and returns a numpy
         array for every interval with the coverage"""
 
 
@@ -38,13 +38,9 @@ class coverage:
 
         merged_bed = self.bed.sort().merge()
 
-        print("%s merged intervals for coverage computation " % len(merged_bed))
-
-
-        coverage_dict = {}
         for interval in merged_bed:
 
-
+            coverage_dict = {}
             if interval.start - self.ext < 0:
                 start = 0
 
@@ -64,89 +60,92 @@ class coverage:
 
             coverage_dict[bt.Interval(interval.chrom, start, end)] = summ_cov
 
-        return (coverage_dict,header_dict)
+            yield(coverage_dict,header_dict)
 
 
-    def compute_coverage(self,cov_dict,header_dict):
+    def compute_coverage(self,cov_generator):
 
-        """Function that takes as input a sorted bam file and a bed file a bed file with summarized statistics of the cove-
-        rage within the intervals"""
+
+        """Function that takes as input generator returning  coverage numpy arrays and  file with summarized statistics
+        of the coverage within the intervals"""
 
         print("Computing the coverage of the identified eccDNA")
 
         output = []
-        for key,value in cov_dict.items():
+        for cov_dict,header_dict in cov_generator():
+            for key,value in cov_dict.items():
 
 
-            overlaps = bt.BedTool(self.bed.all_hits(key))
+                overlaps = bt.BedTool(self.bed.all_hits(key))
 
 
-            for interval in overlaps:
+                for interval in overlaps:
 
-                # compute array slicing indices
-                start = interval.start -key.start
-                end = interval.end - key.start
-
-
-                if start - self.ext < 0:
-                    ext_start = 0
-                else:
-                    ext_start = start - self.ext
-
-                if header_dict[interval.chrom] < (end+ self.ext):
-                    ext_end = header_dict[interval.chrom]
-                else:
-                    ext_end = end + self.ext
-
-                # slice extended array and coverage array
-                ext_array = value[ext_start:ext_end]
-                region_array = value[start:end]
+                    # compute array slicing indices
+                    start = interval.start -key.start
+                    end = interval.end - key.start
 
 
+                    if start - self.ext < 0:
+                        ext_start = 0
+                    else:
+                        ext_start = start - self.ext
 
+                    if header_dict[interval.chrom] < (end+ self.ext):
+                        ext_end = header_dict[interval.chrom]
+                    else:
+                        ext_end = end + self.ext
+
+                    # slice extended array and coverage array
+                    ext_array = value[ext_start:ext_end]
+                    region_array = value[start:end]
 
 
 
-                try:
-
-                    mean = np.mean(region_array)
-                    sd = np.std(region_array)
-
-                    interval.append(str(mean))
-                    interval.append(str(sd))
-
-                except:
-
-                    interval.append('NA')
-                    interval.append('NA')
 
 
-                # compute ratios
 
-                try:
+                    try:
 
-                    start_coverage_ratio = np.sum(region_array[0:self.ilen]) / np.sum(
-                        ext_array[0:(self.ilen + self.ext)])
-                    end_coverage_ratio = np.sum(region_array[-self.ilen:]) / np.sum(ext_array[-(self.ilen + self.ext):])
+                        mean = np.mean(region_array)
+                        sd = np.std(region_array)
 
-                    interval.append(str(start_coverage_ratio))
-                    interval.append(str(end_coverage_ratio))
+                        interval.append(str(mean))
+                        interval.append(str(sd))
 
-                except:
+                    except:
 
-                    interval.append('NA')
-                    interval.append('NA')
-
-                try:
+                        interval.append('NA')
+                        interval.append('NA')
 
 
-                    zero_frac = np.count_nonzero(region_array == 0) / len(region_array)
-                    interval.append(str(zero_frac))
+                    # compute ratios
 
-                except:
+                    try:
 
-                    interval.append('NA')
+                        start_coverage_ratio = np.sum(region_array[0:self.ilen]) / np.sum(
+                            ext_array[0:(self.ilen + self.ext)])
+                        end_coverage_ratio = np.sum(region_array[-self.ilen:]) / np.sum(ext_array[-(self.ilen + self.ext):])
 
-                output.append(interval)
+                        interval.append(str(start_coverage_ratio))
+                        interval.append(str(end_coverage_ratio))
+
+                    except:
+
+                        interval.append('NA')
+                        interval.append('NA')
+
+                    try:
+
+
+                        zero_frac = np.count_nonzero(region_array == 0) / len(region_array)
+                        interval.append(str(zero_frac))
+
+                    except:
+
+                        interval.append('NA')
+
+                    output.append(interval)
+
 
         return(bt.BedTool(output))
