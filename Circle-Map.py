@@ -1,4 +1,4 @@
-#!/isdata/kroghgrp/xsh723/bin/miniconda3/bin/python
+#!/home/iprada/bin/miniconda3/bin/python
 # Author Inigo Prada Luengo
 # email: inigo.luengo@bio.ku.dk
 
@@ -175,9 +175,9 @@ Commands:
                         coverage_object = coverage(self.args.sbam, output,
                                                    self.args.bases, self.args.cmapq, self.args.extension,
                                                    self.args.directory)
-                        coverage_dict, header_dict = coverage_object.get_wg_coverage()
 
-                        output = coverage_object.compute_coverage(coverage_dict, header_dict)
+                        #get_wg_coverage is a generator
+                        output = coverage_object.compute_coverage(coverage_object.get_wg_coverage())
                         filtered_output = filter_by_ratio(output, self.args.ratio)
                         filtered_output.to_csv(r'%s' % self.args.output, header=None, index=None, sep='\t', mode='w')
 
@@ -436,7 +436,7 @@ Commands:
                                   default=0.95)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
-                                  help="Skip edges of the graph with a probability below the threshold. Default: 0 (Most probable path)",
+                                  help="Skip edges of the graph with a probability below the threshold. Default: (Most probable edge)",
                                   default=0)
             interval.add_argument('-K', '--clustering_dist', type=int, metavar='',
                                   help="Cluster reads that are K nucleotides appart in the same node. Default: 0",
@@ -551,7 +551,7 @@ Commands:
                                   default=0.95)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
-                                  help="Skip edges of the graph with a probability below the threshold. Default: 0 (Most probable path)",
+                                  help="Skip edges of the graph with a probability below the threshold. Default: (Most probable path)",
                                   default=0)
             interval.add_argument('-K', '--clustering_dist', type=int, metavar='',
                                   help="Cluster reads that are K nucleotides appart in the same node. Default: 0",

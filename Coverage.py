@@ -58,6 +58,7 @@ class coverage:
             # save memory, convert to uint32.
             summ_cov = np.uint32(summarized_cov)
 
+            print("Computing coverage on interval %s:%s-%s" % (interval.chrom,interval.start,interval.end))
             coverage_dict[bt.Interval(interval.chrom, start, end)] = summ_cov
 
             yield(coverage_dict,header_dict)
@@ -70,9 +71,10 @@ class coverage:
         of the coverage within the intervals"""
 
         print("Computing the coverage of the identified eccDNA")
+        print("Merging intervals for coverage computation")
 
         output = []
-        for cov_dict,header_dict in cov_generator():
+        for cov_dict,header_dict in cov_generator:
             for key,value in cov_dict.items():
 
 
@@ -144,7 +146,7 @@ class coverage:
                     except:
 
                         interval.append('NA')
-
+                    print(interval)
                     output.append(interval)
 
 
