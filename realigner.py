@@ -62,7 +62,6 @@ class realignment:
         #regular options
         self.cores = ncores
         self.verbose = verbose
-        self.phreds_to_probs = np.vectorize(phred_to_prob)
         self.lock = locker
 
         #this two parameters don't work on this class. They are here for printing the parameters
@@ -123,7 +122,7 @@ class realignment:
             ecc_dna = ps.AlignmentFile(self.ecc_dna_str,"rb")
 
             begin = time.time()
-            print("processing %s clusters" % len(peaks) )
+            #print("processing %s clusters" % len(peaks) )
             peaks_pd = bt.BedTool(peaks).to_dataframe(names=['chrom', 'start', 'end'])
 
 
@@ -202,8 +201,12 @@ class realignment:
 
                             # precompute the denominators of the error model. They will be constants for every interval
                             plus_base_freqs = background_freqs(plus_coding_interval)
+
                             minus_base_freqs = {'T':plus_base_freqs['A'],'A':plus_base_freqs['T'],
                                                 'C':plus_base_freqs['G'],'G':plus_base_freqs['C']}
+
+                            minus_base_freqs = np.array([plus_base_freqs['T'],plus_base_freqs['A'],plus_base_freqs['G'],plus_base_freqs['C']])
+                            plus_base_freqs = np.array([plus_base_freqs['A'],plus_base_freqs['T'],plus_base_freqs['C'],plus_base_freqs['G']])
 
 
                             #note that I am getting the reads of the interval. Not the reads of the mates
@@ -230,7 +233,7 @@ class realignment:
 
                                                 if support['support'] == True:
 
-                                                    score = len(get_longest_soft_clipped_bases(read)['seq'])*  (1-phred_to_prob(int(read.get_tag('SA').split(',')[4])))
+                                                    score = len(get_longest_soft_clipped_bases(read)['seq'])*  (1-phred_to_prob(np.array(int(read.get_tag('SA').split(',')[4]),dtype=np.float64)))
 
                                                     #compute mapping positions
 
@@ -343,7 +346,7 @@ class realignment:
 
                         #second pass to add discordant read info
                         if len(iteration_results) > 0:
-                            results = results + assign_discordants(iteration_results,iteration_discordants)
+                            results = results + assign_discordants(iteration_results,iteration_discordants,insert_metrics[0],insert_metrics[1])
 
 
                         elif len(iteration_discordants) > 0:

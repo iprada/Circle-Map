@@ -16,6 +16,9 @@ import time
 import sys
 from scipy import stats as st
 import random
+import re
+from numba import jit
+
 
 
 
@@ -267,7 +270,7 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
 
     #from bam to BedGraph
 
-    sp.call("bedtools genomecov -bg -ibam %s | sort -T temp_files_%s -k 1,1 -k2,2n | mergeBed -d %s > temp_files_%s/peaks.bed" %
+    sp.call("bedtools genomecov -bg -ibam %s | sort -T temp_files_%s -k 1,1 -k2,2n | mergeBed -d %s -c 4 -o mean | sort -r -n -k 4,4 > temp_files_%s/peaks.bed" %
             (input_bam_name,pid,clusters,pid),shell=True)
 
     split_peaks = []
@@ -331,7 +334,8 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
                                     # L means that the SA is aligned to to a rightmost part.
 
                                     mate_interval = [interval['chrom'], int(supl_info[1]) - (ref_alignment_length),
-                                                     (int(supl_info[1]) + (ref_alignment_length)), "SA", "L",str(1-phred_to_prob(int(supl_info[4])))]
+                                                     (int(supl_info[1]) + (ref_alignment_length)), "SA", "L",str(
+                                            1-phred_to_prob(np.array(int(supl_info[4]),dtype=np.float64)))]
 
                                     candidate_mates.append(mate_interval)
 
@@ -345,7 +349,7 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
                                     # by a supplementary alignment. R means that the SA is aligned to to a rightmost part.
 
                                     mate_interval = [interval['chrom'], (int(supl_info[1]) - (ref_alignment_length)),
-                                                     int(supl_info[1]) + (ref_alignment_length), "SA", "R",str(1-phred_to_prob(int(supl_info[4])))]
+                                                     int(supl_info[1]) + (ref_alignment_length), "SA", "R",str(1-phred_to_prob(np.array(int(supl_info[4]),dtype=np.float64)))]
 
                                     candidate_mates.append(mate_interval)
                     else:
@@ -375,7 +379,8 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
 
 
                                 mate_interval = [interval['chrom'], read.next_reference_start,
-                                                 (read.next_reference_start + read_length), "DR", "R",str(1-phred_to_prob(read.get_tag('MQ')))]
+                                                 (read.next_reference_start + read_length), "DR",
+                                                 "R",str(1-phred_to_prob(np.array(read.get_tag('MQ'),dtype=np.float64)))]
                                 candidate_mates.append(mate_interval)
 
 
@@ -391,7 +396,8 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
                                 # L means that the mate is aligned to a leftmost part
 
                                 mate_interval = [interval['chrom'], read.next_reference_start,
-                                                 (read.next_reference_start + read_length), "DR", "L",str(1-phred_to_prob(read.get_tag('MQ')))]
+                                                 (read.next_reference_start + read_length),
+                                                 "DR", "L",str(1-phred_to_prob(np.array(read.get_tag('MQ'),dtype=np.float64)))]
                                 candidate_mates.append(mate_interval)
                     else:
 
@@ -550,6 +556,8 @@ def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
 
 def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,verbose):
 
+    #OPTIMIZE
+
     """Function that takes as input a bed file with the read type information and will remove the soft-clipped if there
             are more informative priors (DR,SA). If there are only soft-clipped reads, they will be saved to a bed file to attemp
             lonely soft-clipped read rescue"""
@@ -703,6 +711,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
 
 
 def circle_from_SA(read,mapq_cutoff,mate_interval):
+    #OPTIMIZE
 
     """Function that takes as input a read (soft-clipped) with a Suplementary alignment the mapping quality cut-off
     and the mate intervals and checks if it fits the conditions to call a circle. Will return True if the supplementary
@@ -740,7 +749,22 @@ def circle_from_SA(read,mapq_cutoff,mate_interval):
     else:
         return{'support' : False}
 
+def number_encoding(seq):
+    encoded = []
+    for i in seq:
+        if i == "A":
+            encoded.append(1)
+        elif i == "T":
+            encoded.append(2)
+        elif i == "C":
+            encoded.append(3)
+        elif i == "G":
+            encoded.append(4)
+    return(np.array(encoded))
+
+
 def check_alphabet(sequence):
+    #Optimize
     """Function that takes as input a sequence and it will check that there is at least a letter matching the alphabet
      in the sequence, returning true."""
 
@@ -764,11 +788,11 @@ def check_compatibility(seq1,seq2):
 
     return(False)
 
-def phred_to_prob(array):
+@jit(nopython=True)
+def phred_to_prob(values):
     """Function that takes as input a numpy array with phred base quality scores and returns an array with base probabi-
     lity scores"""
-
-    return(10**((array*-1)/10))
+    return(10**((values*-1)/10))
 
 def get_longest_soft_clipped_bases(read):
     """Function that takes as input the cigar string and returns a dictionary containing the longest soft-clipped part of
@@ -844,6 +868,10 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
     #get soft-clipped read
     soft_clipped_read = get_longest_soft_clipped_bases(read)
 
+    #encoding of DNA and operations A,T,C,G,=,X,DI
+    nuc_and_ops =  np.array([1,2,3,4,5,6,7])
+    encoded_nucs = number_encoding(soft_clipped_read['seq'])
+
 
 
     if check_alphabet(soft_clipped_read['seq']) == False:
@@ -891,7 +919,8 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
                     hits += 1
 
 
-                    score = pssm(soft_clipped_read['qual'], soft_clipped_read['seq'],alignment['cigar'],minus_base_freqs,gap_open,gap_extend,verbose)
+                    score = pssm(phred_to_prob(np.array(soft_clipped_read['qual'],dtype=np.float64)), encoded_nucs,
+                                 edlib_cigar_to_iterable(alignment['cigar']),minus_base_freqs,gap_open,gap_extend,nuc_and_ops,verbose)
 
                     if score < min_score:
                         min_score = score
@@ -920,7 +949,8 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
 
                     hits += 1
 
-                    score = pssm(soft_clipped_read['qual'], soft_clipped_read['seq'],alignment['cigar'], plus_base_freqs,gap_open,gap_extend,verbose)
+                    score = pssm(phred_to_prob(np.array(soft_clipped_read['qual'],dtype=np.float64)), encoded_nucs,
+                                 edlib_cigar_to_iterable(alignment['cigar']), plus_base_freqs,gap_open,gap_extend,nuc_and_ops,verbose)
 
                     if score < min_score:
                         min_score = score
@@ -939,20 +969,30 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
 
 def edlib_cigar_to_iterable(edlib_cigar):
     """Function that takes as input the edlib cigar and parses it to get it in a iterable manner"""
+    #encoding of DNA and operations A,T,C,G,=,X,ID
+    #nuc_and_ops =  np.array([1,2,3,4,5,6,7])
 
-    cigar = [''.join(g) for _, g in it.groupby(edlib_cigar, str.isdigit)]
+    length = []
+    operations = []
 
-    return(cigar)
+    for i in re.findall(r'\d+[IDX=]',edlib_cigar):
+        length.append(int(i[0]))
+        if i[1] == '=':
+            operations.append(5)
+        elif i[1] == 'X':
+            operations.append(6)
+        elif i[1] == 'I' or 'D':
+            operations.append(7)
 
 
+    return(np.array(length),np.array(operations))
 
-def pssm(seq_prob,seq_nucl,edlib_cigar,base_freqs,gap_open,gap_extend,verbose):
+
+@jit(nopython=True)
+def pssm(seq_prob,seq_nucl,iterable_cigar,base_freqs,gap_open,gap_extend,nuc_and_ops,verbose):
     """Function that takes as input the sequencing probabilities and cigar string and returns the log2 pssm of the read"""
 
-    phreds_to_probs = np.vectorize(phred_to_prob)
-    iterable_cigar = edlib_cigar_to_iterable(edlib_cigar)
 
-    seq_prob = phreds_to_probs(seq_prob)
 
 
 
@@ -964,35 +1004,36 @@ def pssm(seq_prob,seq_nucl,edlib_cigar,base_freqs,gap_open,gap_extend,verbose):
 
 
     #iterate trough CIGAR operations
-    for index in range(0,len(iterable_cigar),2):
+    for index in range(0,len(iterable_cigar[0])):
 
-        operation_length = int(iterable_cigar[index])
+        operation_length = iterable_cigar[0][index]
+        end = operation_length + seq_pos
 
 
 
-        operation = iterable_cigar[index+1]
+        operation = iterable_cigar[1][index]
 
 
         #match, 1 minus prob(base called wrong)
-        if operation == '=':
+        if operation == nuc_and_ops[4]:
 
-            for nucleotide in range(seq_pos, (operation_length + seq_pos)):
+            for nucleotide in range(seq_pos,end):
 
-                if seq_nucl[nucleotide] == 'A':
+                if seq_nucl[nucleotide] == nuc_and_ops[0]:
 
-                    seq_prob[nucleotide] = np.log2((1 - (seq_prob[nucleotide]))/base_freqs['A'])
+                    seq_prob[nucleotide] = np.log2((1 - (seq_prob[nucleotide]))/base_freqs[0])
 
-                elif seq_nucl[nucleotide] == 'T':
+                elif seq_nucl[nucleotide] == nuc_and_ops[1]:
 
-                    seq_prob[nucleotide] = np.log2((1 - (seq_prob[nucleotide])) / base_freqs['T'])
+                    seq_prob[nucleotide] = np.log2((1 - (seq_prob[nucleotide])) / base_freqs[1])
 
-                elif seq_nucl[nucleotide] == 'C':
+                elif seq_nucl[nucleotide] == nuc_and_ops[2]:
 
-                    seq_prob[nucleotide] = np.log2((1 - (seq_prob[nucleotide])) / base_freqs['C'])
+                    seq_prob[nucleotide] = np.log2((1 - (seq_prob[nucleotide])) / base_freqs[2])
 
-                elif seq_nucl[nucleotide] == 'G':
+                elif seq_nucl[nucleotide] == nuc_and_ops[3]:
 
-                    seq_prob[nucleotide] = np.log2((1 - (seq_prob[nucleotide])) / base_freqs['G'])
+                    seq_prob[nucleotide] = np.log2((1 - (seq_prob[nucleotide])) / base_freqs[3])
 
 
 
@@ -1000,47 +1041,47 @@ def pssm(seq_prob,seq_nucl,edlib_cigar,base_freqs,gap_open,gap_extend,verbose):
 
 
 
-        elif operation == 'X':
+        elif operation == nuc_and_ops[5]:
 
 
-            for nucleotide in range(seq_pos,(operation_length + seq_pos)):
+            for nucleotide in range(seq_pos,end):
 
-                if seq_nucl[nucleotide] == 'A':
-
-                    seq_prob[nucleotide] = np.log2(
-                        (seq_prob[nucleotide]/3)/base_freqs['A'])
-
-
-                elif seq_nucl[nucleotide] == 'T':
+                if seq_nucl[nucleotide] == nuc_and_ops[0]:
 
                     seq_prob[nucleotide] = np.log2(
-                        (seq_prob[nucleotide]/3)/base_freqs['T'])
-
-                elif seq_nucl[nucleotide] == 'G':
-
-                    seq_prob[nucleotide] = np.log2(
-                        (seq_prob[nucleotide]/3)/base_freqs['G'])
+                        (seq_prob[nucleotide]/3)/base_freqs[0])
 
 
-                elif seq_nucl[nucleotide] == 'C':
+                elif seq_nucl[nucleotide] == nuc_and_ops[1]:
 
                     seq_prob[nucleotide] = np.log2(
-                        (seq_prob[nucleotide]/3)/base_freqs['C'])
+                        (seq_prob[nucleotide]/3)/base_freqs[1])
+
+                elif seq_nucl[nucleotide] == nuc_and_ops[2]:
+
+                    seq_prob[nucleotide] = np.log2(
+                        (seq_prob[nucleotide]/3)/base_freqs[2])
+
+
+                elif seq_nucl[nucleotide] == nuc_and_ops[3]:
+
+                    seq_prob[nucleotide] = np.log2(
+                        (seq_prob[nucleotide]/3)/base_freqs[3])
 
 
 
 
-                elif seq_nucl[nucleotide] == 'N':
+                elif seq_nucl[nucleotide] == nuc_and_ops[6]:
 
                     if verbose < 2:
 
                         seq_prob[nucleotide] = 0
-                        warnings.warn("Ambiguous base found in nucleotide sequence. Assigning score of 0 in the log2 pssm")
+                        print("Warning:Ambiguous base found in nucleotide sequence. Assigning score of 0 in the log2 pssm")
 
             seq_pos += operation_length
 
 
-        elif operation == 'I' or 'D':
+        elif operation == nuc_and_ops[6]:
 
             #affine gap scoring model
             indel_penalty += gap_open + gap_extend*(operation_length-1)
@@ -1056,7 +1097,8 @@ def realignment_probability(hit_dict,interval_length):
     best_hit = hit_dict['alignments'][1][2]
 
     #this might be included on the denominator
-    regularizer = (interval_length * phred_to_prob(hit_dict['mapq_prior']))/(1- phred_to_prob(hit_dict['mapq_prior']))
+    regularizer = (interval_length * phred_to_prob(np.array(hit_dict['mapq_prior'],dtype=np.float64))
+                   )/(1- phred_to_prob(np.array(hit_dict['mapq_prior'],dtype=np.float64)))
     posterior = 2**best_hit/(np.sum((2**value[2]) for key,value in hit_dict['alignments'].items())+regularizer)
 
     return(posterior)
@@ -1115,7 +1157,7 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
 
     discordant_bed = bt.BedTool(parsed_discordants)
     unparsed_bed = bt.BedTool(results)
-    print("filtering %s intervals" % len(unparsed_bed))
+    #print("filtering %s intervals" % len(unparsed_bed))
 
 
 
@@ -1140,20 +1182,38 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
     allele_free = bedtool_output.cat(discordant_bed, postmerge=False)
     write = []
     for interval in allele_free:
-        if (int(interval[4])) >= splits and float(interval[5]) > score:
-            start_cov = bam.count_coverage(contig=interval.chrom,
-                                           start=int(interval.start), stop=int(interval.start) + sc_len,
-                                           quality_threshold=0,read_callback='nofilter')
 
-            end_cov = bam.count_coverage(contig=interval.chrom,
-                                         start=int(interval.end) - sc_len, stop=int(interval.end),
-                                         quality_threshold=0,read_callback='nofilter')
-            start_cov_mean = np.mean(np.array([start_cov[0], start_cov[1], start_cov[2], start_cov[3]]).sum(axis=0))
-            end_cov_mean = np.mean(np.array([end_cov[0], end_cov[1], end_cov[2], end_cov[3]]).sum(axis=0))
+        if int(interval[4]) != 0:
+            if (int(interval[4])) >= splits and float(interval[5]) > score:
+                start_cov = bam.count_coverage(contig=interval.chrom,
+                                               start=int(interval.start), stop=int(interval.start)+1,
+                                               quality_threshold=0,read_callback='nofilter')
 
-            circle_af = (int(interval[4])*2) / ((start_cov_mean+end_cov_mean)/2)
-            if circle_af >=af:
-                write.append(interval)
+                end_cov = bam.count_coverage(contig=interval.chrom,
+                                             start=int(interval.end) - 1, stop=int(interval.end),
+                                             quality_threshold=0,read_callback='nofilter')
+                start_cov_mean = np.mean(np.array([start_cov[0], start_cov[1], start_cov[2], start_cov[3]]).sum(axis=0))
+                end_cov_mean = np.mean(np.array([end_cov[0], end_cov[1], end_cov[2], end_cov[3]]).sum(axis=0))
+
+                circle_af = ((int(interval[4]) * 2)+int(interval[3])) / ((start_cov_mean+end_cov_mean)/2)
+                if circle_af >=af:
+                    write.append(interval)
+        else:
+            if int(interval[3]) >= splits:
+                start_cov = bam.count_coverage(contig=interval.chrom,
+                                               start=int(interval.start), stop=int(interval.start) + sc_len,
+                                               quality_threshold=0, read_callback='nofilter')
+
+                end_cov = bam.count_coverage(contig=interval.chrom,
+                                             start=int(interval.end) - sc_len, stop=int(interval.end),
+                                             quality_threshold=0, read_callback='nofilter')
+                start_cov_mean = np.mean(np.array([start_cov[0], start_cov[1], start_cov[2], start_cov[3]]).sum(axis=0))
+                end_cov_mean = np.mean(np.array([end_cov[0], end_cov[1], end_cov[2], end_cov[3]]).sum(axis=0))
+
+                circle_af = ((int(interval[4]) * 2)+int(interval[3])) / ((start_cov_mean + end_cov_mean) / 2)
+                if circle_af >= af:
+                    write.append(interval)
+
 
     return(bt.BedTool(write))
 
@@ -1198,7 +1258,7 @@ def merge_final_output(bam,results,begin,splits,dir,fraction,pid):
     filtered = []
     for interval in unfiltered_output:
 
-        if int(interval[4]) >= splits:
+        if (int(interval[4])+int(interval[3])) >= splits:
             filtered.append(interval)
 
     filtered_output = bt.BedTool(filtered)
@@ -1250,12 +1310,11 @@ def start_realign(circle_bam,output,threads,verbose,pid,clusters):
     sorted_bam,peaks = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose,pid,clusters)
 
 
-    splitted = [peaks[x:x+200] for x in range(0, len(peaks),200)]
+    splitted = [peaks[x:x+1] for x in range(0, len(peaks),1)]
 
     # split to cores
 
     print("\nSplitting coverage file to cores\n")
-
     os.chdir("temp_files_%s" % pid)
     sp.call("touch %s" % output, shell=True)
     os.chdir("../")
@@ -1379,17 +1438,20 @@ def merge_bed(discordants_pd):
     #if both bools are succesful returns a 2
     return ((overlap * 1 + chr_overlap * 1).lt(2).cumsum())
 
-def assign_discordants(split_bed,discordant_bed):
+def assign_discordants(split_bed,discordant_bed,insert_mean,insert_std):
 
-
+    max_dist = (insert_mean/2)+(5*insert_std)
     if len(discordant_bed) > 0:
         assigned_splits = []
+
         for i in split_bed:
             discordants = 0
             for j in discordant_bed:
                 if i[0] == j[0]:
-                    if i[1] < j[1] and i[2] > j[2]:
-                        discordants +=1
+                    if (i[1] < j[1]) and ((j[1]-i[1])<max_dist):
+                        if (i[2]>j[2]) and ((i[2]-j[2])<max_dist):
+                            discordants += 1
+
 
             i.append(discordants)
             assigned_splits.append(i)
