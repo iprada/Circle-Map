@@ -1186,11 +1186,11 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
         if int(interval[4]) != 0:
             if (int(interval[4])) >= splits and float(interval[5]) > score:
                 start_cov = bam.count_coverage(contig=interval.chrom,
-                                               start=int(interval.start), stop=int(interval.start)+1,
+                                               start=int(interval.start)-1, stop=int(interval.start)+1,
                                                quality_threshold=0,read_callback='nofilter')
 
                 end_cov = bam.count_coverage(contig=interval.chrom,
-                                             start=int(interval.end) - 1, stop=int(interval.end),
+                                             start=int(interval.end) - 1, stop=int(interval.end)+1,
                                              quality_threshold=0,read_callback='nofilter')
                 start_cov_mean = np.mean(np.array([start_cov[0], start_cov[1], start_cov[2], start_cov[3]]).sum(axis=0))
                 end_cov_mean = np.mean(np.array([end_cov[0], end_cov[1], end_cov[2], end_cov[3]]).sum(axis=0))
@@ -1201,11 +1201,11 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
         else:
             if int(interval[3]) >= splits:
                 start_cov = bam.count_coverage(contig=interval.chrom,
-                                               start=int(interval.start), stop=int(interval.start) + 1,
+                                               start=int(interval.start)-1, stop=int(interval.start) + 1,
                                                quality_threshold=0, read_callback='nofilter')
 
                 end_cov = bam.count_coverage(contig=interval.chrom,
-                                             start=int(interval.end) - 1, stop=int(interval.end),
+                                             start=int(interval.end) - 1, stop=int(interval.end)+1,
                                              quality_threshold=0, read_callback='nofilter')
                 start_cov_mean = np.mean(np.array([start_cov[0], start_cov[1], start_cov[2], start_cov[3]]).sum(axis=0))
                 end_cov_mean = np.mean(np.array([end_cov[0], end_cov[1], end_cov[2], end_cov[3]]).sum(axis=0))
