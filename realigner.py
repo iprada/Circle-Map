@@ -118,7 +118,7 @@ class realignment:
         try:
             peaks_pd = pd.DataFrame.from_records(peaks,columns=['chrom', 'start', 'end'])
             sorted_bam = ps.AlignmentFile(self.sorted_bam_str, "rb")
-            self.genome_fa = ps.FastaFile(self.genome_fa)
+            genome_fa = ps.FastaFile(self.genome_fa)
             ecc_dna = ps.AlignmentFile(self.ecc_dna_str,"rb")
 
             begin = time.time()
@@ -195,7 +195,7 @@ class realignment:
                             #sample realignment intervals
                             #fasta file fetch is 1 based that why I do +1
 
-                            plus_coding_interval = self.genome_fa.fetch(mate_interval['chrom'],mate_interval['start']+1,mate_interval['end']+1).upper()
+                            plus_coding_interval = genome_fa.fetch(mate_interval['chrom'],mate_interval['start']+1,mate_interval['end']+1).upper()
                             interval_length = len(plus_coding_interval)
                             minus_coding_interval = str(Seq(plus_coding_interval).complement())
 
@@ -389,7 +389,7 @@ class realignment:
             return([0,0])
 
         sorted_bam.close()
-        self.genome_fa.close()
+        genome_fa.close()
         ecc_dna.close()
 
 
