@@ -1144,7 +1144,7 @@ def merge_fraction(chrom1,x1,x2,chrom2,y1,y2):
     return(pd.Series(chrom1 == chrom2) + pd.Series(two_overlap_one.clip(0)) + pd.Series(one_overlap_two.clip(0)))
 
 
-def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af):
+def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af,insert,std):
     """finction that merges the results of every iteration"""
 
     norm_fraction = 3
@@ -1195,7 +1195,7 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
                 start_cov_mean = np.mean(np.array([start_cov[0], start_cov[1], start_cov[2], start_cov[3]]).sum(axis=0))
                 end_cov_mean = np.mean(np.array([end_cov[0], end_cov[1], end_cov[2], end_cov[3]]).sum(axis=0))
 
-                circle_af = ((int(interval[4]) * 2)+int(interval[3])) / ((start_cov_mean+end_cov_mean)/2)
+                circle_af = ((int(interval[4]) * 2)) / ((start_cov_mean+end_cov_mean)/2)
                 if circle_af >=af:
                     write.append(interval)
         else:
@@ -1210,10 +1210,10 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
                 start_cov_mean = np.mean(np.array([start_cov[0], start_cov[1], start_cov[2], start_cov[3]]).sum(axis=0))
                 end_cov_mean = np.mean(np.array([end_cov[0], end_cov[1], end_cov[2], end_cov[3]]).sum(axis=0))
 
-                circle_af = ((int(interval[4]) * 2)+int(interval[3])) / ((start_cov_mean + end_cov_mean) / 2)
+                circle_af = ((interval[3])) / ((start_cov_mean+end_cov_mean)/2)
+
                 if circle_af >= af:
                     write.append(interval)
-
 
     return(bt.BedTool(write))
 
@@ -1440,7 +1440,7 @@ def merge_bed(discordants_pd):
 
 def assign_discordants(split_bed,discordant_bed,insert_mean,insert_std):
 
-    max_dist = (insert_mean/2)+(5*insert_std)
+    max_dist = (insert_mean/2)+(3*insert_std)
     if len(discordant_bed) > 0:
         assigned_splits = []
 
@@ -1451,12 +1451,10 @@ def assign_discordants(split_bed,discordant_bed,insert_mean,insert_std):
                     if (i[1] < j[1]) and ((j[1]-i[1])<max_dist):
                         if (i[2]>j[2]) and ((i[2]-j[2])<max_dist):
                             discordants += 1
-
-
             i.append(discordants)
             assigned_splits.append(i)
 
-        return (assigned_splits)
+        return(assigned_splits)
 
     else:
         assigned_splits = []

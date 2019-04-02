@@ -116,14 +116,14 @@ class realignment:
 
         #open files for every process
         try:
-
+            peaks_pd = bt.BedTool(peaks).to_dataframe(names=['chrom', 'start', 'end'])
             sorted_bam = ps.AlignmentFile(self.sorted_bam_str, "rb")
             self.genome_fa = ps.FastaFile(self.genome_fa)
             ecc_dna = ps.AlignmentFile(self.ecc_dna_str,"rb")
 
             begin = time.time()
-            #print("processing %s clusters" % len(peaks) )
-            peaks_pd = bt.BedTool(peaks).to_dataframe(names=['chrom', 'start', 'end'])
+
+
 
 
 
@@ -377,12 +377,16 @@ class realignment:
 
             #Write process output to disk
             output = iteration_merge(only_discordants,results,
-                                     self.overlap_fraction,self.split,self.score,self.min_sc_length,sorted_bam,self.af)
+                                     self.overlap_fraction,self.split,self.score,self.min_sc_length,sorted_bam,self.af,insert_metrics[0],insert_metrics[1])
 
             write_to_disk(output, self.output, self.lock, self.directory, self.pid)
 
 
         except:
-            return(1,traceback.print_exc(file=sys.stdout))
+            print("Failed on cluster:")
+            print(peaks_pd)
+            print(traceback.print_exc(file=sys.stdout))
+            return([0,0])
+
 
         return([0,0])
