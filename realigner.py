@@ -210,7 +210,7 @@ class realignment:
 
 
                             #note that I am getting the reads of the interval. Not the reads of the mates
-                            for read in ecc_dna.fetch(interval['chrom'],interval['start'],interval['end'],multiple_iterators=True):
+                            for read in ecc_dna.fetch(interval['chrom'],int(interval['start']),int(interval['end']),multiple_iterators=True):
 
 
                                 if is_soft_clipped(read):

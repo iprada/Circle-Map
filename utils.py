@@ -302,7 +302,7 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
 
 
         candidate_mates = []
-        for read in sorted_bam.fetch(interval['chrom'], interval['start'], interval['end'],multiple_iterators=True):
+        for read in sorted_bam.fetch(interval['chrom'], int(interval['start']), int(interval['end']),multiple_iterators=True):
 
             if read.mapq >= mapq_cutoff:
 
