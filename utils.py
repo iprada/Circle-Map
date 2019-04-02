@@ -1144,7 +1144,7 @@ def merge_fraction(chrom1,x1,x2,chrom2,y1,y2):
     return(pd.Series(chrom1 == chrom2) + pd.Series(two_overlap_one.clip(0)) + pd.Series(one_overlap_two.clip(0)))
 
 
-def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af,insert,std):
+def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af,insert,std,n_discordant):
     """finction that merges the results of every iteration"""
 
     norm_fraction = 3
@@ -1199,7 +1199,7 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
                 if circle_af >=af:
                     write.append(interval)
         else:
-            if int(interval[3]) >= splits:
+            if int(interval[3]) >= n_discordant:
                 start_cov = bam.count_coverage(contig=interval[0],
                                                start=int(interval[1])-1, stop=int(interval[2]) + 1,
                                                quality_threshold=0, read_callback='nofilter')

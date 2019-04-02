@@ -151,7 +151,8 @@ Commands:
                                          self.args.threads, self.args.allele_frequency, lock, self.args.split,
                                          self.args.ratio, self.args.verbose, self.__getpid__(),
                                          self.args.edit_distance_fraction, self.args.remap_splits,
-                                         self.args.only_discordants, self.args.split, self.args.split_quality, metrics)
+                                         self.args.only_discordants, self.args.split,
+                                         self.args.split_quality, metrics,self.args.number_of_discordants)
 
                     pool = mp.Pool(processes=self.args.threads)
                     exits = pool.map(object.realign, splitted)
@@ -453,6 +454,9 @@ Commands:
                                       help="Number of required split reads to output a eccDNA. Default: 2",
                                       default=2)
 
+            out_decision.add_argument('-O', '--number_of_discordants', type=int, metavar='',
+                                      help="Number of required discordant reads for intervals with only discordants. Default: 5",
+                                      default=5)
             out_decision.add_argument('-r', '--ratio', type=float, metavar='',
                                       help="Minimum in/out required coverage ratio. Default: 0.0",
                                       default=0.0)
@@ -567,6 +571,9 @@ Commands:
             out_decision.add_argument('-S', '--split', type=int, metavar='',
                                       help="Number of required split reads to output a eccDNA. Default: 2",
                                       default=2)
+            out_decision.add_argument('-O', '--number_of_discordants', type=int, metavar='',
+                                      help="Number of required discordant reads for intervals with only discordants. Default: 5",
+                                      default=5)
 
             out_decision.add_argument('-r', '--ratio', type=float, metavar='',
                                       help="Minimum in/out required coverage ratio. Default: 0.0",
