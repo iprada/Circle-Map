@@ -116,7 +116,7 @@ class realignment:
 
         #open files for every process
         try:
-            peaks_pd = bt.BedTool(peaks).to_dataframe(names=['chrom', 'start', 'end'])
+            peaks_pd = pd.DataFrame.from_records(peaks,columns=['chrom', 'start', 'end'])
             sorted_bam = ps.AlignmentFile(self.sorted_bam_str, "rb")
             self.genome_fa = ps.FastaFile(self.genome_fa)
             ecc_dna = ps.AlignmentFile(self.ecc_dna_str,"rb")
@@ -387,6 +387,10 @@ class realignment:
             print(peaks_pd)
             print(traceback.print_exc(file=sys.stdout))
             return([0,0])
+
+        sorted_bam.close()
+        self.genome_fa.close()
+        ecc_dna.close()
 
 
         return([0,0])

@@ -154,7 +154,7 @@ Commands:
                                          self.args.only_discordants, self.args.split, self.args.split_quality, metrics)
 
                     pool = mp.Pool(processes=self.args.threads)
-                    exits = pool.imap_unordered(object.realign, splitted)
+                    exits = pool.map(object.realign, splitted)
                     pool.close()
                     for res in exits:
                         if res[0] == 1:
