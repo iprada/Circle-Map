@@ -455,8 +455,8 @@ Commands:
                                       default=2)
 
             out_decision.add_argument('-O', '--number_of_discordants', type=int, metavar='',
-                                      help="Number of required discordant reads for intervals with only discordants. Default: 5",
-                                      default=5)
+                                      help="Number of required discordant reads for intervals with only discordants. Default: 3",
+                                      default=3)
             out_decision.add_argument('-r', '--ratio', type=float, metavar='',
                                       help="Minimum in/out required coverage ratio. Default: 0.0",
                                       default=0.0)
@@ -572,8 +572,8 @@ Commands:
                                       help="Number of required split reads to output a eccDNA. Default: 2",
                                       default=2)
             out_decision.add_argument('-O', '--number_of_discordants', type=int, metavar='',
-                                      help="Number of required discordant reads for intervals with only discordants. Default: 5",
-                                      default=5)
+                                      help="Number of required discordant reads for intervals with only discordants. Default: 3",
+                                      default=3)
 
             out_decision.add_argument('-r', '--ratio', type=float, metavar='',
                                       help="Minimum in/out required coverage ratio. Default: 0.0",

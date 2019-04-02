@@ -1199,7 +1199,7 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
                 if circle_af >=af:
                     write.append(interval)
         else:
-            if int(interval[3]) >= n_discordant:
+            if int(interval[3]) > n_discordant:
                 start_cov = bam.count_coverage(contig=interval[0],
                                                start=int(interval[1])-1, stop=int(interval[2]) + 1,
                                                quality_threshold=0, read_callback='nofilter')
