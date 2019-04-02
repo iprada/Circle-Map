@@ -1210,7 +1210,7 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
                 start_cov_mean = np.mean(np.array([start_cov[0], start_cov[1], start_cov[2], start_cov[3]]).sum(axis=0))
                 end_cov_mean = np.mean(np.array([end_cov[0], end_cov[1], end_cov[2], end_cov[3]]).sum(axis=0))
 
-                circle_af = ((interval[3])) / ((start_cov_mean+end_cov_mean)/2)
+                circle_af = (int(interval[3])) / ((start_cov_mean+end_cov_mean)/2)
 
                 if circle_af >= af:
                     write.append(interval)
