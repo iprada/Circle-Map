@@ -269,10 +269,11 @@ class realignment:
 
 
                                                 if sc_len >= self.min_sc_length:
+                                                    edits_allowed = adaptative_myers_k(sc_len, self.edit_distance_frac)
                                                 #realignment
 
                                                     realignment_dict = realign(read,self.n_hits,plus_coding_interval,minus_coding_interval,
-                                                                               plus_base_freqs,minus_base_freqs,self.gap_open,self.gap_ext,self.verbose)
+                                                                               plus_base_freqs,minus_base_freqs,self.gap_open,self.gap_ext,self.verbose,edits_allowed)
 
 
                                                     if realignment_dict == None:
@@ -281,7 +282,6 @@ class realignment:
 
                                                     else:
                                                         #calc edit distance allowed
-                                                        edits_allowed = adaptative_myers_k(sc_len, self.edit_distance_frac)
                                                         prob = realignment_probability(realignment_dict,interval_length)
                                                         if prob >= self.prob_cutoff and realignment_dict['alignments'][1][3] <= edits_allowed:
 

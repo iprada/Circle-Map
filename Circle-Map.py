@@ -19,6 +19,7 @@ import pybedtools as bt
 from simulations import sim_ecc_reads
 import subprocess as sp
 import glob
+from tqdm import *
 
 
 class circle_map:
@@ -155,15 +156,13 @@ Commands:
                                          self.args.split_quality, metrics,self.args.number_of_discordants)
 
                     pool = mp.Pool(processes=self.args.threads)
-                    exits = pool.map(object.realign, splitted)
-                    pool.close()
-                    for res in exits:
-                        if res[0] == 1:
-                            print("A process failed")
-                            print(res[1])
-                            pool.terminate()
-                            break
+                    #exits = pool.map(object.realign, splitted)
+                    with tqdm(total=len(splitted)) as pbar:
+                        for i,exits in tqdm(enumerate(pool.imap_unordered(object.realign, splitted))):
+                            pbar.update()
 
+                    pbar.close()
+                    pool.close()
                     pool.join()
                     output = merge_final_output(self.args.sbam, self.args.output, begin, self.args.split,
                                                 self.args.directory,
@@ -411,7 +410,7 @@ Commands:
 
             alignment_options.add_argument('-Q', '--split_quality', type=float, metavar='',
                                            help="Minium split score to output an interval. Default (20.0)",
-                                           default=10.0)
+                                           default=8.0)
 
             alignment_options.add_argument('-R', '--remap_splits', help="Remap probabilistacally the split reads",
                                            action='store_true')
@@ -529,8 +528,8 @@ Commands:
                                            default=0.05)
 
             alignment_options.add_argument('-Q', '--split_quality', type=float, metavar='',
-                                           help="Minium split score to output an interval. Default (10.0)",
-                                           default=10.0)
+                                           help="Minium split score to output an interval. Default (8.0)",
+                                           default=8.0)
             alignment_options.add_argument('-R', '--remap_splits', help="Remap probabilistacally bwa-mem split reads",
                                            action='store_true')
 
