@@ -156,7 +156,6 @@ Commands:
                                          self.args.split_quality, metrics,self.args.number_of_discordants)
 
                     pool = mp.Pool(processes=self.args.threads)
-                    #exits = pool.map(object.realign, splitted)
                     with tqdm(total=len(splitted)) as pbar:
                         for i,exits in tqdm(enumerate(pool.imap_unordered(object.realign, splitted))):
                             pbar.update()

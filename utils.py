@@ -285,9 +285,6 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
         else:
             split_peaks.append([interval.chrom,str(interval.start),str(interval.end)])
 
-    #randomize list order to win speed
-    #random.shuffle(split_peaks)
-    bt.BedTool(split_peaks).saveas("temp_files_%s/peaks.bed" % pid)
 
     return(sorted_bam,split_peaks)
 
@@ -1314,23 +1311,11 @@ def start_realign(circle_bam,output,threads,verbose,pid,clusters):
 
     sorted_bam,peaks = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose,pid,clusters)
 
-    #split to chunks sorted by coverage
-    splitted = []
-    index = 0
-    for i in range(0, threads * 100):
-        splitted.append([])
-    for i in peaks:
-        splitted[index].append(i)
-        if index == (threads * 100)-1:
-            index = 0
-        else:
-            index +=1
-    #remove empty lists
-    check_splitted = []
-    for i in splitted:
-        if i != []:
-            check_splitted.append(i)
-    splitted = check_splitted
+    chunks = int(round(len(peaks)/(threads*100)))
+
+
+    splitted = [peaks[x:x + chunks] for x in range(0, len(peaks),chunks)]
+
 
     # split to cores
 
