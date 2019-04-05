@@ -381,7 +381,7 @@ Commands:
             # alignment
             alignment_options.add_argument('-n', '--nhits', type=int, metavar='',
                                            help="Number of realignment attempts. Default: 100",
-                                           default=100)
+                                           default=10)
 
             alignment_options.add_argument('-p', '--cut_off', type=float, metavar='',
                                            help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.999",

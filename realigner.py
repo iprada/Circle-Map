@@ -196,7 +196,7 @@ class realignment:
                             #sample realignment intervals
                             #fasta file fetch is 1 based that why I do +1
 
-                            plus_coding_interval = genome_fa.fetch(mate_interval['chrom'],mate_interval['start']+1,mate_interval['end']+1).upper()
+                            plus_coding_interval = genome_fa.fetch(str(mate_interval['chrom']),int(mate_interval['start']+1),int(mate_interval['end']+1)).upper()
                             interval_length = len(plus_coding_interval)
                             minus_coding_interval = str(Seq(plus_coding_interval).complement())
 
@@ -365,6 +365,7 @@ class realignment:
 
 
                     if self.verbose < 2:
+                        print(interval)
                         traceback.print_exc(file=sys.stdout)
                         warnings.warn(
                             "Failed on interval %s due to the error %s" % (
@@ -373,8 +374,13 @@ class realignment:
                     else:
                         continue
 
+                #print("Mother node")
+                #print(interval)
+                #print("Child node")
+                #print(realignment_interval_extended)
 
             ecc_dna.close()
+            genome_fa.close()
 
             #Write process output to disk
             output = iteration_merge(only_discordants,results,

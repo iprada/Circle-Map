@@ -588,9 +588,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
             candidate_mates_dataframe = candidate_mates_dataframe.sort_values(by=['chrom', 'start','end'],ascending=[True,True,True])
             candidate_mates_dataframe['probability'] = candidate_mates_dataframe.probability.astype(float)
 
-
             candidate_mates = candidate_mates_dataframe.groupby((candidate_mates_dataframe.end.shift()-candidate_mates_dataframe.start).lt(0).cumsum()).agg({'chrom':'first','start':'first','end':'last','probability':'sum'})
-
 
             sum = np.sum(float(x[3]) for index, x in candidate_mates.iterrows())
 
@@ -623,6 +621,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
             #argmax(probability)
 
             candidate_mates =  candidate_mates.loc[candidate_mates['probability'] == candidate_mates['probability'].max()]
+
             for item,row in candidate_mates.iterrows():
                 if ('LR' in orientation) or ('L' and 'R' in orientation):
 
@@ -869,22 +868,6 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
     nuc_and_ops =  np.array([1,2,3,4,5,6,7])
     encoded_nucs = number_encoding(soft_clipped_read['seq'])
 
-
-
-    if check_alphabet(soft_clipped_read['seq']) == False:
-
-        #Warning raised when alphabets do not match
-
-        if verbose < 2:
-
-            warnings.warn(
-                "WARNING: a soft-clipped containing only ambiguous DNA bases was found. Soft-clipped sequence is: %s" %
-                soft_clipped_read['seq'])
-
-        return(None)
-
-
-
     hits = 0
 
     min_score = len(soft_clipped_read['seq'])
@@ -897,73 +880,70 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
 
         while hits < n_hits and min_score >= -10:
 
-
-            if check_compatibility(soft_clipped_read['seq'], minus_strand) == True:
-
-                alignment = edlib.align(soft_clipped_read['seq'], minus_strand, mode='HW', task='path')
-                if hits ==0:
-                    if alignment['editDistance'] > max_edit:
-                        return(None)
+            alignment = edlib.align(soft_clipped_read['seq'], minus_strand, mode='HW', task='path')
+            if hits ==0:
+                if alignment['editDistance'] > max_edit:
+                    return(None)
 
 
 
-                for location in alignment['locations']:
+            for location in alignment['locations']:
 
 
 
-                    mask_bases = 'X' * ( location[1] - location[0])
+                mask_bases = 'X' * ( location[1] - location[0])
 
 
-                    minus_strand = minus_strand[:location[0]] + mask_bases + minus_strand[location[1]:]
+                minus_strand = minus_strand[:location[0]] + mask_bases + minus_strand[location[1]:]
 
-                    hits += 1
-
-
-                    score = pssm(phred_to_prob(np.array(soft_clipped_read['qual'],dtype=np.float64)), encoded_nucs,
-                                 edlib_cigar_to_iterable(alignment['cigar']),minus_base_freqs,gap_open,gap_extend,nuc_and_ops,verbose)
-
-                    if score < min_score:
-                        min_score = score
+                hits += 1
 
 
-                    top_hits[hits] = (location,alignment['cigar'],score,alignment['editDistance'])
+                score = pssm(phred_to_prob(np.array(soft_clipped_read['qual'],dtype=np.float64)), encoded_nucs,
+                             edlib_cigar_to_iterable(alignment['cigar']),minus_base_freqs,gap_open,gap_extend,nuc_and_ops,verbose)
 
-            else:
-                # the search was exaustive
-                hits +=n_hits
+                if score < min_score:
+                    min_score = score
+
+
+                top_hits[hits] = (location,alignment['cigar'],score,alignment['editDistance'])
+
+        else:
+            # the search was exaustive
+            hits +=n_hits
 
     else:
 
         while hits < n_hits and min_score >= -10:
 
-            if check_compatibility(soft_clipped_read['seq'], plus_strand) == True:
-
-                alignment = edlib.align(soft_clipped_read['seq'], plus_strand, mode='HW', task='path')
-                #stop search if edit distance is to high
-                if hits ==0:
-                    if alignment['editDistance'] > max_edit:
-                        return (None)
 
 
-                for location in alignment['locations']:
+            alignment = edlib.align(soft_clipped_read['seq'], plus_strand, mode='HW', task='path')
+            #stop search if edit distance is to high
+            if hits ==0:
+                if alignment['editDistance'] > max_edit:
+                    return (None)
 
-                    mask_bases = 'X' * ( location[1] - location[0])
 
-                    plus_strand = plus_strand[:location[0]] + mask_bases + plus_strand[location[1]:]
+            for location in alignment['locations']:
 
-                    hits += 1
+                mask_bases = 'X' * ( location[1] - location[0])
 
-                    score = pssm(phred_to_prob(np.array(soft_clipped_read['qual'],dtype=np.float64)), encoded_nucs,
-                                 edlib_cigar_to_iterable(alignment['cigar']), plus_base_freqs,gap_open,gap_extend,nuc_and_ops,verbose)
+                plus_strand = plus_strand[:location[0]] + mask_bases + plus_strand[location[1]:]
 
-                    if score < min_score:
-                        min_score = score
+                hits += 1
 
-                    top_hits[hits] = (location,alignment['cigar'],score,alignment['editDistance'])
+                score = pssm(phred_to_prob(np.array(soft_clipped_read['qual'],dtype=np.float64)), encoded_nucs,
+                             edlib_cigar_to_iterable(alignment['cigar']), plus_base_freqs,gap_open,gap_extend,nuc_and_ops,verbose)
 
-            else:
+                if score < min_score:
+                    min_score = score
 
-                hits +=n_hits
+                top_hits[hits] = (location,alignment['cigar'],score,alignment['editDistance'])
+
+        else:
+
+            hits +=n_hits
 
 
 
