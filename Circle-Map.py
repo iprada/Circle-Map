@@ -153,7 +153,8 @@ Commands:
                                          self.args.ratio, self.args.verbose, self.__getpid__(),
                                          self.args.edit_distance_fraction, self.args.remap_splits,
                                          self.args.only_discordants, self.args.split,
-                                         self.args.split_quality, metrics,self.args.number_of_discordants)
+                                         self.args.split_quality, metrics,self.args.number_of_discordants,
+                                         self.args.maximum_cluster_time)
 
                     pool = mp.Pool(processes=self.args.threads)
                     with tqdm(total=len(splitted)) as pbar:
@@ -446,6 +447,9 @@ Commands:
             interval.add_argument('-F', '--allele_frequency', type=float, metavar='',
                                   help="Minimum allele frequency required to report the circle interval. Default (0.1)",
                                   default=0.1)
+            interval.add_argument('-T', '--maximum_cluster_time', type=int, metavar='',
+                                  help="Maximum time allowed per every read cluster. Default (30 mins)",
+                                  default=30)
             # When to call a circle
 
             out_decision.add_argument('-S', '--split', type=int, metavar='',
@@ -563,6 +567,9 @@ Commands:
             interval.add_argument('-F', '--allele_frequency', type=float, metavar='',
                                   help="Minimum allele frequency required to report the circle interval. Default (0.1)",
                                   default=0.1)
+            interval.add_argument('-T', '--maximum_cluster_time', type=int, metavar='',
+                                  help="Maximum time allowed per every read cluster. Default (30 mins)",
+                                  default=30)
 
             # When to call a circle
 
