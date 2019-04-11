@@ -1228,7 +1228,11 @@ def merge_final_output(bam,results,begin,splits,dir,fraction,pid):
 
 
     second_merging_round = unparsed_pd.sort_values(['chrom', 'start', 'end']).reset_index()
-
+    #merge the output
+    # merge_fraction calculates the degree of overlap between the two genomic intervals
+    #lt(norm_freaction) looks the ones that surpass the merging threshold (returns 0 if true, 1 if not)
+    # Cumsum calculates the cumulative sum over the output of lt. Which is then used for the grouping. 
+    #If the cumulative sum is the same for two rows, they are merged
     final_output = second_merging_round.groupby(
         merge_fraction(second_merging_round.chrom.shift(), second_merging_round.start.shift(),
                      second_merging_round.end.shift(),second_merging_round.chrom,second_merging_round.start,second_merging_round.end).lt(norm_fraction).cumsum()).agg(
