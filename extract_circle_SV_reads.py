@@ -133,7 +133,7 @@ class readExtractor:
                                             circle_sv_reads.write(read1)
                                             circle_sv_reads.write(read2)
                                         else:
-                                            continue
+                                            pass
                             else:
                                 #if the leftmost mapping condition is not met check if they are soft-clipped
                                 if is_soft_clipped(read1) == True:
@@ -147,7 +147,7 @@ class readExtractor:
                                             circle_sv_reads.write(read1)
 
                                     else:
-                                        continue
+                                        pass
 
                                 else:
 
@@ -161,7 +161,7 @@ class readExtractor:
                                                 read1.tags += [('MQ', read2.mapq)]
                                                 circle_sv_reads.write(read1)
                                         else:
-                                            continue
+                                            pass
 
 
                                 if is_soft_clipped(read2) == True:
@@ -174,7 +174,7 @@ class readExtractor:
                                             circle_sv_reads.write(read2)
 
                                     else:
-                                        continue
+                                        pass
 
                                 else:
 
@@ -191,7 +191,7 @@ class readExtractor:
 
                                         else:
 
-                                            continue
+                                            pass
 
 
                         else:
@@ -208,7 +208,7 @@ class readExtractor:
 
                                 else:
 
-                                    continue
+                                    pass
 
                             else:
 
@@ -224,7 +224,7 @@ class readExtractor:
 
                                     else:
 
-                                        continue
+                                        pass
 
 
                             if is_soft_clipped(read2) == True:
@@ -239,8 +239,7 @@ class readExtractor:
 
 
                                 else:
-
-                                    continue
+                                    pass
 
         end = time.time()
 

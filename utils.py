@@ -34,7 +34,7 @@ def is_soft_clipped(read):
         if cigar[0] == 4:
             match +=1
         else:
-            continue
+            pass
 
     if match > 0:
         return(True)
@@ -52,7 +52,7 @@ def is_hard_clipped(read):
         if cigar[0] == 5:
             match += 1
         else:
-            continue
+            pass
 
     if match > 0:
         return (True)
@@ -120,7 +120,7 @@ def aligned_bases(read):
         if cigar[0] == 0:
             aligned += cigar[1]
         else:
-            continue
+            pass
 
 
 
@@ -350,7 +350,7 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
 
                                     candidate_mates.append(mate_interval)
                     else:
-                        continue
+                        pass
 
 
 
@@ -479,13 +479,13 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
 
                                                 candidate_mates.append(mate_interval)
                         else:
-                            continue
+                            pass
 
 
 
             else:
                 # low mapping quality reads, do nothing
-                continue
+                pass
 
         #this function should return the candidate mates (realignment prior, discordant intervals/split read intervals and soft-clipped reads)
         return(candidate_mates)
@@ -543,7 +543,7 @@ def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
         if counter >= sample_size:
             break
         else:
-            continue
+            pass
 
 
     mean = np.mean(insert_length)
@@ -610,6 +610,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
 
         else:
             #only soft clipped
+            print(candidate_mates_dataframe)
 
             return(None)
 
@@ -1081,9 +1082,8 @@ def realignment_probability(hit_dict,interval_length):
     best_hit = hit_dict['alignments'][1][2]
 
     #this might be included on the denominator
-    regularizer = (interval_length * phred_to_prob(np.array(hit_dict['mapq_prior'],dtype=np.float64))
-                   )/(1- phred_to_prob(np.array(hit_dict['mapq_prior'],dtype=np.float64)))
-    posterior = 2**best_hit/(np.sum((2**value[2]) for key,value in hit_dict['alignments'].items())+regularizer)
+
+    posterior = 2**best_hit/(np.sum((2**value[2]) for key,value in hit_dict['alignments'].items()))
 
     return(posterior)
 

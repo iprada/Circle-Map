@@ -166,14 +166,29 @@ class realignment:
                     candidate_mates = get_mate_intervals(ecc_dna,interval,self.mapq_cutoff,self.verbose,self.only_discordants)
 
 
+                    empty = 0
 
 
-                    #check that the output is not empty
                     if len(candidate_mates) > 0:
+                        empty = 0
+                        #nothing
+                        pass
+                    else:
+                        candidate_mates.append(1)
+                        empty =1
+                        new_realignment_interval_extended = pd.DataFrame.from_records(
+                            [[interval.chrom, int(interval.start) - 10000, int(interval.end) + 10000]],
+                            columns=['chrom', 'start', 'end'])
 
 
-                        # sort merge and extend
-                        realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p,
+                    #check that the output is not empty if empty realignment prior is a window of +-10000
+                    if len(candidate_mates) > 0:
+                        if empty ==1:
+                            realignment_interval_extended = new_realignment_interval_extended
+                            print("Realiging a lonely soft-clipped interval. This might be slow")
+                        else:
+                            # sort merge and extend
+                            realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p,
                                                                                   self.verbose)
 
 
@@ -181,8 +196,10 @@ class realignment:
 
 
 
+
                         if realignment_interval_extended is None:
-                            continue
+                            realignment_interval_extended = pd.DataFrame.from_records(
+                                [[interval.chrom,int(interval.start)-10000,int(interval.end)+10000]], columns=['chrom', 'start', 'end'])
 
 
 
@@ -233,7 +250,7 @@ class realignment:
 
 
                                             if support is  None:
-                                                continue
+                                                pass
 
                                             else:
 
@@ -261,7 +278,7 @@ class realignment:
 
                                                     else:
                                                         #uninformative read
-                                                        continue
+                                                        pass
 
 
 
@@ -283,7 +300,7 @@ class realignment:
 
                                                     if realignment_dict == None:
 
-                                                        continue
+                                                        pass
 
                                                     else:
                                                         #calc edit distance allowed
@@ -316,18 +333,18 @@ class realignment:
 
                                                             else:
                                                                 # uninformative read
-                                                                continue
+                                                                pass
 
 
 
                                                         else:
-                                                            continue
+                                                            pass
                                             else:
 
-                                                continue
+                                                pass
 
                                     else:
-                                        continue
+                                        pass
                                 else:
                                     #discordant reads
                                     #R2F1 oriented when iterating trough R2
@@ -377,7 +394,7 @@ class realignment:
                                 str(interval), str(e)))
 
                     else:
-                        continue
+                        pass
 
                 #print("Mother node")
                 #print(interval)
