@@ -134,6 +134,109 @@ class readExtractor:
                                             circle_sv_reads.write(read2)
                                         else:
                                             pass
+                                    else:
+                                        #extract soft-clipped if the mapq is high enough
+                                        if read1.mapq >= self.mapq_cutoff:
+                                            if is_soft_clipped(read1) == True:
+                                                if self.no_soft_clipped == False:
+
+                                                    if read1.mapq >= self.mapq_cutoff:
+                                                        read1.tags += [('MQ', read2.mapq)]
+                                                        circle_sv_reads.write(read1)
+
+                                                else:
+
+                                                    pass
+
+                                            else:
+
+                                                if is_hard_clipped(read1) == True:
+
+                                                    if self.no_hard_clipped == False:
+
+                                                        # gets its on mapq since mate is unmapped
+                                                        if read1.mapq >= self.mapq_cutoff:
+                                                            read1.tags += [('MQ', read1.mapq)]
+                                                            circle_sv_reads.write(read1)
+
+                                                    else:
+
+                                                        pass
+                                        if read2.mapq >= self.mapq_cutoff:
+                                            if is_soft_clipped(read2) == True:
+
+                                                if self.no_soft_clipped == False:
+
+                                                    # gets its on mapq since mate is unmapped
+                                                    if read2.mapq >= self.mapq_cutoff:
+                                                        read2.tags += [('MQ', read2.mapq)]
+                                                        circle_sv_reads.write(read2)
+
+                                                else:
+                                                    pass
+                                            if is_hard_clipped(read2) == True:
+
+                                                if self.no_hard_clipped == False:
+
+                                                    # gets its on mapq since mate is unmapped
+                                                    if read2.mapq >= self.mapq_cutoff:
+                                                        read2.tags += [('MQ', read2.mapq)]
+                                                        circle_sv_reads.write(read1)
+
+                                                else:
+
+                                                    pass
+
+
+                                else:
+                                    if is_soft_clipped(read1) == True:
+
+                                        if self.no_soft_clipped == False:
+
+                                            if read1.mapq >= self.mapq_cutoff:
+                                                read1.tags += [('MQ', read2.mapq)]
+                                                circle_sv_reads.write(read1)
+
+                                        else:
+                                            pass
+
+                                    else:
+
+                                        if is_hard_clipped(read1) == True:
+
+                                            if self.no_hard_clipped == False:
+
+                                                if read1.mapq >= self.mapq_cutoff:
+                                                    read1.tags += [('MQ', read2.mapq)]
+                                                    circle_sv_reads.write(read1)
+                                            else:
+                                                pass
+
+                                    if is_soft_clipped(read2) == True:
+
+                                        if self.no_soft_clipped == False:
+
+                                            if read2.mapq >= self.mapq_cutoff:
+                                                read2.tags += [('MQ', read1.mapq)]
+                                                circle_sv_reads.write(read2)
+
+                                        else:
+                                            pass
+
+                                    else:
+
+                                        if is_hard_clipped(read2) == True:
+
+                                            if self.no_hard_clipped == False:
+
+                                                if read2.mapq >= self.mapq_cutoff:
+                                                    read2.tags += [('MQ', read1.mapq)]
+                                                    circle_sv_reads.write(read2)
+
+                                            else:
+
+                                                pass
+
                             else:
                                 #if the leftmost mapping condition is not met check if they are soft-clipped
                                 if is_soft_clipped(read1) == True:
@@ -240,6 +343,64 @@ class readExtractor:
 
                                 else:
                                     pass
+                    else:
+                        if read1.is_unmapped == False:
+                            if is_soft_clipped(read1) == True:
+                                if self.no_soft_clipped == False:
+
+                                    if read1.mapq >= self.mapq_cutoff:
+                                        read1.tags += [('MQ', read2.mapq)]
+                                        circle_sv_reads.write(read1)
+
+                                else:
+
+                                    pass
+
+                            else:
+
+                                if is_hard_clipped(read1) == True:
+
+                                    if self.no_hard_clipped == False:
+
+                                        #gets its on mapq since mate is unmapped
+                                        if read1.mapq >= self.mapq_cutoff:
+                                            read1.tags += [('MQ', read1.mapq)]
+                                            circle_sv_reads.write(read1)
+
+                                    else:
+
+                                        pass
+                        if read2.is_unmapped == False:
+                            if is_soft_clipped(read2) == True:
+
+                                if self.no_soft_clipped == False:
+
+                                    #gets its on mapq since mate is unmapped
+                                    if read2.mapq >= self.mapq_cutoff:
+                                        read2.tags += [('MQ', read2.mapq)]
+                                        circle_sv_reads.write(read2)
+
+                                else:
+                                    pass
+                            if is_hard_clipped(read2) == True:
+
+                                if self.no_hard_clipped == False:
+
+                                    # gets its on mapq since mate is unmapped
+                                    if read2.mapq >= self.mapq_cutoff:
+                                        read2.tags += [('MQ', read2.mapq)]
+                                        circle_sv_reads.write(read1)
+
+                                else:
+
+                                    pass
+
+
+
+                else:
+                    # reads are not queryname sorted and cannot be processed in paired mode
+                    warnings.warn("Unpaired reads found. Is your bam file queryname sorted?")
+
 
         end = time.time()
 
@@ -253,11 +414,3 @@ class readExtractor:
             print("finished extracting reads. Elapsed time:", (end - begin) / 60, "mins")
 
             print("Thanks for using Circle-Map")
-
-
-
-
-
-
-
-

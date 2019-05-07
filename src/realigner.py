@@ -166,40 +166,19 @@ class realignment:
                     candidate_mates = get_mate_intervals(ecc_dna,interval,self.mapq_cutoff,self.verbose,self.only_discordants)
 
 
-                    empty = 0
+
 
 
                     if len(candidate_mates) > 0:
-                        empty = 0
-                        #nothing
-                        pass
-                    else:
-                        candidate_mates.append(1)
-                        empty =1
-                        new_realignment_interval_extended = pd.DataFrame.from_records(
-                            [[interval.chrom, int(interval.start) - 10000, int(interval.end) + 10000]],
-                            columns=['chrom', 'start', 'end'])
 
 
-                    #check that the output is not empty if empty realignment prior is a window of +-10000
-                    if len(candidate_mates) > 0:
-                        if empty ==1:
-                            realignment_interval_extended = new_realignment_interval_extended
-                            print("Realiging a lonely soft-clipped interval. This might be slow")
-                        else:
-                            # sort merge and extend
-                            realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p,
+                        realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p,
                                                                                   self.verbose)
 
-
-
-
-
-
+                        print(realignment_interval_extended)
 
                         if realignment_interval_extended is None:
-                            realignment_interval_extended = pd.DataFrame.from_records(
-                                [[interval.chrom,int(interval.start)-10000,int(interval.end)+10000]], columns=['chrom', 'start', 'end'])
+                            continue
 
 
 
@@ -215,7 +194,7 @@ class realignment:
                             #sample realignment intervals
                             #fasta file fetch is 1 based that why I do +1
 
-                            plus_coding_interval = genome_fa.fetch(str(mate_interval['chrom']),int(mate_interval['start']+1),int(mate_interval['end']+1)).upper()
+                            plus_coding_interval = genome_fa.fetch(str(mate_interval['chrom']),int(int(mate_interval['start'])+1),int(int(mate_interval['end'])+1)).upper()
                             interval_length = len(plus_coding_interval)
                             minus_coding_interval = str(Seq(plus_coding_interval).complement())
 
@@ -230,13 +209,14 @@ class realignment:
 
 
                             #note that I am getting the reads of the interval. Not the reads of the mates
+                            i = 0
                             for read in ecc_dna.fetch(interval['chrom'],int(interval['start']),int(interval['end']),multiple_iterators=True):
-
-                                if (time.time() - max_time_begin)/60 > self.max_time:
-                                    print("Runtime skip on cluster %s. Skipping to next")
-                                    break
+                                #print(read)
+                                i +=1
+                                print(i)
 
                                 if is_soft_clipped(read):
+                                    #print(read)
 
                                     if read.mapq >= self.mapq_cutoff:
 
@@ -313,20 +293,20 @@ class realignment:
                                                             read_end = rightmost_from_read(read)
 
 
-                                                            soft_clip_start = mate_interval['start']+ int(realignment_dict['alignments'][1][0][0])
+                                                            soft_clip_start = int(mate_interval['start'])+ int(realignment_dict['alignments'][1][0][0])
 
-                                                            soft_clip_end = mate_interval['start'] + int(realignment_dict['alignments'][1][0][1])
+                                                            soft_clip_end = int(mate_interval['start']) + int(realignment_dict['alignments'][1][0][1])
 
                                                             score = sc_len*prob
 
 
                                                             # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
-                                                            if read.reference_start < mate_interval['start'] + int(
+                                                            if read.reference_start < int(mate_interval['start']) + int(
                                                                     realignment_dict['alignments'][1][0][0]):
 
                                                                 iteration_results.append([interval['chrom'], read.reference_start, soft_clip_end+1, read.qname,iteration,str(round(score,2))])
 
-                                                            elif read.reference_start + mate_interval['start'] + int(
+                                                            elif read.reference_start + int(mate_interval['start']) + int(
                                                                     realignment_dict['alignments'][1][0][0]):
 
                                                                 iteration_results.append([interval['chrom'], soft_clip_start, read_end, read.qname,iteration,str(round(score,2))])
@@ -369,8 +349,9 @@ class realignment:
 
                         #second pass to add discordant read info
                         if len(iteration_results) > 0:
+                            print("finish looping through reads")
                             results = results + assign_discordants(iteration_results,iteration_discordants,insert_metrics[0],insert_metrics[1])
-
+                            print("assgined discordants")
 
                         elif len(iteration_discordants) > 0:
                                 discordant_bed = pd.DataFrame.from_records(iteration_discordants,columns=['chrom','start','end','read']).sort_values(['chrom','start','end'])
@@ -381,6 +362,7 @@ class realignment:
 
                                 for index,disc_interval in discordant_bed.iterrows():
                                     only_discordants.append([disc_interval['chrom'],disc_interval['start'],disc_interval['end'],disc_interval['read'],0])
+
 
 
                 except BaseException as e:
@@ -396,15 +378,12 @@ class realignment:
                     else:
                         pass
 
-                #print("Mother node")
-                #print(interval)
-                #print("Child node")
-                #print(realignment_interval_extended)
 
             ecc_dna.close()
             genome_fa.close()
 
             #Write process output to disk
+            print("Writting to disk")
             output = iteration_merge(only_discordants,results,
                                      self.overlap_fraction,self.split,self.score,
                                      self.min_sc_length,sorted_bam,self.af,insert_metrics[0],insert_metrics[1],self.discordant_filter)
@@ -414,7 +393,6 @@ class realignment:
 
         except:
             print("Failed on cluster:")
-            print(peaks_pd)
             print(traceback.print_exc(file=sys.stdout))
             return([0,0])
 

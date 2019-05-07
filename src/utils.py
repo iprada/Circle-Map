@@ -18,7 +18,7 @@ from scipy import stats as st
 import random
 import re
 from numba import jit
-
+import math
 
 
 
@@ -65,6 +65,7 @@ def rightmost_from_read(read):
 
     rightmost = 0
 
+    #matches, deletions and ref skip consume reference
     for cigar in read.cigar:
 
         if cigar[0] == 0:
@@ -88,7 +89,7 @@ def rightmost_from_sa(leftmost,sa_cigar):
     rightmost = int(leftmost)-1
 
     cigar = [''.join(g) for _, g in it.groupby(sa_cigar, str.isalpha)]
-
+    # matches, deletions and ref skip consume reference
     match_index = [x for x in range(len(cigar)) if cigar[x] == 'M']
     deletion_index = [x for x in range(len(cigar)) if cigar[x] == 'D']
     ambiguous_index = [x for x in range(len(cigar)) if cigar[x] == 'N']
@@ -103,6 +104,8 @@ def rightmost_from_sa(leftmost,sa_cigar):
 
     for index in ambiguous_index:
         rightmost += int(cigar[index-1])
+
+    assert rightmost >= (int(leftmost)-1)
 
     return(rightmost)
 
@@ -121,12 +124,7 @@ def aligned_bases(read):
             aligned += cigar[1]
         else:
             pass
-
-
-
-
-
-
+    assert aligned >= 0
     return(aligned)
 
 def aligned_bases_from_sa(sa_cigar):
@@ -150,6 +148,7 @@ def aligned_bases_from_sa(sa_cigar):
         for index in match_index:
             aligned += int(cigar[index - 1])
 
+    assert aligned >=0
     return(aligned)
 
 
@@ -194,7 +193,7 @@ def genome_alignment_from_cigar(sa_cigar):
             for index in deletion_index:
                 aligned += int(cigar[index - 1])
 
-
+    assert aligned >=0
     return(aligned)
 
 
@@ -321,7 +320,6 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
 
                                 # SA is downstream, the interval is start, start+read length
 
-                                # Future Inigo, this part of the code is over complicated. you can create a function of this
                                 if read.reference_start > int(supl_info[1]):
 
                                     ref_alignment_length = genome_alignment_from_cigar(supl_info[3])
@@ -430,7 +428,6 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
                                 # all hard clipped reads have SA tag with bwa, but just as sanity
 
                                 if read.has_tag('SA'):
-                                    # Future me, This part of the code could be OOP using the soft-clipped extraction
 
                                     read_chr = sorted_bam.get_reference_name(read.reference_id)
 
@@ -447,7 +444,6 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
 
                                             # SA is downstream, the interval is start, start+read length
 
-                                            # Future Inigo, this part of the code is over complicated. you can create a function of this
                                             if read.reference_start > int(supl_info[1]):
 
                                                 ref_alignment_length = genome_alignment_from_cigar(supl_info[3])
@@ -512,7 +508,6 @@ def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
     the standard deviation from. This number is computed from the F1R2 read with a user defined sample size,
      using a user defined mapping quality cutoff in both reads"""
 
-    #TO-DO Warning if the bam file is not query name sorted
 
     whole_bam = ps.AlignmentFile(qname_bam, "rb")
 
@@ -548,22 +543,16 @@ def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
 
     mean = np.mean(insert_length)
     std = np.std(insert_length)
-
     return(mean, std)
 
 def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,verbose):
 
-    #OPTIMIZE
 
     """Function that takes as input a bed file with the read type information and will remove the soft-clipped if there
             are more informative priors (DR,SA). If there are only soft-clipped reads, they will be saved to a bed file to attemp
             lonely soft-clipped read rescue"""
 
     try:
-
-
-
-
 
         labels = ['chrom', 'start', 'end', 'read_type', 'orientation','probability']
         candidate_mates_dataframe = pd.DataFrame.from_records(bed_prior, columns=labels)
@@ -610,7 +599,6 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
 
         else:
             #only soft clipped
-            print(candidate_mates_dataframe)
 
             return(None)
 
@@ -708,7 +696,6 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
 
 
 def circle_from_SA(read,mapq_cutoff,mate_interval):
-    #OPTIMIZE
 
     """Function that takes as input a read (soft-clipped) with a Suplementary alignment the mapping quality cut-off
     and the mate intervals and checks if it fits the conditions to call a circle. Will return True if the supplementary
@@ -747,6 +734,8 @@ def circle_from_SA(read,mapq_cutoff,mate_interval):
         return{'support' : False}
 
 def number_encoding(seq):
+    """Function that takes as input a DNA sequence, and encodes the sequence to numbers, so that it can be accelerated
+    with numba"""
     encoded = []
     for i in seq:
         if i == "A":
@@ -761,7 +750,6 @@ def number_encoding(seq):
 
 
 def check_alphabet(sequence):
-    #Optimize
     """Function that takes as input a sequence and it will check that there is at least a letter matching the alphabet
      in the sequence, returning true."""
 
@@ -770,10 +758,11 @@ def check_alphabet(sequence):
     for base in sequence:
         if base in code:
             return(True)
-
     return(False)
 
 def check_compatibility(seq1,seq2):
+    """Function that takes as input two DNA sequence and checks whether their alphabets have at least one element
+    in common. This due to an old bug in edlib"""
 
     for base in seq1:
 
@@ -865,7 +854,7 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
     #get soft-clipped read
     soft_clipped_read = get_longest_soft_clipped_bases(read)
 
-    #encoding of DNA and operations A,T,C,G,=,X,DI
+    #encoding of DNA and operations A,T,C,G,=,X,DI. THis is done for Numba
     nuc_and_ops =  np.array([1,2,3,4,5,6,7])
     encoded_nucs = number_encoding(soft_clipped_read['seq'])
 
@@ -914,7 +903,8 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
             hits +=n_hits
 
     else:
-
+        #min socre stops the search if the score is orders of magnitude smaller that the top score given the edit
+        #distance
         while hits < n_hits and min_score >= -10:
 
 
@@ -1094,18 +1084,19 @@ def realignment_probability(hit_dict,interval_length):
 
 
 def fraction(start1,start2,end1,end2,read1,read2):
-    #completely internal function
     """Function that performs a first round of merging. If the realigned intervals and SA intervals overlap, and are ca-
     lled within the same iteration (which means that it is the same circle probably) they will be merged"""
 
-
+    #check that they come from the same read
     read_match = (read1 == read2)*1
 
 
-
+    #calculate distance between the two intervals
     distance = (abs(start1-start2) + abs(end1-end2))
 
+    #overlap of interval 1 on interval 2
     one_overlap_two = 1 - (distance/(end1-start1))
+    #overlap of interval two on interval 1
     two_overlap_one =  1 - (distance/(end2-start2))
 
     return(one_overlap_two + two_overlap_one + read_match)
@@ -1113,7 +1104,7 @@ def fraction(start1,start2,end1,end2,read1,read2):
 
 
 def merge_fraction(chrom1,x1,x2,chrom2,y1,y2):
-    """compute overlap of the interval y over interval x"""
+    """compute overlap (reciprocal) of the interval y over interval x"""
 
     distance = (np.minimum(x2.values,y2.values) - np.maximum(x1.values,y1.values))
 
@@ -1129,7 +1120,7 @@ def merge_fraction(chrom1,x1,x2,chrom2,y1,y2):
 
 
 def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af,insert,std,n_discordant):
-    """finction that merges the results of every iteration"""
+    """finction that merges the results of every iteration and filters the data by allele frequency"""
 
     norm_fraction = 3
 
@@ -1141,7 +1132,6 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
 
     discordant_bed = bt.BedTool(parsed_discordants)
     unparsed_bed = bt.BedTool(results)
-    #print("filtering %s intervals" % len(unparsed_bed))
 
 
 
@@ -1196,8 +1186,6 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
                     if circle_af >= af:
                         write.append(interval)
 
-
-
     return(bt.BedTool(write))
 
 
@@ -1205,6 +1193,9 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
 
 
 def merge_final_output(bam,results,begin,splits,dir,fraction,pid):
+
+    """Function that takes as input the final results, and merge reciprocal intervals (this is done to combine the output
+    of different clusters)"""
 
 
 
@@ -1270,6 +1261,8 @@ def merge_final_output(bam,results,begin,splits,dir,fraction,pid):
 
 def write_to_disk(partial_bed,output,locker,dir,pid):
 
+    """function that writes to disk the results of every worker thread"""
+
 
     locker.acquire()
     os.chdir("%s/temp_files_%s/" % (dir,pid))
@@ -1280,7 +1273,8 @@ def write_to_disk(partial_bed,output,locker,dir,pid):
     locker.release()
 
 def start_realign(circle_bam,output,threads,verbose,pid,clusters):
-    """a"""
+    """Function that start the realigner function
+        - Splits the clusters to cores and removes the from disk the bedtools intermediates"""
 
     begin = time.time()
 
@@ -1295,7 +1289,7 @@ def start_realign(circle_bam,output,threads,verbose,pid,clusters):
 
     sorted_bam,peaks = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose,pid,clusters)
 
-    chunks = int(round(len(peaks)/(threads*100)))
+    chunks = int(math.ceil(len(peaks)/(threads*100)))
 
 
     splitted = [peaks[x:x + chunks] for x in range(0, len(peaks),chunks)]
@@ -1343,6 +1337,7 @@ def mutate(genome,pid,indel,snp,java_mem):
 
 
 def check_size_and_write(results,only_discortants,output,lock,directory,fraction,pid):
+    """Function that checks if the intervals in memory are to big. And writes them to disk to release memory."""
 
 
     if sys.getsizeof(results) < 100000000:
@@ -1429,6 +1424,9 @@ def merge_bed(discordants_pd):
 
 def assign_discordants(split_bed,discordant_bed,insert_mean,insert_std):
 
+    """Function that takes as input the the discordant reads supporting an interval and assigns them to the
+    interval if they are close by (using the insert size estimate)"""
+
     max_dist = (insert_mean/2)+(3*insert_std)
     if len(discordant_bed) > 0:
         assigned_splits = []
@@ -1464,9 +1462,9 @@ def non_colinearity(read,mate_interval):
     #check left soft-clipped
     if read.cigar[0][0] == 4:
         #graph needs to be upstream or looping to itself
-        if mate_interval.start > read.pos:
+        if int(mate_interval.start) > read.pos:
             return (True)
-        elif read.pos < mate_interval.end:
+        elif read.pos < int(mate_interval.end):
             #looping to itself
             return (True)
         else:
@@ -1474,9 +1472,9 @@ def non_colinearity(read,mate_interval):
     #check right softclipped
     if read.cigar[-1][0] == 4:
     # graph needs to be downstream or looping to itself
-        if mate_interval.end < read.pos:
+        if int(mate_interval.end) < read.pos:
             return (True)
-        elif read.pos > mate_interval.start:
+        elif read.pos > int(mate_interval.start):
             #looping to itself
             return (True)
         else:

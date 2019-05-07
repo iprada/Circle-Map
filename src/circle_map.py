@@ -1,7 +1,4 @@
 #!/home/iprada/bin/miniconda3/bin/python
-# Author Inigo Prada Luengo
-# email: inigo.luengo@bio.ku.dk
-
 
 import argparse
 import sys
@@ -32,9 +29,8 @@ class circle_map:
     def __init__(self):
         self.parser = argparse.ArgumentParser(
             description='Circle-Map',
-            usage='''CircleMap <subprogram> [options]
+            usage='''Circle-Map <subprogram> [options]
 
-Author= Inigo Prada-Luengo
 version=1.0
 contact= https://github.com/iprada/Circle-Map/issues
 
@@ -42,66 +38,42 @@ The Circle-Map suite
 
 Commands:
 
-   ReadExtractor   Extracts the reads indicating extrachromosomal eccDNA structural variants
-   Realign         Realign the soft-clipped reads and identify eccDNA
-   Repeats         Identify eccDNA formed from repeat regions
-   Simulate        Simulate eccDNA from a reference genome
+   ReadExtractor   Extracts circular DNA read candidates
+   Realign         Realign circular DNA read candidates
+   Repeats         Identify circular DNA from repetitive regions
+   Simulate        Simulate circular DNA
 
 ''')
         subparsers = self.parser.add_subparsers()
 
         self.readextractor = subparsers.add_parser(
             name="ReadExtractor",
-            description='Extracts the reads indicating extrachromosomal circular DNA structural variants',
+            description='Extracts circular DNA read candidates',
             prog="Circle-Map ReadExtractor",
-            usage='''Circle-Map ReadExtractor [options]
-
-                     Author= Inigo Prada-Luengo
-                     version=1.0
-                     contact= https://github.com/iprada/Circle-Map/issues
-                     The Regenberg laboratory
-                     '''
+            usage='''Circle-Map ReadExtractor [options]'''
 
         )
 
         self.realigner = subparsers.add_parser(
             name="Realign",
-            description='Realigns the soft-clipped reads and indentifies circular DNA',
+            description='Realign circular DNA read candidates',
             prog="Circle-Map Realign",
-            usage='''Circle-Map Realign [options]
-
-                             Author= Inigo Prada-Luengo
-                             version=1.0
-                             contact= https://github.com/iprada/Circle-Map/issues
-                             The Regenberg laboratory
-                             '''
+            usage='''Circle-Map Realign [options]'''
 
         )
 
         self.repeats = subparsers.add_parser(
             name="Repeats",
-            description='Identify cluster of reads with two alignments',
-            prog="CircleMap Repeats",
-            usage='''CircleMap Repeats [options]
-
-                             Author= Inigo Prada-Luengo
-                             version=1.0
-                             contact= https://github.com/iprada/Circle-Map/issues
-                             The Regenberg laboratory
-                             '''
+            description='Identify circular DNA from repetitive regions',
+            prog="Circle-Map Repeats",
+            usage='''Circle-Map Repeats [options]'''
 
         )
         self.simulate = subparsers.add_parser(
             name="Simulate",
             description='Simulate eccDNA NGS datastes',
-            prog="CircleMap Reepeats",
-            usage='''CircleMap Simulate [options]
-
-                                     Author= Inigo Prada-Luengo
-                                     version=1.0
-                                     contact= https://github.com/iprada/Circle-Map/issues
-                                     The Regenberg laboratory
-                                     '''
+            prog="Circle-Map Reepeats",
+            usage='''Circle-Map Simulate [options]'''
 
         )
 
@@ -114,6 +86,7 @@ Commands:
 
         else:
             if sys.argv[1] == "ReadExtractor":
+
 
                 self.subprogram = self.args_readextractor()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
@@ -129,15 +102,18 @@ Commands:
                 self.args = self.subprogram.parse_args(sys.argv[2:])
 
                 os.chdir(self.args.directory)
+                # get clusters
                 splitted, sorted_bam, begin = start_realign(self.args.i, self.args.output, self.args.threads,
                                                             self.args.verbose, self.__getpid__(),
                                                             self.args.clustering_dist)
 
                 sorted_bam.close()
+                #get global insert size prior
                 metrics = insert_size_dist(self.args.sample_size, self.args.insert_mapq, self.args.qbam)
 
                 if __name__ == '__main__':
 
+                    # pool based parallel of religment
                     m = mp.Manager()
 
                     lock = m.Lock()
@@ -157,6 +133,8 @@ Commands:
                                          self.args.maximum_cluster_time)
 
                     pool = mp.Pool(processes=self.args.threads)
+
+                    #progress bar
                     with tqdm(total=len(splitted)) as pbar:
                         for i,exits in tqdm(enumerate(pool.imap_unordered(object.realign, splitted))):
                             pbar.update()
@@ -169,14 +147,13 @@ Commands:
                                                 self.args.merge_fraction, self.__getpid__())
 
                     # compute coverage statistics
-
                     if self.args.no_coverage == False:
 
                         coverage_object = coverage(self.args.sbam, output,
                                                    self.args.bases, self.args.cmapq, self.args.extension,
                                                    self.args.directory)
 
-                        #get_wg_coverage is a generator
+                        #Generator function for the coverage calculations
                         output = coverage_object.compute_coverage(coverage_object.get_wg_coverage())
                         filtered_output = filter_by_ratio(output, self.args.ratio)
                         filtered_output.to_csv(r'%s' % self.args.output, header=None, index=None, sep='\t', mode='w')
@@ -189,22 +166,24 @@ Commands:
                 self.subprogram = self.args_repeats()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
 
-                if self.args.directory[-1:] != "/":
-                    self.args.dir = self.args.directory + "/"
 
                 object = repeat(self.args.i, self.args.directory, self.args.mismatch, self.args.fraction,
                                 self.args.read_number)
-                bed = object.find_circles()
-                coverage_object = coverage(self.args.i, bed, self.args.bases, self.args.cmapq,
-                                           self.args.extension, self.args.directory)
 
-                coverage_dict, header_dict = coverage_object.get_wg_coverage()
-                output = coverage_object.compute_coverage(coverage_dict, header_dict)
+                bed = object.find_circles()
+
+                coverage_object = coverage(self.args.sbam, bed,
+                                           self.args.bases, self.args.cmapq, self.args.extension,
+                                           self.args.directory)
+
+                output = coverage_object.compute_coverage(coverage_object.get_wg_coverage())
+
                 filtered_output = filter_by_ratio(output, self.args.ratio)
                 filtered_output.saveas("%s" % self.args.output)
 
 
             elif sys.argv[1] == "Simulate":
+
                 sim_pid = start_simulate(self.__getpid__())
                 self.subprogram = self.args_simulate()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
@@ -216,8 +195,7 @@ Commands:
                 paired_end_fastq_1.close()
                 paired_end_fastq_2.close()
 
-                # mutate
-
+                # mutate reference genome
                 if self.args.variants == True:
                     mutate(self.args.g, sim_pid, self.args.Indels, self.args.substitution, self.args.java_memory)
 
@@ -381,16 +359,16 @@ Commands:
 
             # alignment
             alignment_options.add_argument('-n', '--nhits', type=int, metavar='',
-                                           help="Number of realignment attempts. Default: 100",
+                                           help="Number of realignment attempts. Default: 10",
                                            default=10)
 
             alignment_options.add_argument('-p', '--cut_off', type=float, metavar='',
-                                           help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.999",
-                                           default=0.999)
+                                           help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.99",
+                                           default=0.99)
 
             alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
-                                           help="Minimum soft-clipped length to attempt the realignment. Default: 8",
-                                           default=8)
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 6",
+                                           default=6)
 
             alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
                                            help="Gap open penalty in the position specific scoring matrix. Default: 5",
@@ -405,12 +383,12 @@ Commands:
                                            default=20)
 
             alignment_options.add_argument('-d', '--edit_distance-fraction', type=float, metavar='',
-                                           help="Maximum edit distance fraction allowed in the first realignment. Default (0.04)",
+                                           help="Maximum edit distance fraction allowed in the first realignment. Default (0.05)",
                                            default=0.05)
 
             alignment_options.add_argument('-Q', '--split_quality', type=float, metavar='',
-                                           help="Minium split score to output an interval. Default (20.0)",
-                                           default=8.0)
+                                           help="Minium split score to output an interval. Default (0.0)",
+                                           default=0.0)
 
             alignment_options.add_argument('-R', '--remap_splits', help="Remap probabilistacally the split reads",
                                            action='store_true')
@@ -422,7 +400,7 @@ Commands:
                                          default=60)
 
             i_size_estimate.add_argument('-sd', '--std', type=int, metavar='',
-                                         help="Standard deviations of the insert size to extend the intervals. Default 4",
+                                         help="Standard deviations of the insert size to extend the intervals. Default 5",
                                          default=4)
 
             i_size_estimate.add_argument('-s', '--sample_size', type=int, metavar='',
@@ -432,15 +410,15 @@ Commands:
             # Interval options
 
             interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
-                                  help="Merge intervals reciprocally overlapping by a fraction. Default 0.8",
+                                  help="Merge intervals reciprocally overlapping by a fraction. Default 0.95",
                                   default=0.95)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
-                                  help="Skip edges of the graph with a probability below the threshold. Default: (Most probable edge)",
-                                  default=0)
+                                  help="Skip edges of the graph with a probability below the threshold. Default: 0.01",
+                                  default=0.01)
             interval.add_argument('-K', '--clustering_dist', type=int, metavar='',
-                                  help="Cluster reads that are K nucleotides appart in the same node. Default: 0",
-                                  default=0)
+                                  help="Cluster reads that are K nucleotides appart in the same node. Default: 500",
+                                  default=500)
 
             interval.add_argument('-D', '--only_discordants', help="Use only discordant reads to build the graph",
                                   action='store_false')
@@ -448,13 +426,13 @@ Commands:
                                   help="Minimum allele frequency required to report the circle interval. Default (0.1)",
                                   default=0.1)
             interval.add_argument('-T', '--maximum_cluster_time', type=int, metavar='',
-                                  help="Maximum time allowed per every read cluster. Default (30 mins)",
-                                  default=30)
+                                  help="Maximum time allowed per interval. Default (5 mins)",
+                                  default=5)
             # When to call a circle
 
             out_decision.add_argument('-S', '--split', type=int, metavar='',
-                                      help="Number of required split reads to output a eccDNA. Default: 2",
-                                      default=2)
+                                      help="Number of required split reads to output a eccDNA. Default: 0",
+                                      default=0)
 
             out_decision.add_argument('-O', '--number_of_discordants', type=int, metavar='',
                                       help="Number of required discordant reads for intervals with only discordants. Default: 3",
@@ -507,12 +485,12 @@ Commands:
                                            default=10)
 
             alignment_options.add_argument('-p', '--cut_off', type=float, metavar='',
-                                           help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.999",
-                                           default=0.999)
+                                           help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.99",
+                                           default=0.99)
 
             alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
-                                           help="Minimum soft-clipped length to attempt the realignment. Default: 8",
-                                           default=8)
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 6",
+                                           default=6)
 
             alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
                                            help="Gap open penalty in the position specific scoring matrix. Default: 5",
@@ -527,12 +505,12 @@ Commands:
                                            default=20)
 
             alignment_options.add_argument('-d', '--edit_distance-fraction', type=float, metavar='',
-                                           help="Maximum edit distance fraction allowed in the first realignment. Default (0.2)",
+                                           help="Maximum edit distance fraction allowed in the first realignment. Default (0.05)",
                                            default=0.05)
 
             alignment_options.add_argument('-Q', '--split_quality', type=float, metavar='',
-                                           help="Minium split score to output an interval. Default (8.0)",
-                                           default=8.0)
+                                           help="Minium split score to output an interval. Default (0.0)",
+                                           default=0.0)
             alignment_options.add_argument('-R', '--remap_splits', help="Remap probabilistacally bwa-mem split reads",
                                            action='store_true')
 
@@ -543,8 +521,8 @@ Commands:
                                          default=60)
 
             i_size_estimate.add_argument('-sd', '--std', type=int, metavar='',
-                                         help="Standard deviations of the insert size to extend the intervals. Default 4",
-                                         default=4)
+                                         help="Standard deviations of the insert size to extend the intervals. Default 5",
+                                         default=5)
 
             i_size_estimate.add_argument('-s', '--sample_size', type=int, metavar='',
                                          help="Number of concordant reads (R2F1) to use for estimating the insert size distribution. Default 100000",
@@ -553,29 +531,29 @@ Commands:
             # Interval options
 
             interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
-                                  help="Merge intervals reciprocally overlapping by a fraction. Default 0.8",
+                                  help="Merge intervals reciprocally overlapping by a fraction. Default 0.95",
                                   default=0.95)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
-                                  help="Skip edges of the graph with a probability below the threshold. Default: (Most probable path)",
-                                  default=0)
+                                  help="Skip edges of the graph with a probability below the threshold. Default: 0.01",
+                                  default=0.01)
             interval.add_argument('-K', '--clustering_dist', type=int, metavar='',
-                                  help="Cluster reads that are K nucleotides appart in the same node. Default: 0",
-                                  default=0)
+                                  help="Cluster reads that are K nucleotides appart in the same node. Default: 500",
+                                  default=500)
             interval.add_argument('-D', '--only_discordants', help="Use only discordant reads to build the graph",
                                   action='store_true')
             interval.add_argument('-F', '--allele_frequency', type=float, metavar='',
                                   help="Minimum allele frequency required to report the circle interval. Default (0.1)",
                                   default=0.1)
             interval.add_argument('-T', '--maximum_cluster_time', type=int, metavar='',
-                                  help="Maximum time allowed per every read cluster. Default (30 mins)",
-                                  default=30)
+                                  help="Maximum time allowed per every read cluster. Default (5 mins)",
+                                  default=5)
 
             # When to call a circle
 
             out_decision.add_argument('-S', '--split', type=int, metavar='',
-                                      help="Number of required split reads to output a eccDNA. Default: 2",
-                                      default=2)
+                                      help="Number of required split reads to output a eccDNA. Default: 0",
+                                      default=0)
             out_decision.add_argument('-O', '--number_of_discordants', type=int, metavar='',
                                       help="Number of required discordant reads for intervals with only discordants. Default: 3",
                                       default=3)
