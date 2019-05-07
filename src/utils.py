@@ -712,7 +712,7 @@ def circle_from_SA(read,mapq_cutoff,mate_interval):
         #chromosome filter
         if supl_info[0] == mate_interval['chrom']:
             #aligned to the mate interval
-            if mate_interval['start'] < int(supl_info[1]) < mate_interval['end']:
+            if int(mate_interval['start']) < int(supl_info[1]) < int(mate_interval['end']):
 
                 #orientation
                 if read.is_reverse == True and supl_info[2] == '-':
@@ -1131,13 +1131,13 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
 
 
     discordant_bed = bt.BedTool(parsed_discordants)
-    unparsed_bed = bt.BedTool(results)
 
 
 
 
-    unparsed_pd = unparsed_bed.to_dataframe(
-        names=['chrom', 'start', 'end', 'read', 'iteration','score', 'discordants'])
+
+    unparsed_pd = pd.DataFrame.from_records(results,
+        columns=['chrom', 'start', 'end', 'read', 'iteration','score', 'discordants'])
 
     unparsed_pd = unparsed_pd.sort_values(['iteration','chrom','start','end']).reset_index()
 
@@ -1423,25 +1423,33 @@ def merge_bed(discordants_pd):
     return ((overlap * 1 + chr_overlap * 1).lt(2).cumsum())
 
 def assign_discordants(split_bed,discordant_bed,insert_mean,insert_std):
-
     """Function that takes as input the the discordant reads supporting an interval and assigns them to the
     interval if they are close by (using the insert size estimate)"""
 
-    max_dist = (insert_mean/2)+(3*insert_std)
+    max_dist = (insert_mean / 2) + (3 * insert_std)
+
+    splits = pd.DataFrame.from_records(split_bed, columns=['chrom', 'start', 'end', 'read', 'iteration',
+                                                           'score']).sort_values(['chrom', 'start', 'end'])
+
+    splits['score'] = splits['score'].astype(float)
+    merged_splits = splits.groupby(['chrom', 'start', 'end', 'iteration']).agg(
+        {'chrom': 'first', 'start': 'first', 'end': 'max', 'read': 'nunique', 'iteration': 'first', 'score': 'sum'})
+
+    discordant_bed = pd.DataFrame.from_records(discordant_bed,columns=['chrom', 'start', 'end', 'read'])
+
     if len(discordant_bed) > 0:
         assigned_splits = []
 
-        for i in split_bed:
-            discordants = 0
-            for j in discordant_bed:
-                if i[0] == j[0]:
-                    if (i[1] < j[1]) and ((j[1]-i[1])<max_dist):
-                        if (i[2]>j[2]) and ((i[2]-j[2])<max_dist):
-                            discordants += 1
-            i.append(discordants)
-            assigned_splits.append(i)
+        for index, row in merged_splits.iterrows():
+            chrom_filt = discordant_bed[(discordant_bed['chrom'] == row['chrom'])]
+            start_filt = chrom_filt[
+                (chrom_filt['start'] > row['start']) & ((chrom_filt['start'] - row['start']) < max_dist)]
+            end_filt = start_filt[(start_filt['end'] < row['end']) & ((row['end'] - start_filt['end']) < max_dist)]
 
-        return(assigned_splits)
+            assigned_splits.append(
+                [row['chrom'], row['start'], row['end'], row['read'], row['iteration'], float(row['score']), len(end_filt)])
+
+        return (assigned_splits)
 
     else:
         assigned_splits = []

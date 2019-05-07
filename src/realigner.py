@@ -175,8 +175,6 @@ class realignment:
                         realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p,
                                                                                   self.verbose)
 
-                        print(realignment_interval_extended)
-
                         if realignment_interval_extended is None:
                             continue
 
@@ -209,14 +207,11 @@ class realignment:
 
 
                             #note that I am getting the reads of the interval. Not the reads of the mates
-                            i = 0
+
                             for read in ecc_dna.fetch(interval['chrom'],int(interval['start']),int(interval['end']),multiple_iterators=True):
-                                #print(read)
-                                i +=1
-                                print(i)
+
 
                                 if is_soft_clipped(read):
-                                    #print(read)
 
                                     if read.mapq >= self.mapq_cutoff:
 
@@ -249,12 +244,12 @@ class realignment:
                                                     # I store the read name to the output, so that a read counts as 1 no matter it is SC in 2 pieces
                                                     if read.reference_start < support['leftmost']:
 
-                                                        iteration_results.append([interval['chrom'],read.reference_start,(supplementary_end-1),read.qname,iteration,str(round(score,2))])
+                                                        iteration_results.append([interval['chrom'],read.reference_start,(supplementary_end-1),read.qname,iteration,float(round(score,2))])
 
                                                     elif read.reference_start > support['leftmost']:
 
                                                         iteration_results.append(
-                                                            [interval['chrom'], (support['leftmost']-1), read_end, read.qname,iteration,str(round(score,2))])
+                                                            [interval['chrom'], (support['leftmost']-1), read_end, read.qname,iteration,float(round(score,2))])
 
                                                     else:
                                                         #uninformative read
@@ -304,12 +299,12 @@ class realignment:
                                                             if read.reference_start < int(mate_interval['start']) + int(
                                                                     realignment_dict['alignments'][1][0][0]):
 
-                                                                iteration_results.append([interval['chrom'], read.reference_start, soft_clip_end+1, read.qname,iteration,str(round(score,2))])
+                                                                iteration_results.append([interval['chrom'], read.reference_start, soft_clip_end+1, read.qname,iteration,float(round(score,2))])
 
                                                             elif read.reference_start + int(mate_interval['start']) + int(
                                                                     realignment_dict['alignments'][1][0][0]):
 
-                                                                iteration_results.append([interval['chrom'], soft_clip_start, read_end, read.qname,iteration,str(round(score,2))])
+                                                                iteration_results.append([interval['chrom'], soft_clip_start, read_end, read.qname,iteration,float(round(score,2))])
 
                                                             else:
                                                                 # uninformative read
@@ -349,9 +344,9 @@ class realignment:
 
                         #second pass to add discordant read info
                         if len(iteration_results) > 0:
-                            print("finish looping through reads")
+
                             results = results + assign_discordants(iteration_results,iteration_discordants,insert_metrics[0],insert_metrics[1])
-                            print("assgined discordants")
+
 
                         elif len(iteration_discordants) > 0:
                                 discordant_bed = pd.DataFrame.from_records(iteration_discordants,columns=['chrom','start','end','read']).sort_values(['chrom','start','end'])
@@ -383,7 +378,6 @@ class realignment:
             genome_fa.close()
 
             #Write process output to disk
-            print("Writting to disk")
             output = iteration_merge(only_discordants,results,
                                      self.overlap_fraction,self.split,self.score,
                                      self.min_sc_length,sorted_bam,self.af,insert_metrics[0],insert_metrics[1],self.discordant_filter)
