@@ -6,10 +6,10 @@ import os
 import sys
 from Bio.Seq import Seq
 import time
-from utils import *
+from src.utils import *
 import pandas as pd
 import traceback
-import pandas.api.types as ptypes
+
 
 
 class realignment:

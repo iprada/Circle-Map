@@ -2,7 +2,7 @@ import pysam as ps
 import pybedtools as bt
 import os
 import time
-from utils import merge_coverage_bed,rightmost_from_sa
+from src.utils import merge_coverage_bed,rightmost_from_sa
 
 
 class repeat:

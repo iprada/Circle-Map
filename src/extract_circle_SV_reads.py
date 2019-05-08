@@ -1,16 +1,9 @@
-#!/isdata/kroghgrp/xsh723/scratch/data_partition/anaconda/bin/python3.6
-from __future__ import division
-#Author Inigo Prada Luengo
-#email: inigo.luengo@bio.ku.dk
-
-
-
 import pysam as ps
 import os
 import time
 import sys
 import warnings
-from utils import is_soft_clipped,is_hard_clipped
+
 
 class readExtractor:
     """Class for managing the read extracting part of circle map"""

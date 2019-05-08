@@ -6,14 +6,14 @@ from functools import partial
 import os
 import time
 import pandas as pd
-from extract_circle_SV_reads import readExtractor
-from realigner import realignment
-from repeats import repeat
-from utils import merge_final_output, filter_by_ratio, start_realign, start_simulate, mutate, insert_size_dist
-from Coverage import coverage
+from src.extract_circle_SV_reads import readExtractor
+from src.realigner import realignment
+from src.repeats import repeat
+from src.utils import merge_final_output, filter_by_ratio, start_realign, start_simulate, mutate, insert_size_dist
+from src.Coverage import coverage
 import multiprocessing as mp
 import pybedtools as bt
-from simulations import sim_ecc_reads
+from src.simulations import sim_ecc_reads
 import subprocess as sp
 import glob
 from tqdm import *
@@ -834,20 +834,24 @@ Commands:
             sys.stderr.write(
                 "\nNo input input given to Simulate, be sure that you are providing the flags '-g' and '-N'"
                 "\nExiting\n")
-            sys.exit(1)
+
 
         if len(sys.argv[2:]) == 0:
             parser.print_help()
             time.sleep(0.01)
             sys.stderr.write("\nNo arguments given to Simulate. Exiting\n")
-            sys.exit(1)
+
+
+
 
         return (parser)
 
-
-if __name__ == '__main__':
+def main():
     run = circle_map()
     pid = run.__getpid__()
     # clean
     os.system("rm -rf temp_files_%s" % pid)
+
+if __name__ == '__main__':
+    main()
 
