@@ -1146,45 +1146,51 @@ def iteration_merge(only_discordants,results,fraction,splits,score,sc_len,bam,af
                                            unparsed_pd.end.shift(), unparsed_pd.iteration,
                                            unparsed_pd.start,
                                            unparsed_pd.end).lt(norm_fraction).cumsum()).agg(
-        {'chrom': 'first', 'start': 'min', 'end': 'max', 'discordants': 'max', 'read': 'nunique','score':'sum'})
+        {'chrom': 'first', 'start': 'min', 'end': 'max', 'discordants': 'max', 'read': 'sum','score':'sum'})
 
     bedtool_output = bt.BedTool.from_dataframe(grouped)
 
 
 
 
+
+
     allele_free = bedtool_output.cat(discordant_bed, postmerge=False)
     write = []
+
     for interval in allele_free:
-
-        if int(interval[4]) != 0:
-            if (int(interval[4])) >= splits and float(interval[5]) > score:
-                start_cov = bam.count(contig=interval[0],
-                                               start=int(interval[1]), stop=int(interval[1])+1
-                                               ,read_callback='nofilter')
-
-                end_cov = bam.count(contig=interval[0],
-                                             start=int(interval[2])-1, stop=int(interval[2])
-                                             ,read_callback='nofilter')
-
-
-
-                circle_af = ((int(interval[4]) * 2)) / ((start_cov+end_cov+0.01)/2)
-                if circle_af >=af:
-                    write.append(interval)
-        else:
-            if int(interval[3]) >= n_discordant:
-                    start_cov = bam.count(contig=interval[0],start=int(interval[1]), stop=int(interval[1]) + 1,
-                                               read_callback='nofilter')
+        try:
+            if int(interval[4]) != 0:
+                if (int(interval[4])) >= splits and float(interval[5]) > score:
+                    start_cov = bam.count(contig=interval[0],
+                                                   start=int(interval[1]), stop=int(interval[1])+1
+                                                   ,read_callback='nofilter')
 
                     end_cov = bam.count(contig=interval[0],
-                                             start=int(interval[2]) - 1, stop=int(interval[2]),
-                                             read_callback='nofilter')
+                                                 start=int(interval[2])-1, stop=int(interval[2])
+                                                 ,read_callback='nofilter')
 
-                    circle_af = (int(interval[3])) / ((start_cov+end_cov+0.01)/2)
 
-                    if circle_af >= af:
+
+                    circle_af = ((int(interval[4]) * 2)) / ((start_cov+end_cov+0.01)/2)
+                    if circle_af >=af:
                         write.append(interval)
+            else:
+                if int(interval[3]) >= n_discordant:
+                        start_cov = bam.count(contig=interval[0],start=int(interval[1]), stop=int(interval[1]) + 1,
+                                                   read_callback='nofilter')
+
+                        end_cov = bam.count(contig=interval[0],
+                                                 start=int(interval[2]) - 1, stop=int(interval[2]),
+                                                 read_callback='nofilter')
+
+                        circle_af = (int(interval[3])) / ((start_cov+end_cov+0.01)/2)
+
+                        if circle_af >= af:
+                            write.append(interval)
+        except BaseException as e:
+            print(e)
+            pass
 
     return(bt.BedTool(write))
 
@@ -1432,9 +1438,11 @@ def assign_discordants(split_bed,discordant_bed,insert_mean,insert_std):
                                                            'score']).sort_values(['chrom', 'start', 'end'])
 
     splits['score'] = splits['score'].astype(float)
+
     merged_splits = splits.groupby(['chrom', 'start', 'end', 'iteration']).agg(
         {'chrom': 'first', 'start': 'first', 'end': 'max', 'read': 'nunique', 'iteration': 'first', 'score': 'sum'})
 
+    merged_splits['read'] = merged_splits['read'].astype(int)
     discordant_bed = pd.DataFrame.from_records(discordant_bed,columns=['chrom', 'start', 'end', 'read'])
 
     if len(discordant_bed) > 0:
@@ -1453,10 +1461,12 @@ def assign_discordants(split_bed,discordant_bed,insert_mean,insert_std):
 
     else:
         assigned_splits = []
-        for i in split_bed:
-            i.append(0)
-            assigned_splits.append(i)
-        return (assigned_splits)
+        for index,row in merged_splits.iterrows():
+            assigned_splits.append(
+                [row['chrom'], row['start'], row['end'], row['read'], row['iteration'], float(row['score']),
+                 0])
+
+        return(assigned_splits)
 
 def adaptative_myers_k(sc_len,edit_frac):
     """Calculate the edit distance allowed as a function of the read length"""
@@ -1487,13 +1497,3 @@ def non_colinearity(read,mate_interval):
             return (True)
         else:
             return (False)
-
-
-
-
-
-
-
-
-
-

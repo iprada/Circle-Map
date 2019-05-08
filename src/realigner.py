@@ -9,6 +9,7 @@ import time
 from utils import *
 import pandas as pd
 import traceback
+import pandas.api.types as ptypes
 
 
 class realignment:
@@ -345,6 +346,7 @@ class realignment:
                         #second pass to add discordant read info
                         if len(iteration_results) > 0:
 
+
                             results = results + assign_discordants(iteration_results,iteration_discordants,insert_metrics[0],insert_metrics[1])
 
 
@@ -377,7 +379,7 @@ class realignment:
             ecc_dna.close()
             genome_fa.close()
 
-            #Write process output to disk
+            # Write process output to disk
             output = iteration_merge(only_discordants,results,
                                      self.overlap_fraction,self.split,self.score,
                                      self.min_sc_length,sorted_bam,self.af,insert_metrics[0],insert_metrics[1],self.discordant_filter)
