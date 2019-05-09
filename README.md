@@ -7,7 +7,7 @@ Circle-Map is an easy to install, python package that implements all the steps r
     
 ## Why should I use Circle-Map?
 
-Circle-Map takes as input an alignment of reads to a reference genome (e.g. a *BWA-MEM* generated *BAM* file) and like other methods, it will use those alignments to detect cases were the read has been splitted into two segments (e.g. split reads) to detect genomic rearrangements supporting a circular DNA structure.
+Circle-Map takes as input an alignment of reads to a reference genome (e.g. a *BWA-MEM* generated *BAM* file) and like other methods, it will use those alignments to detect cases were the read has been split into two segments (e.g. split reads) to detect genomic rearrangements supporting a circular DNA structure.
 
 However, this approach results in many split read alignments being missed because the aligner is not able to map both split segments of the read, either because they are too short or because they align to many places. In this cases, the aligner will report a read alignment containing some of the bases unmapped (e.g soft-clipped reads). 
 
