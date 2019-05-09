@@ -1,6 +1,6 @@
 # Circle-Map
 
-Circle-Map is based software package designed for the indentification of extrachromosomal DNA circles. Circle-Map is easy to install and provides easy to run software to detect extrachromosomal DNA circles.
+Circle-Map is an easy to install, python package that implements all the steps required to detect extrachromosomal DNA circles from your raw sequencing reads.
 ## Why should I use Circle-Map?
 
 ## Features
