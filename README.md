@@ -1,8 +1,8 @@
 # Circle-Map
 
+Circle-Map is a software package designed for the indentification of extrachromosomal DNA circles from a reference genome, such as the human
 
-
-## Introduction
+## Why should I use Circle-Map?
 
 ## Features
 
@@ -13,3 +13,5 @@
 ## Citing
 
 ## Third party software
+
+## Ach
