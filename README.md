@@ -26,7 +26,7 @@ Installation using **pip**:
 
      python -m pip install THIS_IS_DONE_WE_JUST_NEED_TO_UPLOAD_:)
      
-**Note**: In case you want to simulate circular DNA short reads, you will need to install [BBMap](https://sourceforge.net/projects/bbmap/) and [ART](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm) on your system.
+**Note**: If you have use pip and you want to simulate circular DNA short reads, you will need to install [BBMap](https://sourceforge.net/projects/bbmap/) and [ART](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm) on your system.
 
 ### Detecting extrachromosomal DNA circles from alignable regions of the genome:
 
