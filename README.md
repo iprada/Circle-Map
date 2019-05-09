@@ -16,15 +16,17 @@ Unlike other methods, Circle-Map is able to map both segments of the soft-clippe
 
 ### Installation
 
-Circle-Map, can be easily installed through **conda** using the following command:
+Installation using conda:
 
      conda install -c bioconda I_NEED_TO_CREATE_THE_RECIPE
 
 This will install Circle-Map, and all the external packages required run every part of Circle-Map software.
 
-You can also install Circle-Map using **pip**:
+Installation using **pip**:
 
      python -m pip install THIS_IS_DONE_WE_JUST_NEED_TO_UPLOAD_:)
+     
+**Note**: In case you want to simulate circular DNA short reads, you will need to install [BBMap](https://sourceforge.net/projects/bbmap/) and [ART](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm) on your system.
 
 
 
