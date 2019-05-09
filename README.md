@@ -1,4 +1,4 @@
-# Author Iñigo Prada
+# Circle-Map
 
 Format of the fastq header(@line)
 
