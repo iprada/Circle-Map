@@ -2,10 +2,7 @@
 
 Welcome to Circle-Map official repository!
 
-Circle-Map is an easy to install, python package that implements all the steps to easily detect extrachromosomal DNA circles. The package  contains two main algorithms for accurately detect circular DNA:
-
-* **Circle-Map Realign**: Detects circular DNA formed from the **mappable** regions of the genome
-* **Circle-Map Repeats**: Detects circular DNA formed from the **repetitive** regions of the genome
+Circle-Map is an easy to install, python package that implements all the steps to easily detect extrachromosomal DNA circles. The package  contains two easy to run algorithms for accurately detect circular DNA formed from mappable and non mappable regions of the genome.
 
     
 ## Why should I use Circle-Map?
