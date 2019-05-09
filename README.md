@@ -14,4 +14,6 @@ Circle-Map is a software package designed for the indentification of extrachromo
 
 ## Third party software
 
-## Ach
+## Acknowledgements
+
+Circle-Map is being developed by Iñigo Prada-Luengo, Lasse Maretty and Birgitte Regenberg at the University of Copenhagen
