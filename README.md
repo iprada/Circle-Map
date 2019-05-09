@@ -28,14 +28,22 @@ Installation using **pip**:
      
 **Note**: If you have use pip and you want to simulate circular DNA short reads, you will need to install [BBMap](https://sourceforge.net/projects/bbmap/) and [ART](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm) on your system.
 
-### Detecting extrachromosomal DNA circles from alignable regions of the genome:
+### Detecting extrachromosomal DNA circles
+
+Now you are ready to get started detecting circular DNA. We have created [Circle-Map wiki](https://github.com/iprada/Circle-Map/wiki) that explains step by step how you can go from your raw sequencing reads to interpretable results. In the wiki, you can try and learn using Circle-Map with the following tutorials:
+
+    *  [Tutorial: identification of mappable circular DNA using Circle Map Realign](https://github.com/iprada/Circle-Map/wiki/Tutorial:-identification-of-mappable-circular-DNA-using-Circle-Map-Realign
+) 
+    *  [Tutorial: Identification of repetitive circular DNA using Circle Map Repeats](https://github.com/iprada/Circle-Map/wiki/Tutorial:-Identification-of-repetitive-circular-DNA-using-Circle-Map-Repeats
+) 
 
 
 
 
 
 
-## Contact
+
+## Getting help
 
 ## Citing
 
