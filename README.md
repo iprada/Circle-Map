@@ -20,7 +20,14 @@ Circle-Map, can be easily installed through **conda** using the following comman
 
      conda install -c bioconda I_NEED_TO_CREATE_THE_RECIPE
 
-#### Dependencies
+This will install Circle-Map, and all the external packages required run every part of Circle-Map software.
+
+You can also install Circle-Map using **pip**:
+
+     python -m pip install THIS_IS_DONE_WE_JUST_NEED_TO_UPLOAD_:)
+
+
+
 
 ## Contact
 
