@@ -1,5 +1,7 @@
 # Circle-Map
 
+## Introduction
+
 Format of the fastq header(@line)
 
 For paired-end datasets, the script is designed as follows, all of them will have six fields in the header:
