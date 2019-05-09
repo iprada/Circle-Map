@@ -16,6 +16,10 @@ Unlike other methods, Circle-Map is able to map both segments of the soft-clippe
 
 ### Installation
 
+Circle-Map, can be easily installed through **conda** using the following command:
+
+     conda install -c bioconda I_NEED_TO_CREATE_THE_RECIPE
+
 #### Dependencies
 
 ## Contact
