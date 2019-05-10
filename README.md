@@ -49,7 +49,9 @@ The best place for getting help, feedback,report bugs or request new features is
 
 **WE_NEED_TO_ADD_THE_PREPRINT**
 
-## Third party software
+## License
+
+Circle-Map is freely available under the [MIT](https://opensource.org/licenses/MIT) license
 
 ## Acknowledgements
 
