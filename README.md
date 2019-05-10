@@ -51,7 +51,7 @@ The best place for getting help, feedback,report bugs or request new features is
 
 ## License
 
-Circle-Map is freely available under the [MIT](https://opensource.org/licenses/MIT) license
+Circle-Map is freely available under the [MIT license](https://opensource.org/licenses/MIT)
 
 ## Acknowledgements
 
