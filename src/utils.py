@@ -1243,6 +1243,8 @@ def merge_final_output(bam,results,begin,splits,dir,fraction,pid):
     for interval in unfiltered_output:
 
         if (int(interval[4])+int(interval[3])) >= splits:
+            if int(interval[1]) != 0:
+                interval[1] = int(interval[1])+1
             filtered.append(interval)
 
     filtered_output = bt.BedTool(filtered)

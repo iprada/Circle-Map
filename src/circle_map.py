@@ -107,59 +107,61 @@ Commands:
                                                             self.args.verbose, self.__getpid__(),
                                                             self.args.clustering_dist)
 
+
+
+
                 sorted_bam.close()
                 #get global insert size prior
                 metrics = insert_size_dist(self.args.sample_size, self.args.insert_mapq, self.args.qbam)
 
-                if __name__ == '__main__':
 
-                    # pool based parallel of religment
-                    m = mp.Manager()
+                # pool based parallel of religment
+                m = mp.Manager()
 
-                    lock = m.Lock()
+                lock = m.Lock()
 
-                    object = realignment(self.args.i, self.args.qbam, self.args.sbam, self.args.fasta,
-                                         self.args.directory,
-                                         self.args.mapq,
-                                         self.args.insert_mapq, self.args.std, self.args.sample_size,
-                                         self.args.gap_open,
-                                         self.args.gap_ext, self.args.nhits, self.args.cut_off, self.args.min_sc,
-                                         self.args.merge_fraction, self.args.interval_probability, self.args.output,
-                                         self.args.threads, self.args.allele_frequency, lock, self.args.split,
-                                         self.args.ratio, self.args.verbose, self.__getpid__(),
-                                         self.args.edit_distance_fraction, self.args.remap_splits,
-                                         self.args.only_discordants, self.args.split,
-                                         self.args.split_quality, metrics,self.args.number_of_discordants,
-                                         self.args.maximum_cluster_time)
+                object = realignment(self.args.i, self.args.qbam, self.args.sbam, self.args.fasta,
+                                     self.args.directory,
+                                     self.args.mapq,
+                                     self.args.insert_mapq, self.args.std, self.args.sample_size,
+                                     self.args.gap_open,
+                                     self.args.gap_ext, self.args.nhits, self.args.cut_off, self.args.min_sc,
+                                     self.args.merge_fraction, self.args.interval_probability, self.args.output,
+                                     self.args.threads, self.args.allele_frequency, lock, self.args.split,
+                                     self.args.ratio, self.args.verbose, self.__getpid__(),
+                                     self.args.edit_distance_fraction, self.args.remap_splits,
+                                     self.args.only_discordants, self.args.split,
+                                     self.args.split_quality, metrics,self.args.number_of_discordants,
+                                     self.args.maximum_cluster_time)
 
-                    pool = mp.Pool(processes=self.args.threads)
+                pool = mp.Pool(processes=self.args.threads)
 
-                    #progress bar
-                    with tqdm(total=len(splitted)) as pbar:
-                        for i,exits in tqdm(enumerate(pool.imap_unordered(object.realign, splitted))):
-                            pbar.update()
+                #progress bar
+                with tqdm(total=len(splitted)) as pbar:
+                    for i,exits in tqdm(enumerate(pool.imap_unordered(object.realign, splitted))):
+                        pbar.update()
 
-                    pbar.close()
-                    pool.close()
-                    pool.join()
-                    output = merge_final_output(self.args.sbam, self.args.output, begin, self.args.split,
-                                                self.args.directory,
-                                                self.args.merge_fraction, self.__getpid__())
+                pbar.close()
+                pool.close()
+                pool.join()
+                output = merge_final_output(self.args.sbam, self.args.output, begin, self.args.split,
+                                            self.args.directory,
+                                            self.args.merge_fraction, self.__getpid__())
 
-                    # compute coverage statistics
-                    if self.args.no_coverage == False:
+                # compute coverage statistics
+                if self.args.no_coverage == False:
 
-                        coverage_object = coverage(self.args.sbam, output,
-                                                   self.args.bases, self.args.cmapq, self.args.extension,
-                                                   self.args.directory)
+                    coverage_object = coverage(self.args.sbam, output,
+                                               self.args.bases, self.args.cmapq, self.args.extension,
+                                               self.args.directory)
 
-                        #Generator function for the coverage calculations
-                        output = coverage_object.compute_coverage(coverage_object.get_wg_coverage())
-                        filtered_output = filter_by_ratio(output, self.args.ratio)
-                        filtered_output.to_csv(r'%s' % self.args.output, header=None, index=None, sep='\t', mode='w')
+                    #Generator function for the coverage calculations
+                    output = coverage_object.compute_coverage(coverage_object.get_wg_coverage())
+                    filtered_output = filter_by_ratio(output, self.args.ratio)
+                    filtered_output.to_csv(r'%s' % self.args.output, header=None, index=None, sep='\t', mode='w')
 
-                    else:
-                        output.saveas("%s" % self.args.output)
+                else:
+                    output.saveas("%s" % self.args.output)
 
             elif sys.argv[1] == "Repeats":
 
@@ -199,37 +201,37 @@ Commands:
                 if self.args.variants == True:
                     mutate(self.args.g, sim_pid, self.args.Indels, self.args.substitution, self.args.java_memory)
 
-                if __name__ == '__main__':
-                    manager = mp.Manager()
-                    # Shared memory object
-                    circle_list = manager.list()
-                    skipped_circles = mp.Value('i', 0)
-                    correct_circles = mp.Value('i', 0)
-                    jobs = []
-                    # init the processes
 
-                    for i in range(self.args.processes):
-                        p = mp.Process(target=sim_ecc_reads,
-                                       args=(self.args.g, self.args.read_length, self.args.directory,
-                                             int(round(self.args.read_number / self.args.processes)),
-                                             self.args.skip_region, self.args.base_name,
-                                             self.args.mean_insert_size, self.args.error,
-                                             self.args.mean_coverage, lock, i, circle_list,
-                                             "%s_1.fastq" % self.args.base_name, "%s_2.fastq" % self.args.base_name,
-                                             skipped_circles,
-                                             correct_circles, self.args.insRate, self.args.insRate2, self.args.delRate,
-                                             self.args.delRate2, sim_pid,))
-                        jobs.append(p)
-                        p.start()
-                    # kill the process
-                    for p in jobs:
-                        p.join()
-                    print("Skipped %s circles, that overlapped the provided regions to exclude" % skipped_circles.value)
-                    print("Simulated %s circles across %s parallel processes" % (
-                    correct_circles.value, self.args.processes))
-                    print("Writting to disk bed file containing the simulated circle coordinates")
+                manager = mp.Manager()
+                # Shared memory object
+                circle_list = manager.list()
+                skipped_circles = mp.Value('i', 0)
+                correct_circles = mp.Value('i', 0)
+                jobs = []
+                # init the processes
 
-                    bt.BedTool(list(circle_list)).saveas(self.args.output)
+                for i in range(self.args.processes):
+                    p = mp.Process(target=sim_ecc_reads,
+                                   args=(self.args.g, self.args.read_length, self.args.directory,
+                                         int(round(self.args.read_number / self.args.processes)),
+                                         self.args.skip_region, self.args.base_name,
+                                         self.args.mean_insert_size, self.args.error,
+                                         self.args.mean_coverage, lock, i, circle_list,
+                                         "%s_1.fastq" % self.args.base_name, "%s_2.fastq" % self.args.base_name,
+                                         skipped_circles,
+                                         correct_circles, self.args.insRate, self.args.insRate2, self.args.delRate,
+                                         self.args.delRate2, sim_pid,))
+                    jobs.append(p)
+                    p.start()
+                # kill the process
+                for p in jobs:
+                    p.join()
+                print("Skipped %s circles, that overlapped the provided regions to exclude" % skipped_circles.value)
+                print("Simulated %s circles across %s parallel processes" % (
+                correct_circles.value, self.args.processes))
+                print("Writting to disk bed file containing the simulated circle coordinates")
+
+                bt.BedTool(list(circle_list)).saveas(self.args.output)
 
             else:
                 self.parser.print_help()

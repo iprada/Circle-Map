@@ -146,7 +146,6 @@ class coverage:
                     except:
 
                         interval.append('NA')
-                    print(interval)
                     output.append(interval)
 
 
