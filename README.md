@@ -36,13 +36,6 @@ Now you are ready to get started detecting circular DNA. We have created a [Circ
 
    * [Tutorial: identification of mappable circular DNA using Circle Map Realign](https://github.com/iprada/Circle-Map/wiki/Tutorial:-identification-of-mappable-circular-DNA-using-Circle-Map-Realign) 
     
-   * [Tutorial: Identification of repetitive circular DNA using Circle Map Repeats](https://github.com/iprada/Circle-Map/wiki/Tutorial:-Identification-of-repetitive-circular-DNA-using-Circle-Map-Repeats) 
-
-
-
-
-
-
 
 ## Getting help
 
