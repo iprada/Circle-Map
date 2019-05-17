@@ -100,7 +100,7 @@ ENV/
 
 # End of https://www.gitignore.io/api/python
 #don't track Pycharm files
-.idea/
+
 .screenlog.0
 
 # Created by https://www.gitignore.io/api/pycharm
@@ -109,7 +109,9 @@ ENV/
 ### PyCharm ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and WebStorm
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
-
+Circle-Map.iml
+misc.xml
+modules.xml
 # User-specific stuff
 .idea/**/workspace.xml
 .idea/**/tasks.xml
@@ -193,3 +195,10 @@ fabric.properties
 build/
 Circle_Map.egg-info/
 dist/
+
+#ignore tutorial files
+tutorial/*bam
+tutorial/*bed
+tutorial/*sam
+tutorial/*sam
+tutorial/*bai

@@ -207,9 +207,10 @@ Commands:
 
             elif sys.argv[1] == "Simulate":
 
-                sim_pid = start_simulate(self.__getpid__())
                 self.subprogram = self.args_simulate()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
+
+                sim_pid = start_simulate(self.__getpid__())
 
                 lock = mp.Lock()
 
@@ -857,6 +858,8 @@ Commands:
             sys.stderr.write(
                 "\nNo input input given to Simulate, be sure that you are providing the flags '-g' and '-N'"
                 "\nExiting\n")
+
+            sys.exit(1)
 
 
         if len(sys.argv[2:]) == 0:
