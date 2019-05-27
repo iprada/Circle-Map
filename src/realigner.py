@@ -39,7 +39,7 @@ class realignment:
     def __init__(self, input_bam,qname_bam,sorted_bam,genome_fasta,directory,mapq_cutoff,insert_size_mapq,std_extension,
                  insert_size_sample_size,gap_open,gap_ext,n_hits,prob_cutoff,min_soft_clipped_length,overlap_frac,
                  interval_p_cut, output_name,ncores,af,locker,split,ratio,verbose,pid,edit_distance_frac,
-                 remap_splits,only_discordants,splits,score,insert_size,discordant_filter,max_time):
+                 remap_splits,only_discordants,splits,score,insert_size,discordant_filter):
         #I/O
         self.edit_distance_frac = edit_distance_frac
         self.ecc_dna_str = input_bam
@@ -86,7 +86,6 @@ class realignment:
         self.cores = ncores
         self.verbose = verbose
         self.lock = locker
-        self.max_time = max_time
 
         #this two parameters don't work on this class. They are here for printing the parameters
         self.split = split
@@ -172,7 +171,7 @@ class realignment:
 
 
             for index,interval in peaks_pd.iterrows():
-                max_time_begin = time.time()
+
 
 
                 if check_size_and_write(results,only_discordants,self.output,self.lock,self.directory,self.overlap_fraction,self.pid) == True:

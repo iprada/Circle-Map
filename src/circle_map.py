@@ -449,9 +449,6 @@ Commands:
             interval.add_argument('-F', '--allele_frequency', type=float, metavar='',
                                   help="Minimum allele frequency required to report the circle interval. Default (0.1)",
                                   default=0.1)
-            interval.add_argument('-T', '--maximum_cluster_time', type=int, metavar='',
-                                  help="Maximum time allowed per interval. Default (5 mins)",
-                                  default=5)
             # When to call a circle
 
             out_decision.add_argument('-S', '--split', type=int, metavar='',
@@ -569,9 +566,6 @@ Commands:
             interval.add_argument('-F', '--allele_frequency', type=float, metavar='',
                                   help="Minimum allele frequency required to report the circle interval. Default (0.1)",
                                   default=0.1)
-            interval.add_argument('-T', '--maximum_cluster_time', type=int, metavar='',
-                                  help="Maximum time allowed per every read cluster. Default (5 mins)",
-                                  default=5)
 
             # When to call a circle
 
