@@ -48,4 +48,4 @@ Circle-Map is freely available under the [MIT license](https://opensource.org/li
 
 ## Acknowledgements
 
-Circle-Map is being developed by Iñigo Prada-Luengo, Lasse Maretty and Birgitte Regenberg at the University of Copenhagen
+Circle-Map is being developed by Iñigo Prada-Luengo, Anders Krogh, Lasse Maretty and Birgitte Regenberg at the University of Copenhagen
