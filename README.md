@@ -40,7 +40,7 @@ Now you are ready to get started detecting circular DNA. We have created a [Circ
 The best place for getting help, feedback,report bugs or request new features is to post an [issue](https://github.com/iprada/Circle-Map/issues). You can also reach me at xsh723 at dot binf dot ku dot dk 
 ## Citing
 
-**WE_NEED_TO_ADD_THE_PREPRINT**
+A manuscript describing the methods is currently under revision.
 
 ## License
 
