@@ -9,14 +9,14 @@ Circle-Map takes as input an alignment of reads to a reference genome (e.g. a *B
 
 However, this approach results in many split read alignments being missed because the aligner is not able to map both split segments of the read, either because they are too short or because they align to too many places. In this cases, the aligner will report a read alignment containing some of the bases unmapped (e.g soft-clipped reads). 
 
-Unlike other methods, Circle-Map is able to map both segments of the soft-clipped reads by realigning the unmapped parts probabilistically to a graph representation of the circular DNA breakpoints. Which allows for a more accurate detection of the circular DNA breakpoints. In our recent paper/preprint (**TO BE ADDED**) we show how this approach dramatically increases sensitivity while retaining high precision.
+Unlike other methods, Circle-Map is able to map both segments of the soft-clipped reads by realigning the unmapped parts probabilistically to a graph representation of the circular DNA breakpoints. Which allows for a more accurate detection of the circular DNA breakpoints. In our recent preprint (**TO BE ADDED**) we show how this approach dramatically increases sensitivity while retaining high precision.
 
 
 ## Getting started
 
 ### Installation
 
-Circle-Map runs on GNU/Linux operating systems, and can installed and set-up using the following ways:
+Circle-Map runs on GNU/Linux operating systems, and can be installed and set-up using the following ways:
 
 Installation using conda:
 
