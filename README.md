@@ -40,9 +40,9 @@ Now you are ready to get started detecting circular DNA. We have created a [Circ
 The best place for getting help, feedback,report bugs or request new features is to post an [issue](https://github.com/iprada/Circle-Map/issues). You can also reach me at xsh723 at dot binf dot ku dot dk 
 ## Citing
 
-Sensitive detection of circular DNA at single-nucleotide resolution using guided realignment of partially aligned reads
+*Sensitive detection of circular DNA at single-nucleotide resolution using guided realignment of partially aligned reads*
 Inigo Prada-Luengo, Anders Krogh, Lasse Maretty, Birgitte Regenberg
-bioRxiv 654194; doi: https://doi.org/10.1101/654194
+**bioRxiv** 654194; doi: https://doi.org/10.1101/654194
 
 A manuscript describing the methods is currently under revision.
 
