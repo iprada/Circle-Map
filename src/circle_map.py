@@ -152,8 +152,8 @@ Commands:
                                      self.args.ratio, self.args.verbose, self.__getpid__(),
                                      self.args.edit_distance_fraction, self.args.remap_splits,
                                      self.args.only_discordants, self.args.split,
-                                     self.args.split_quality, metrics,self.args.number_of_discordants,
-                                     self.args.maximum_cluster_time)
+                                     self.args.split_quality, metrics,self.args.number_of_discordants)
+
 
                 pool = mp.Pool(processes=self.args.threads)
 
