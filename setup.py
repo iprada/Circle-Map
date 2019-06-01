@@ -41,4 +41,7 @@ setup(name='Circle-Map',
           ],
 
       },
+      classifiers=[
+          'License :: OSI Approved :: MIT License'
+      ],
      )
