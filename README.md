@@ -24,7 +24,9 @@ Installation using **pip**:
 
      python -m pip install Circle-Map
      
-Installation through conda/bioconda will be supported soon.
+Installation using **conda**
+
+     conda install -c bioconda circle-map
      
 **Note**: If you have use pip and you want to simulate circular DNA short reads, you will need to install [BBMap](https://sourceforge.net/projects/bbmap/) and [ART](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm) on your system.
 
