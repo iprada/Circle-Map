@@ -26,7 +26,7 @@ from setuptools import setup,find_packages
 
 
 setup(name='Circle-Map',
-      version='1.0.1',
+      version='1.0.2',
       description='Circular DNA analysis tools',
       author='Inigo Prada-Luengo',
       url='https://github.com/iprada/Circle-Map',
@@ -37,7 +37,7 @@ setup(name='Circle-Map',
       ],
       entry_points={
           'console_scripts': [
-              'Circle-Map = src.circle_map:main'
+              'Circle-Map = circlemap.circle_map:main'
           ],
 
       },

@@ -22,7 +22,7 @@
 
 import pysam as ps
 import os
-from src.utils import *
+from circlemap.utils import *
 import time
 import sys
 import warnings

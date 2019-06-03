@@ -27,14 +27,14 @@ from functools import partial
 import os
 import time
 import pandas as pd
-from src.extract_circle_SV_reads import readExtractor
-from src.realigner import realignment
-from src.repeats import repeat
-from src.utils import merge_final_output, filter_by_ratio, start_realign, start_simulate, mutate, insert_size_dist
-from src.Coverage import coverage
+from circlemap.extract_circle_SV_reads import readExtractor
+from circlemap.realigner import realignment
+from circlemap.repeats import repeat
+from circlemap.utils import merge_final_output, filter_by_ratio, start_realign, start_simulate, mutate, insert_size_dist
+from circlemap.Coverage import coverage
 import multiprocessing as mp
 import pybedtools as bt
-from src.simulations import sim_ecc_reads
+from circlemap.simulations import sim_ecc_reads
 import subprocess as sp
 import glob
 from tqdm import *

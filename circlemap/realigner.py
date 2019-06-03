@@ -27,7 +27,7 @@ import os
 import sys
 from Bio.Seq import Seq
 import time
-from src.utils import *
+from circlemap.utils import *
 import pandas as pd
 import traceback
 
