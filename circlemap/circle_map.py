@@ -103,7 +103,7 @@ Commands:
             time.sleep(0.01)
             sys.stderr.write("\nNo argument given to Circle-Map"
                              "\nExiting\n")
-            sys.exit(1)
+            sys.exit(0)
 
         else:
             if sys.argv[1] == "ReadExtractor":
@@ -260,7 +260,7 @@ Commands:
                 time.sleep(0.01)
                 sys.stderr.write("\nWrong argument given to Circle-Map"
                                  "\nExiting\n")
-                sys.exit(1)
+                sys.exit(0)
 
     def args_readextractor(self):
 
@@ -344,7 +344,7 @@ Commands:
             sys.stderr.write(
                 "\nNo input or output input given to readExtractor, be sure that you are providing the flags'-i' and '-o'"
                 "\nExiting\n")
-            sys.exit(1)
+            sys.exit(0)
 
         # parse the commands
 
@@ -352,7 +352,7 @@ Commands:
             parser.print_help()
             time.sleep(0.01)
             sys.stderr.write("\nNo arguments given to read extractor. Exiting\n")
-            sys.exit(1)
+            sys.exit(0)
 
         return (parser)
 
@@ -618,13 +618,13 @@ Commands:
             time.sleep(0.01)
             sys.stderr.write("\nInput does not match. Check that you provide the -i, -qbam and -fasta options"
                              "\nExiting\n")
-            sys.exit(1)
+            sys.exit(0)
 
         if len(sys.argv[2:]) == 0:
             parser.print_help()
             time.sleep(0.01)
             sys.stderr.write("\nNo arguments given to Realign. Exiting\n")
-            sys.exit(1)
+            sys.exit(0)
 
         return (parser)
 
@@ -726,7 +726,7 @@ Commands:
             time.sleep(0.01)
             sys.stderr.write("\nNo input input given to Repeats, be sure that you are providing the flag '-i'"
                              "\nExiting\n")
-            sys.exit(1)
+            sys.exit(0)
 
         # parse the commands
 
@@ -734,7 +734,7 @@ Commands:
             parser.print_help()
             time.sleep(0.01)
             sys.stderr.write("\nNo arguments given to Repeats. Exiting\n")
-            sys.exit(1)
+            sys.exit(0)
 
         return (parser)
 
@@ -853,7 +853,7 @@ Commands:
                 "\nNo input input given to Simulate, be sure that you are providing the flags '-g' and '-N'"
                 "\nExiting\n")
 
-            sys.exit(1)
+            sys.exit(0)
 
 
         if len(sys.argv[2:]) == 0:
