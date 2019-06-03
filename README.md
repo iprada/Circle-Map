@@ -34,7 +34,7 @@ Installation using **conda**:
 
 Now you are ready to get started detecting circular DNA. We have created a [Circle-Map wiki](https://github.com/iprada/Circle-Map/wiki) that explains step by step how you can go from your raw sequencing reads to interpretable results. In the wiki, you can try and learn using Circle-Map with the following tutorials:
 
-   * [Tutorial: identification of mappable circular DNA using Circle Map Realign](https://github.com/iprada/Circle-Map/wiki/Tutorial:-identification-of-mappable-circular-DNA-using-Circle-Map-Realign) 
+   * [Tutorial: identification of mappable circular DNA using Circle Map Realign](https://github.com/iprada/Circle-Map/wiki/Tutorial:-Identification-of-circular-DNA-using-Circle-Map-Realign) 
     
 
 ## Getting help
