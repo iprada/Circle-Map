@@ -24,7 +24,7 @@ Installation using **pip**:
 
      python -m pip install Circle-Map
      
-Installation using **conda**
+Installation using **conda**:
 
      conda install -c bioconda circle-map
      
