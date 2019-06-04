@@ -1,5 +1,6 @@
 # Welcome to Circle-Map official repository!
 [![PyPI](https://img.shields.io/pypi/v/Circle-Map.svg)](https://pypi.python.org/pypi/Circle-Map)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/circle-map/badges/version.svg)](https://anaconda.org/bioconda/circle-map)
 [![Anaconda-Server Downloads](https://anaconda.org/bioconda/circle-map/badges/downloads.svg)](https://anaconda.org/bioconda/circle-map)
 [![GitHub Downloads](https://img.shields.io/github/downloads/iprada/Circle-Map/total.svg?style=social&logo=github&label=Download)](https://github.com/iprada/Circle-Map/releases)
 
