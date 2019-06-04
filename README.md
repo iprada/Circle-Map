@@ -1,6 +1,6 @@
 # Welcome to Circle-Map official repository!
 [![PyPI](https://img.shields.io/pypi/v/Circle-Map.svg)](https://pypi.python.org/pypi/Circle-Map)
-[![Anaconda-Server Downloads](https://anaconda.org/bioconda/circele-map/badges/downloads.svg)](https://anaconda.org/bioconda/circle-map)
+[![Anaconda-Server Downloads](https://anaconda.org/bioconda/circle-map/badges/downloads.svg)](https://anaconda.org/bioconda/circle-map)
 
 Circle-Map is an easy to install, python package that implements all the steps required to detect extrachromosomal DNA circles. The package  contains easy to run algorithms for accurately detect circular DNA formed from mappable and non mappable regions of a genome.
 
