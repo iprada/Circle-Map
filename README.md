@@ -41,12 +41,20 @@ Installation using **conda**:
 
 Now you are ready to get started detecting circular DNA. We have created a [Circle-Map wiki](https://github.com/iprada/Circle-Map/wiki) that explains step by step how you can go from your raw sequencing reads to interpretable results. In the wiki, you can try and learn using Circle-Map with the following tutorials:
 
-   * [Tutorial: identification of mappable circular DNA using Circle Map Realign](https://github.com/iprada/Circle-Map/wiki/Tutorial:-Identification-of-circular-DNA-using-Circle-Map-Realign) 
+   * [Tutorial: identification of mappable circular DNA using Circle Map Realign](https://github.com/iprada/Circle-Map/wiki/Tutorial:-Identification-of-circular-DNA-using-Circle-Map-Realign)  
+
+   
+Once you have detect circular DNA in your samples you will probably be interested at looking at the output files. To help you understanding the output, we have create a page explaining what is the information provided by Circle-Map in every column of its output. You can find the information in the following link:
+
+* [Circle-Map output explanation](https://github.com/iprada/Circle-Map/wiki/Circle-Map-output-files) 
     
+   
+
 
 ## Getting help
 
 The best place for getting help, feedback,report bugs or request new features is to post an [issue](https://github.com/iprada/Circle-Map/issues). You can also reach me at xsh723 at dot binf dot ku dot dk 
+
 ## Citing
 
 *Sensitive detection of circular DNA at single-nucleotide resolution using guided realignment of partially aligned reads*
