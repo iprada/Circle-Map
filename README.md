@@ -35,7 +35,7 @@ Installation using **conda**:
 
      conda install -c bioconda circle-map
      
-**Note**: If you have use pip and you want to simulate circular DNA short reads, you will need to install [BBMap](https://sourceforge.net/projects/bbmap/) and [ART](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm) on your system.
+**Note**: If you have used pip and you want to simulate circular DNA short reads, you will need to install [BBMap](https://sourceforge.net/projects/bbmap/) and [ART](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm) on your system.
 
 ### Using Circle-Map
 
@@ -44,7 +44,7 @@ Now you are ready to get started detecting circular DNA. We have created a [Circ
    * [Tutorial: identification of mappable circular DNA using Circle Map Realign](https://github.com/iprada/Circle-Map/wiki/Tutorial:-Identification-of-circular-DNA-using-Circle-Map-Realign)  
 
    
-Once you have detect circular DNA in your samples you will probably be interested at looking at the output files. To help you understanding the output, we have create a page explaining what is the information provided by Circle-Map in every column of its output. You can find the information in the following link:
+Once you have detected circular DNA in your samples you will probably be interested at looking at the output files. To help you understanding the output, we have created a page explaining what is the information provided by Circle-Map in every column of its output. You can find the information in the following link:
 
 * [Circle-Map output explanation](https://github.com/iprada/Circle-Map/wiki/Circle-Map-output-files) 
     
