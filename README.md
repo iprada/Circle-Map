@@ -23,7 +23,7 @@ Unlike other methods, Circle-Map is able to map both segments of the soft-clippe
 
 ### Installation
 
-Circle-Map runs on GNU/Linux operating systems,**requires >=python3.6** and can be installed and set-up using the following ways:
+Circle-Map runs on GNU/Linux operating systems, **requires >=python3.6** and can be installed and set-up using the following ways:
 
 This will install Circle-Map, and all the external packages required run every part of Circle-Map software.
 
