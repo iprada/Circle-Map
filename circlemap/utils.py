@@ -1491,28 +1491,29 @@ def assign_discordants(split_bed,discordant_bed,insert_mean,insert_std):
 def adaptative_myers_k(sc_len,edit_frac):
     """Calculate the edit distance allowed as a function of the read length"""
     return(float(sc_len*edit_frac))
-
-def non_colinearity(read,mate_interval):
+@jit(nopython=True)
+def non_colinearity(read_start_cigar,read_end_cigar,aln_start,mate_interval_start,mate_interval_end):
     """Input a read and the mate interval in the graph. The function checks whether the alignment would be linear (splicing)
     or colinear. Will return false, in order to not attemp realignment. This is mainly thought for skipping deletions and
     RNA splicing"""
 
+
     #check left soft-clipped
-    if read.cigar[0][0] == 4:
+    if read_start_cigar == 4:
         #graph needs to be upstream or looping to itself
-        if int(mate_interval.start) > read.pos:
+        if int(mate_interval_start) > aln_start:
             return (True)
-        elif read.pos < int(mate_interval.end):
+        elif aln_start < int(mate_interval_end):
             #looping to itself
             return (True)
         else:
             return (False)
     #check right softclipped
-    if read.cigar[-1][0] == 4:
+    if read_end_cigar == 4:
     # graph needs to be downstream or looping to itself
-        if int(mate_interval.end) < read.pos:
+        if int(mate_interval_end) < aln_start:
             return (True)
-        elif read.pos > int(mate_interval.start):
+        elif aln_start > int(mate_interval_start):
             #looping to itself
             return (True)
         else:
