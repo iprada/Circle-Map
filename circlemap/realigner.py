@@ -283,8 +283,8 @@ class realignment:
                                             sc_len = len(get_longest_soft_clipped_bases(read)['seq'])
 
 
-                                            if non_colinearity(read.cigar[0][0],read.cigar[-1][0],read.pos,
-                                                               mate_interval.start,mate_interval.end) == True:
+                                            if non_colinearity(int(read.cigar[0][0]),int(read.cigar[-1][0]),int(read.pos),
+                                                               int(mate_interval.start),int(mate_interval.end)) == True:
 
 
                                                 if sc_len >= self.min_sc_length:
