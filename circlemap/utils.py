@@ -750,7 +750,7 @@ def circle_from_SA(read,mapq_cutoff,mate_interval):
 
     else:
         return{'support' : False}
-
+@jit(nopython=True)
 def number_encoding(seq):
     """Function that takes as input a DNA sequence, and encodes the sequence to numbers, so that it can be accelerated
     with numba"""
