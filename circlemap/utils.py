@@ -290,17 +290,28 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
     sp.call("bedtools genomecov -bg -ibam %s | sort -T temp_files_%s -k 1,1 -k2,2n | mergeBed -d %s -c 4 -o mean | sort -r -n -k 4,4 > temp_files_%s/peaks.bed" %
             (input_bam_name,pid,clusters,pid),shell=True)
 
+    #Decide number of chunks
+    chunks = cores * 100
+    #Create empty list
     split_peaks = []
-    for interval in bt.BedTool("temp_files_%s/peaks.bed" % pid):
+    for i in range(0, chunks):
+        split_peaks.append([])
 
-        if int(interval[2])-int(interval[1])>500:
+    #put chunks in the list
+    counter = 0
+    for interval in bt.BedTool("temp_files_%s/peaks.bed" % pid):
+        if counter == chunks:
+            counter = 0
+
+        if int(interval[2]) - int(interval[1]) > 500:
             w_start = int(interval[1])
             while w_start < int(interval[2]):
-                splitted = [interval.chrom,str(w_start),str(w_start+300)]
-                w_start+=300
-                split_peaks.append(splitted)
+                splitted = [interval.chrom, str(w_start), str(w_start + 300)]
+                w_start += 300
+                split_peaks[counter].append(splitted)
         else:
-            split_peaks.append([interval.chrom,str(interval.start),str(interval.end)])
+            split_peaks[counter].append([interval.chrom, str(interval.start), str(interval.end)])
+        counter += 1
 
 
     return(sorted_bam,split_peaks)
@@ -1313,16 +1324,12 @@ def start_realign(circle_bam,output,threads,verbose,pid,clusters):
     sp.call("mkdir temp_files_%s" % pid, shell=True)
 
 
-    sorted_bam,peaks = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose,pid,clusters)
-
-    chunks = int(math.ceil(len(peaks)/(threads*100)))
+    sorted_bam,splitted = bam_circ_sv_peaks(eccdna_bam,circle_bam,threads,verbose,pid,clusters)
 
 
-    splitted = [peaks[x:x + chunks] for x in range(0, len(peaks),chunks)]
 
 
     # split to cores
-
     print("\nSplitting coverage file to cores\n")
     os.chdir("temp_files_%s" % pid)
     sp.call("touch %s" % output, shell=True)

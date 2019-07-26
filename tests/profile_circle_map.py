@@ -21,7 +21,7 @@ lock = mp.Lock()
 
 object = realignment(input, qbam, sort_bam, fasta,
                      os.getcwd(),
-                     20,60, 4, 100000,5,1, 10, 0.99, 6,0.95,0.01,"profiling_output.bed",16,0.1, lock, 0,0.0,3,1,
+                     20,60, 4, 100000,5,1, 10, 0.99, 6,0.95,0.01,"profiling_output.bed",16,0.1, lock, 0,0.0,1,1,
                      0.05, False,False, 0,0.0, metrics, 3)
 
 
