@@ -1,4 +1,9 @@
 # Welcome to Circle-Map official repository!
+[![PyPI](https://img.shields.io/pypi/v/Circle-Map.svg)](https://pypi.python.org/pypi/Circle-Map)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/circle-map/badges/version.svg)](https://anaconda.org/bioconda/circle-map)
+[![Bioconda Downloads](https://anaconda.org/bioconda/circle-map/badges/downloads.svg)](https://anaconda.org/bioconda/circle-map)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/circle-map/badges/latest_release_date.svg)](https://anaconda.org/bioconda/circle-map)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/circle-map/badges/license.svg)](https://github.com/iprada/Circle-Map/blob/master/LICENSE)
 
 Circle-Map is an easy to install, python package that implements all the steps required to detect extrachromosomal DNA circles. The package  contains easy to run algorithms for accurately detect circular DNA formed from mappable and non mappable regions of a genome.
 
@@ -16,28 +21,38 @@ Unlike other methods, Circle-Map is able to map both segments of the soft-clippe
 
 ### Installation
 
-Circle-Map runs on GNU/Linux operating systems, and can be installed and set-up using the following ways:
+Circle-Map runs on GNU/Linux operating systems, **requires >=python3.6** and can be installed and set-up using the following ways:
 
-This will install Circle-Map, and all the external packages required run every part of Circle-Map software.
+This will install Circle-Map, and all the external packages required to run every part of Circle-Map software.
 
 Installation using **pip**:
 
      python -m pip install Circle-Map
      
-Installation through conda/bioconda will be supported soon.
+Installation using **conda**:
+
+     conda install -c bioconda circle-map
      
-**Note**: If you have use pip and you want to simulate circular DNA short reads, you will need to install [BBMap](https://sourceforge.net/projects/bbmap/) and [ART](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm) on your system.
+**Note**: If you want to simulate circular DNA short reads, you will need to install [BBMap](https://sourceforge.net/projects/bbmap/) and [ART](https://www.niehs.nih.gov/research/resources/software/biostatistics/art/index.cfm) on your system.
 
 ### Using Circle-Map
 
 Now you are ready to get started detecting circular DNA. We have created a [Circle-Map wiki](https://github.com/iprada/Circle-Map/wiki) that explains step by step how you can go from your raw sequencing reads to interpretable results. In the wiki, you can try and learn using Circle-Map with the following tutorials:
 
-   * [Tutorial: identification of mappable circular DNA using Circle Map Realign](https://github.com/iprada/Circle-Map/wiki/Tutorial:-identification-of-mappable-circular-DNA-using-Circle-Map-Realign) 
+   * [Tutorial: identification of mappable circular DNA using Circle Map Realign](https://github.com/iprada/Circle-Map/wiki/Tutorial:-Identification-of-circular-DNA-using-Circle-Map-Realign)  
+
+   
+Once you have detected circular DNA in your samples you will probably be interested at looking at the output files. To help you understanding the output, we have created a page explaining what is the information provided by Circle-Map in every column of its output. You can find the information in the following link:
+
+* [Circle-Map output explanation](https://github.com/iprada/Circle-Map/wiki/Circle-Map-output-files) 
     
+   
+
 
 ## Getting help
 
 The best place for getting help, feedback,report bugs or request new features is to post an [issue](https://github.com/iprada/Circle-Map/issues). You can also reach me at xsh723 at dot binf dot ku dot dk 
+
 ## Citing
 
 *Sensitive detection of circular DNA at single-nucleotide resolution using guided realignment of partially aligned reads*
