@@ -391,8 +391,8 @@ Commands:
                                            default=0.99)
 
             alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
-                                           help="Minimum soft-clipped length to attempt the realignment. Default: 6",
-                                           default=6)
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 5",
+                                           default=5)
 
             alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
                                            help="Gap open penalty in the position specific scoring matrix. Default: 5",
@@ -434,8 +434,8 @@ Commands:
             # Interval options
 
             interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
-                                  help="Merge intervals reciprocally overlapping by a fraction. Default 0.95",
-                                  default=0.95)
+                                  help="Merge intervals reciprocally overlapping by a fraction. Default 0.99",
+                                  default=0.99)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
                                   help="Skip edges of the graph with a probability below the threshold. Default: 0.01",
@@ -510,8 +510,8 @@ Commands:
                                            default=0.99)
 
             alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
-                                           help="Minimum soft-clipped length to attempt the realignment. Default: 6",
-                                           default=6)
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 5",
+                                           default=5)
 
             alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
                                            help="Gap open penalty in the position specific scoring matrix. Default: 5",
@@ -552,8 +552,8 @@ Commands:
             # Interval options
 
             interval.add_argument('-f', '--merge_fraction', type=float, metavar='',
-                                  help="Merge intervals reciprocally overlapping by a fraction. Default 0.95",
-                                  default=0.95)
+                                  help="Merge intervals reciprocally overlapping by a fraction. Default 0.99",
+                                  default=0.99)
 
             interval.add_argument('-P', '--interval_probability', type=float, metavar='',
                                   help="Skip edges of the graph with a probability below the threshold. Default: 0.01",
