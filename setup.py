@@ -21,12 +21,10 @@
 #SOFTWARE.
 
 from setuptools import setup,find_packages
-
-
-
+from circlemap.__version__ import __version__
 
 setup(name='Circle-Map',
-      version='1.0.4',
+      version=__version__,
       description='Circular DNA analysis tools',
       author='Inigo Prada-Luengo',
       url='https://github.com/iprada/Circle-Map',

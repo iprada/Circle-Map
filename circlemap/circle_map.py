@@ -38,7 +38,7 @@ from circlemap.simulations import sim_ecc_reads
 import subprocess as sp
 import glob
 from tqdm import *
-
+from circlemap.__version__ import __version__ as cm_version
 
 class circle_map:
 
@@ -52,7 +52,7 @@ class circle_map:
             description='Circle-Map',
             usage='''Circle-Map <subprogram> [options]
 
-version=1.0
+version=%s
 contact= https://github.com/iprada/Circle-Map/issues
 
 The Circle-Map suite
@@ -64,7 +64,7 @@ Commands:
    Repeats         Identify circular DNA from repetitive regions
    Simulate        Simulate circular DNA
 
-''')
+''' % cm_version)
         subparsers = self.parser.add_subparsers()
 
         self.readextractor = subparsers.add_parser(
