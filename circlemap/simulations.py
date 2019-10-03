@@ -57,6 +57,8 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
         weighted_chromosomes[contigs] = chromosomes[contigs]/whole_genome_len
 
 
+
+
     contig_list = []
     weights = []
     for contigs, value in weighted_chromosomes.items():
@@ -96,7 +98,7 @@ def sim_ecc_reads(genome_fasta,read_length,directory,reads,exclude_regions,fastq
         # decide ecDNA length
 
         #sample circle length
-        circle_length = rd.randint(150,10000)
+        circle_length = rd.randint(150,350)
 
 
         # linear decrease in coverage based on circle length

@@ -195,14 +195,15 @@ Commands:
 
                 bed = object.find_circles()
 
-                coverage_object = coverage(self.args.sbam, bed,
+                coverage_object = coverage(self.args.i, bed,
                                            self.args.bases, self.args.cmapq, self.args.extension,
                                            self.args.directory)
 
                 output = coverage_object.compute_coverage(coverage_object.get_wg_coverage())
 
                 filtered_output = filter_by_ratio(output, self.args.ratio)
-                filtered_output.saveas("%s" % self.args.output)
+                filtered_output.to_csv(r'%s' % self.args.output, header=None, index=None, sep='\t', mode='w')
+
 
 
             elif sys.argv[1] == "Simulate":
