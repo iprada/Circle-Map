@@ -122,7 +122,6 @@ Commands:
                 self.subprogram = self.args_realigner()
                 self.args = self.subprogram.parse_args(sys.argv[2:])
 
-                os.chdir(self.args.directory)
                 # get clusters
                 splitted, sorted_bam, begin = start_realign(self.args.i, self.args.output, self.args.threads,
                                                             self.args.verbose, self.__getpid__(),

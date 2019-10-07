@@ -1303,9 +1303,9 @@ def write_to_disk(partial_bed,output,locker,dir,pid):
 
     locker.acquire()
     os.chdir("%s/temp_files_%s/" % (dir,pid))
-    output_bed = bt.BedTool('%s' % output)
+    output_bed = bt.BedTool('%s' % os.path.basename(output))
     writer_bed = output_bed.cat(partial_bed,postmerge=False)
-    writer_bed.saveas('%s' % output)
+    writer_bed.saveas('%s' % os.path.basename(output))
     os.chdir("%s" % dir)
     locker.release()
 
@@ -1318,6 +1318,7 @@ def start_realign(circle_bam,output,threads,verbose,pid,clusters):
     print("\nRunning Circle-Map realign\n")
 
     print("Clustering structural variant reads\n")
+
 
     eccdna_bam = ps.AlignmentFile("%s" % circle_bam, "rb")
 
@@ -1332,7 +1333,7 @@ def start_realign(circle_bam,output,threads,verbose,pid,clusters):
     # split to cores
     print("\nSplitting coverage file to cores\n")
     os.chdir("temp_files_%s" % pid)
-    sp.call("touch %s" % output, shell=True)
+    sp.call("touch %s" % os.path.basename(output), shell=True)
     os.chdir("../")
 
     #this releases from tmp file the unmerged and peak file
