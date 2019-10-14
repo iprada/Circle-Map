@@ -1240,7 +1240,7 @@ def merge_final_output(bam,results,begin,splits,dir,fraction,pid):
     # multiply *2 for reciprocal overlap +1 to check chromosome
     norm_fraction = (fraction*2)+1
 
-    unparsed_bed = bt.BedTool(results)
+    unparsed_bed = bt.BedTool(os.path.basename(results))
 
 
 
