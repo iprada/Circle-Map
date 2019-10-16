@@ -308,10 +308,15 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
             while w_start < int(interval[2]):
                 splitted = [interval.chrom, str(w_start), str(w_start + 300)]
                 w_start += 300
-                split_peaks[counter].append(splitted)
+                if counter == chunks:
+                    counter = 0
+                    split_peaks[counter].append(splitted)
+                else:
+                    split_peaks[counter].append(splitted)
+                    counter +=1
         else:
             split_peaks[counter].append([interval.chrom, str(interval.start), str(interval.end)])
-        counter += 1
+            counter += 1
 
 
     return(sorted_bam,split_peaks)

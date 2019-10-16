@@ -360,8 +360,7 @@ class realignment:
                                         if read.is_read2 == False:
                                             if read.next_reference_start < read.reference_start:
                                                 disorcordants_per_it +=1
-                                                iteration_discordants.append([interval['chrom'], read.next_reference_start,read.reference_start+read.infer_query_length(),
-                                                                              read.qname])
+                                                iteration_discordants.append([interval['chrom'], read.next_reference_start,read.reference_start+read.infer_query_length(),                                                                              read.qname])
 
 
                         #second pass to add discordant read info
@@ -399,6 +398,7 @@ class realignment:
 
             ecc_dna.close()
             genome_fa.close()
+
 
             # Write process output to disk
             output = iteration_merge(only_discordants,results,
