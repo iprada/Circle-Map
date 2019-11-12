@@ -579,6 +579,9 @@ def insert_size_dist(sample_size,mapq_cutoff,qname_bam):
     std = np.std(insert_length)
     return(mean, std)
 
+def normalize_probability_matrix(pandas_df):
+    return(pandas_df)
+
 def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,verbose):
 
 
@@ -614,6 +617,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
             candidate_mates = candidate_mates_dataframe.groupby((candidate_mates_dataframe.end.shift()-candidate_mates_dataframe.start).lt(0).cumsum()).agg({'chrom':'first','start':'first','end':'last','probability':'sum'})
 
             sum = np.sum(float(x[3]) for index, x in candidate_mates.iterrows())
+            candidate_mates['probability'] = candidate_mates['probability'] / sum
 
 
         elif np.any(read_types == 'SC') == True and (np.any(read_types == 'DR') == True or np.any(read_types == 'SA') == True):
@@ -628,6 +632,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
 
 
             sum = np.sum(float(x[3]) for index,x in candidate_mates.iterrows())
+            candidate_mates['probability'] = candidate_mates['probability']/sum
 
 
 
@@ -637,6 +642,8 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
             return(None)
 
         extended = []
+
+
 
 
         #if argmax is turn on interval_p is 0
@@ -654,28 +661,28 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
                     end = row['end'] + interval_extension
 
                     if start < 0:
-                        extended.append([row['chrom'], str(0), int(round(end))])
+                        extended.append([row['chrom'], str(0), int(round(end)),float(row['probability'])])
 
                     else:
-                        extended.append([row['chrom'], int(round(start)), int(round(end))])
+                        extended.append([row['chrom'], int(round(start)), int(round(end)),float(row['probability'])])
 
                 elif 'L' in orientation:
 
                     start = row['start'] - interval_extension
 
                     if start < 0:
-                        extended.append([row['chrom'], str(0), row['end']])
+                        extended.append([row['chrom'], str(0), row['end'],float(row['probability'])])
 
                     else:
-                        extended.append([row['chrom'], int(round(start)), row['end']])
+                        extended.append([row['chrom'], int(round(start)), row['end'],float(row['probability'])])
 
                 elif 'R' in orientation:
 
                     end = row['end'] + interval_extension
 
-                    extended.append([row['chrom'], row['start'], int(round(end))])
+                    extended.append([row['chrom'], row['start'], int(round(end)),float(row['probability'])])
 
-                return (pd.DataFrame.from_records(extended, columns=['chrom', 'start', 'end']))
+                return (pd.DataFrame.from_records(extended, columns=['chrom', 'start', 'end','probability']))
 
         else:
 
@@ -693,29 +700,29 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
                         end = interval['end'] + interval_extension
 
                         if start < 0:
-                            extended.append([interval['chrom'], str(0), int(round(end))])
+                            extended.append([interval['chrom'], str(0), int(round(end)),float(interval['probability'])])
 
                         else:
-                            extended.append([interval['chrom'], int(round(start)), int(round(end))])
+                            extended.append([interval['chrom'], int(round(start)), int(round(end)),float(interval['probability'])])
 
                     elif 'L' in orientation:
 
                         start = interval['start'] - interval_extension
 
                         if start < 0:
-                            extended.append([interval['chrom'], str(0), interval['end']])
+                            extended.append([interval['chrom'], str(0), interval['end'],float(interval['probability'])])
 
                         else:
-                            extended.append([interval['chrom'], int(round(start)), interval['end']])
+                            extended.append([interval['chrom'], int(round(start)), interval['end'],float(interval['probability'])])
 
                     elif 'R' in orientation:
 
                         end = interval['end'] + interval_extension
 
-                        extended.append([interval['chrom'], interval['start'], int(round(end))])
+                        extended.append([interval['chrom'], interval['start'], int(round(end)),float(interval['probability'])])
 
 
-            return(pd.DataFrame.from_records(extended,columns=['chrom','start','end']))
+            return(pd.DataFrame.from_records(extended,columns=['chrom','start','end','probability']).sort_values(by=['probability'],ascending=[False]))
 
 
     except BaseException as e:

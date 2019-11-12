@@ -190,11 +190,13 @@ class realignment:
 
 
 
+
                     if len(candidate_mates) > 0:
 
 
                         realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p,
                                                                                   self.verbose)
+                        
 
                         if realignment_interval_extended is None:
                             continue

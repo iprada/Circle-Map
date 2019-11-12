@@ -391,8 +391,8 @@ Commands:
                                            default=0.99)
 
             alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
-                                           help="Minimum soft-clipped length to attempt the realignment. Default: 5",
-                                           default=5)
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 8",
+                                           default=8)
 
             alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
                                            help="Gap open penalty in the position specific scoring matrix. Default: 5",
@@ -510,8 +510,8 @@ Commands:
                                            default=0.99)
 
             alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
-                                           help="Minimum soft-clipped length to attempt the realignment. Default: 5",
-                                           default=5)
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 8",
+                                           default=8)
 
             alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
                                            help="Gap open penalty in the position specific scoring matrix. Default: 5",
