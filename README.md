@@ -55,12 +55,7 @@ The best place for getting help, feedback,report bugs or request new features is
 
 ## Citing
 
-*Sensitive detection of circular DNA at single-nucleotide resolution using guided realignment of partially aligned reads*
-
-Inigo Prada-Luengo, Anders Krogh, Lasse Maretty, Birgitte Regenberg
-**bioRxiv** 654194; doi: https://doi.org/10.1101/654194
-
-A manuscript describing the methods is currently under revision.
+Prada-Luengo, I., Krogh, A., Maretty, L. et al. Sensitive detection of circular DNAs at single-nucleotide resolution using guided realignment of partially aligned reads. BMC Bioinformatics 20, 663 (2019) doi:10.1186/s12859-019-3160-3
 
 ## License
 
