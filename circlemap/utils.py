@@ -1538,3 +1538,72 @@ def non_colinearity(read_start_cigar,read_end_cigar,aln_start,mate_interval_star
             return (True)
         else:
             return (False)
+
+def is_discordant_pair(read1_aln_start,read2_aln_start,read1_is_reverse,read2_is_reverse):
+    """Function that takes as input read pair info (alignment position and strandness) and returns True if
+    the read pair is discordant"""
+    #first check aln pos
+    # Then RF/FR
+    if read2_aln_start < read1_aln_start:
+        if read1_is_reverse != read2_is_reverse:
+            return(True)
+        else:
+            return(False)
+    else:
+        return(False)
+
+def is_pair_clipped(read1,read2,circle_sv_reads,no_soft_clipped,no_hard_clipped,mapq_cutoff):
+    """Function that takes as input a read pair and returns, and writes the read pair to disk if they are clipped"""
+
+    if read1.is_unmapped == False:
+        if is_soft_clipped(read1) == True:
+            if no_soft_clipped == False:
+
+                if read1.mapq >= mapq_cutoff:
+                    read1.tags += [('MQ', read2.mapq)]
+                    circle_sv_reads.write(read1)
+
+            else:
+
+                pass
+
+        else:
+
+            if is_hard_clipped(read1) == True:
+
+                if no_hard_clipped == False:
+
+                    # gets its on mapq since mate is unmapped
+                    if read1.mapq >= mapq_cutoff:
+                        read1.tags += [('MQ', read1.mapq)]
+                        circle_sv_reads.write(read1)
+
+                else:
+
+                    pass
+    if read2.is_unmapped == False:
+        if is_soft_clipped(read2) == True:
+
+            if no_soft_clipped == False:
+
+                # gets its on mapq since mate is unmapped
+                if read2.mapq >= mapq_cutoff:
+                    read2.tags += [('MQ', read2.mapq)]
+                    circle_sv_reads.write(read2)
+
+            else:
+                pass
+        if is_hard_clipped(read2) == True:
+
+            if no_hard_clipped == False:
+
+                # gets its on mapq since mate is unmapped
+                if read2.mapq >= mapq_cutoff:
+                    read2.tags += [('MQ', read2.mapq)]
+                    circle_sv_reads.write(read1)
+
+            else:
+
+                pass
+
+
