@@ -129,31 +129,25 @@ class readExtractor:
                     if read1.is_unmapped == False and read2.is_unmapped == False:
 
 
-                        if read2.is_reverse and read1.is_reverse == False:
+                        if is_discordant_pair(read1.reference_start,
+                                              read2.reference_start,read1.is_reverse,read2.is_reverse) == True:
 
-                            # read2 leftmost mapping position smaller than read1 leftmost mapping position
-                            if read2.reference_start < read1.reference_start:
+                            #aligned to the same chromosome
+                            if read1.reference_id == read2.reference_id:
 
-                                #aligned to the same chromosome
-                                if read1.reference_id == read2.reference_id:
+                                if read1.mapq >= self.mapq_cutoff and read2.mapq >= self.mapq_cutoff:
 
-                                    if read1.mapq >= self.mapq_cutoff and read2.mapq >= self.mapq_cutoff:
+                                    #is discordant extraction turn off?
 
-                                        #is discordant extraction turn off?
+                                    if self.no_discordants == False:
+                                        #add mate mapping quality info
+                                        read1.tags += [('MQ',read2.mapq)]
+                                        read2.tags += [('MQ', read1.mapq)]
 
-                                        if self.no_discordants == False:
-                                            #add mate mapping quality info
-                                            read1.tags += [('MQ',read2.mapq)]
-                                            read2.tags += [('MQ', read1.mapq)]
-
-                                            circle_sv_reads.write(read1)
-                                            circle_sv_reads.write(read2)
-                                        else:
-                                            pass
+                                        circle_sv_reads.write(read1)
+                                        circle_sv_reads.write(read2)
                                     else:
-                                        is_pair_clipped(read1, read2, circle_sv_reads, self.no_soft_clipped,
-                                                        self.no_hard_clipped, self.mapq_cutoff)
-
+                                        pass
                                 else:
                                     is_pair_clipped(read1, read2, circle_sv_reads, self.no_soft_clipped,
                                                     self.no_hard_clipped, self.mapq_cutoff)
@@ -163,8 +157,10 @@ class readExtractor:
                                                 self.no_hard_clipped, self.mapq_cutoff)
 
                         else:
-                            is_pair_clipped(read1, read2, circle_sv_reads, self.no_soft_clipped, self.no_hard_clipped,
-                                            self.mapq_cutoff)
+                            is_pair_clipped(read1, read2, circle_sv_reads, self.no_soft_clipped,
+                                            self.no_hard_clipped, self.mapq_cutoff)
+
+
 
                     else:
                         is_pair_clipped(read1,read2,circle_sv_reads,
