@@ -391,12 +391,10 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
                 elif read.is_unmapped == False and read.mate_is_unmapped == False:
 
                     # check R2F1 orientation,when the R2 read
-                    if read.is_reverse == True and read.mate_is_reverse == False:
+                    if is_discordant_pair(read.next_reference_start,
+                                          read.reference_start, read.mate_is_reverse, read.is_reverse) == True:
 
-                        # R2F1 order
-                        if read.reference_start < read.next_reference_start:
-
-                            if read.reference_id == read.next_reference_id:
+                        if read.reference_id == read.next_reference_id:
                                 # create mate interval
                                 read_length = read.infer_query_length()
 
@@ -414,20 +412,19 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
 
 
                     # R2F1 when iterating trough F1 read
-                    elif read.is_reverse == False and read.mate_is_reverse == True:
+                    if is_discordant_pair(read.reference_start,
+                                          read.next_reference_start,read.is_reverse,read.mate_is_reverse) == True:
 
-                        if read.next_reference_start < read.reference_start:
+                        if read.reference_id == read.next_reference_id:
+                            # create mate interval
+                            read_length = read.infer_query_length()
 
-                            if read.reference_id == read.next_reference_id:
-                                # create mate interval
-                                read_length = read.infer_query_length()
+                            # L means that the mate is aligned to a leftmost part
 
-                                # L means that the mate is aligned to a leftmost part
-
-                                mate_interval = [interval['chrom'], read.next_reference_start,
-                                                 (read.next_reference_start + read_length),
-                                                 "DR", "L",str(1-phred_to_prob(np.array(read.get_tag('MQ'),dtype=np.float64)))]
-                                candidate_mates.append(mate_interval)
+                            mate_interval = [interval['chrom'], read.next_reference_start,
+                                             (read.next_reference_start + read_length),
+                                             "DR", "L",str(1-phred_to_prob(np.array(read.get_tag('MQ'),dtype=np.float64)))]
+                            candidate_mates.append(mate_interval)
                     else:
 
                         if only_discordants != True:
@@ -1507,7 +1504,7 @@ def assign_discordants(split_bed,discordant_bed,insert_mean,insert_std):
                  0])
 
         return(assigned_splits)
-
+@jit(nopython=True)
 def adaptative_myers_k(sc_len,edit_frac):
     """Calculate the edit distance allowed as a function of the read length"""
     return(float(sc_len*edit_frac))
@@ -1538,7 +1535,7 @@ def non_colinearity(read_start_cigar,read_end_cigar,aln_start,mate_interval_star
             return (True)
         else:
             return (False)
-
+@jit(nopython=True)
 def is_discordant_pair(read1_aln_start,read2_aln_start,read1_is_reverse,read2_is_reverse):
     """Function that takes as input read pair info (alignment position and strandness) and returns True if
     the read pair is discordant"""
