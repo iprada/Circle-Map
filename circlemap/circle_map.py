@@ -97,6 +97,13 @@ Commands:
             usage='''Circle-Map Simulate [options]'''
 
         )
+        self.bam2bam = subparsers.add_parser(
+            name="BamToBam",
+            description='Convert the soft-clipped reads to split-reads',
+            prog="Circle-Map BamToBam",
+            usage='''Circle-Map BamToBam [options]'''
+
+        )
 
         if len(sys.argv) <= 1:
             self.parser.print_help()
@@ -254,6 +261,53 @@ Commands:
                 print("Writting to disk bed file containing the simulated circle coordinates")
 
                 bt.BedTool(list(circle_list)).saveas(self.args.output)
+            elif sys.argv[1] == "BamToBam":
+                ## KEEP WORKING HERE!
+                self.subprogram = self.args_realigner()
+                self.args = self.subprogram.parse_args(sys.argv[2:])
+
+                # get clusters
+                splitted, sorted_bam, begin = start_realign(self.args.i, self.args.output, self.args.threads,
+                                                            self.args.verbose, self.__getpid__(),
+                                                            self.args.clustering_dist)
+
+
+
+
+                sorted_bam.close()
+                #get global insert size prior
+                metrics = insert_size_dist(self.args.sample_size, self.args.insert_mapq, self.args.qbam)
+
+
+                # pool based parallel of religment
+                m = mp.Manager()
+
+                lock = m.Lock()
+
+                object = realignment(self.args.i, self.args.qbam, self.args.sbam, self.args.fasta,
+                                     self.args.directory,
+                                     self.args.mapq,
+                                     self.args.insert_mapq, self.args.std, self.args.sample_size,
+                                     self.args.gap_open,
+                                     self.args.gap_ext, self.args.nhits, self.args.cut_off, self.args.min_sc,
+                                     self.args.merge_fraction, self.args.interval_probability, self.args.output,
+                                     self.args.threads, self.args.allele_frequency, lock, self.args.split,
+                                     self.args.ratio, self.args.verbose, self.__getpid__(),
+                                     self.args.edit_distance_fraction, self.args.remap_splits,
+                                     self.args.only_discordants, self.args.split,
+                                     self.args.split_quality, metrics,self.args.number_of_discordants)
+
+
+                pool = mp.Pool(processes=self.args.threads)
+
+                #progress bar
+                with tqdm(total=len(splitted)) as pbar:
+                    for i,exits in tqdm(enumerate(pool.imap_unordered(object.realign, splitted))):
+                        pbar.update()
+
+                pbar.close()
+                pool.close()
+                pool.join()
 
             else:
                 self.parser.print_help()

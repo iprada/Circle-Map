@@ -1572,7 +1572,7 @@ def is_pair_clipped(read1,read2,circle_sv_reads,no_soft_clipped,no_hard_clipped,
 
                     # gets its on mapq since mate is unmapped
                     if read1.mapq >= mapq_cutoff:
-                        read1.tags += [('MQ', read1.mapq)]
+                        read1.tags += [('MQ', read2.mapq)]
                         circle_sv_reads.write(read1)
 
                 else:
@@ -1585,7 +1585,7 @@ def is_pair_clipped(read1,read2,circle_sv_reads,no_soft_clipped,no_hard_clipped,
 
                 # gets its on mapq since mate is unmapped
                 if read2.mapq >= mapq_cutoff:
-                    read2.tags += [('MQ', read2.mapq)]
+                    read2.tags += [('MQ', read1.mapq)]
                     circle_sv_reads.write(read2)
 
             else:
@@ -1596,8 +1596,8 @@ def is_pair_clipped(read1,read2,circle_sv_reads,no_soft_clipped,no_hard_clipped,
 
                 # gets its on mapq since mate is unmapped
                 if read2.mapq >= mapq_cutoff:
-                    read2.tags += [('MQ', read2.mapq)]
-                    circle_sv_reads.write(read1)
+                    read2.tags += [('MQ', read1.mapq)]
+                    circle_sv_reads.write(read2)
 
             else:
 
