@@ -14,7 +14,7 @@ Circle-Map takes as input an alignment of reads to a reference genome (e.g. a *B
 
 However, this approach results in many split read alignments being missed because the aligner is not able to map both split segments of the read, either because they are too short or because they align to too many places. In this cases, the aligner will report a read alignment containing some of the bases unmapped (e.g soft-clipped reads). 
 
-Unlike other methods, Circle-Map is able to map both segments of the soft-clipped reads by realigning the unmapped parts probabilistically to a graph representation of the circular DNA breakpoints. Which allows for a more accurate detection of the circular DNA breakpoints. In our recent preprint (https://www.biorxiv.org/content/10.1101/654194v1) we show how this approach dramatically increases sensitivity while retaining high precision.
+Unlike other methods, Circle-Map is able to map both segments of the soft-clipped reads by realigning the unmapped parts probabilistically to a graph representation of the circular DNA breakpoints. Which allows for a more accurate detection of the circular DNA breakpoints. In our recent paper (https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-019-3160-3) we show how this approach dramatically increases sensitivity while retaining high precision.
 
 
 ## Getting started
@@ -55,12 +55,7 @@ The best place for getting help, feedback,report bugs or request new features is
 
 ## Citing
 
-*Sensitive detection of circular DNA at single-nucleotide resolution using guided realignment of partially aligned reads*
-
-Inigo Prada-Luengo, Anders Krogh, Lasse Maretty, Birgitte Regenberg
-**bioRxiv** 654194; doi: https://doi.org/10.1101/654194
-
-A manuscript describing the methods is currently under revision.
+Prada-Luengo, I., Krogh, A., Maretty, L. & Regenberg,B. Sensitive detection of circular DNAs at single-nucleotide resolution using guided realignment of partially aligned reads. BMC Bioinformatics 20, 663 (2019) doi:10.1186/s12859-019-3160-3
 
 ## License
 
