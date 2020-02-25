@@ -27,8 +27,10 @@ from functools import partial
 import os
 import time
 import pandas as pd
+import pysam as ps
 from circlemap.extract_circle_SV_reads import readExtractor
 from circlemap.realigner import realignment
+from circlemap.bam2bam import bam2bam
 from circlemap.repeats import repeat
 from circlemap.utils import merge_final_output, filter_by_ratio, start_realign, start_simulate, mutate, insert_size_dist
 from circlemap.Coverage import coverage
@@ -61,6 +63,7 @@ Commands:
 
    ReadExtractor   Extracts circular DNA read candidates
    Realign         Realign circular DNA read candidates
+   bam2bam         Realign circular DNA read candidates and report them on a new BAM file
    Repeats         Identify circular DNA from repetitive regions
    Simulate        Simulate circular DNA
 
@@ -95,6 +98,13 @@ Commands:
             description='Simulate eccDNA NGS datastes',
             prog="Circle-Map Reepeats",
             usage='''Circle-Map Simulate [options]'''
+
+        )
+        self.simulate = subparsers.add_parser(
+            name="bam2bam",
+            description='Realign the soft-clipped reads  and report',
+            prog="Circle-Map bam2bam",
+            usage='''Circle-Map bam2bam [options]'''
 
         )
 
@@ -182,6 +192,69 @@ Commands:
 
                 else:
                     output.saveas("%s" % self.args.output)
+
+            elif sys.argv[1] == "bam2bam":
+                self.subprogram = self.args_bam2bam()
+                self.args = self.subprogram.parse_args(sys.argv[2:])
+
+                # get clusters
+                splitted, sorted_bam, begin = start_realign(self.args.i, self.args.output, self.args.threads,
+                                                            self.args.verbose, self.__getpid__(),
+                                                            self.args.clustering_dist)
+
+
+                #create output bam
+                circle_sv_reads = ps.AlignmentFile(self.args.output, "wb", template=sorted_bam)
+
+                sorted_bam.close()
+                #get global insert size prior
+                metrics = insert_size_dist(self.args.sample_size, self.args.insert_mapq, self.args.qbam)
+
+
+
+
+                manager = mp.Manager()
+
+
+
+
+
+                lock = manager.Lock()
+
+                object = bam2bam(self.args.i,self.args.output,self.args.qbam, self.args.fasta,
+                                     self.args.directory,
+                                     self.args.mapq,
+                                     self.args.insert_mapq, self.args.std, self.args.sample_size,
+                                     self.args.gap_open,
+                                     self.args.gap_ext, self.args.nhits, self.args.cut_off, self.args.min_sc,
+                                     self.args.interval_probability,
+                                     self.args.threads, lock,
+                                     self.args.verbose, self.__getpid__(),
+                                     self.args.edit_distance_fraction, self.args.remap_splits,
+                                     self.args.only_discordants,
+                                     self.args.split_quality, metrics,manager)
+
+
+                pool = mp.Pool(processes=self.args.threads)
+                # create writer process
+
+                writer_p =  mp.Process(target=object.listener_writer, args=(circle_sv_reads,))
+                writer_p.daemon = True
+                writer_p.start()
+                #progress bar
+                with tqdm(total=len(splitted)) as pbar:
+                    for i,exits in tqdm(enumerate(pool.imap_unordered(object.realign,splitted))):
+                        pbar.update()
+
+                pbar.close()
+                pool.close()
+                pool.join()
+                object.queue.put("DONE")
+                writer_p.join()
+
+                circle_sv_reads.close()
+                print("Done")
+
 
             elif sys.argv[1] == "Repeats":
 
@@ -624,6 +697,207 @@ Commands:
             parser.print_help()
             time.sleep(0.01)
             sys.stderr.write("\nNo arguments given to Realign. Exiting\n")
+            sys.exit(0)
+
+        return (parser)
+
+
+    def args_bam2bam(self):
+        parser = self.realigner
+
+        # declare the different groups for the parser
+        parser._action_groups.pop()
+        io_options = parser.add_argument_group('Required')
+        alignment_options = parser.add_argument_group('Alignment options')
+        i_size_estimate = parser.add_argument_group('Insert size estimation options')
+        interval = parser.add_argument_group('Interval processing options')
+        running = parser.add_argument_group('Running options')
+
+        io_options.add_argument('-i', metavar='',
+                                help="Input: bam file containing the reads extracted by ReadExtractor")
+        io_options.add_argument('-qbam', metavar='', help="Input: query name sorted bam file")
+        io_options.add_argument('-fasta', metavar='', help="Input: Reference genome fasta file")
+        io_options.add_argument('-o', '--output', metavar='', help="Output BAM name")
+
+        if "-i" and "-qbam" and "-fasta" and "-o" in sys.argv:
+            # output
+
+
+
+            # alignment
+            alignment_options.add_argument('-n', '--nhits', type=int, metavar='',
+                                           help="Number of realignment attempts. Default: 10",
+                                           default=10)
+
+            alignment_options.add_argument('-p', '--cut_off', type=float, metavar='',
+                                           help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.99",
+                                           default=0.99)
+
+            alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 8",
+                                           default=8)
+
+            alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
+                                           help="Gap open penalty in the position specific scoring matrix. Default: 5",
+                                           default=5)
+
+            alignment_options.add_argument('-e', '--gap_ext', type=int, metavar='',
+                                           help="Gap extension penalty in the position specific scoring matrix. Default: 1",
+                                           default=1)
+
+            alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
+                                           help="Minimum mapping quality allowed in the supplementary alignments. Default: 20",
+                                           default=20)
+
+            alignment_options.add_argument('-d', '--edit_distance-fraction', type=float, metavar='',
+                                           help="Maximum edit distance fraction allowed in the first realignment. Default (0.05)",
+                                           default=0.05)
+
+            alignment_options.add_argument('-Q', '--split_quality', type=float, metavar='',
+                                           help="Minium split score to output an interval. Default (0.0)",
+                                           default=0.0)
+
+            alignment_options.add_argument('-R', '--remap_splits', help="Remap probabilistacally the split reads",
+                                           action='store_true')
+
+            # insert size
+
+            i_size_estimate.add_argument('-iq', '--insert_mapq', type=int, metavar='',
+                                         help="Mapq cutoff for stimating the insert size distribution. Default 60",
+                                         default=60)
+
+            i_size_estimate.add_argument('-sd', '--std', type=int, metavar='',
+                                         help="Standard deviations of the insert size to extend the intervals. Default 5",
+                                         default=4)
+
+            i_size_estimate.add_argument('-s', '--sample_size', type=int, metavar='',
+                                         help="Number of concordant reads (R2F1) to use for estimating the insert size distribution. Default 100000",
+                                         default=100000)
+
+            # Interval options
+
+
+
+            interval.add_argument('-P', '--interval_probability', type=float, metavar='',
+                                  help="Skip edges of the graph with a probability below the threshold. Default: 0.01",
+                                  default=0.01)
+            interval.add_argument('-K', '--clustering_dist', type=int, metavar='',
+                                  help="Cluster reads that are K nucleotides appart in the same node. Default: 500",
+                                  default=500)
+
+            interval.add_argument('-D', '--only_discordants', help="Use only discordant reads to build the graph",
+                                  action='store_false')
+
+
+
+            # run options
+
+            running.add_argument('-t', '--threads', type=int, metavar='',
+                                 help="Number of threads to use.Default 1",
+                                 default=1)
+
+            running.add_argument('-dir', '--directory', metavar='',
+                                 help="Working directory, default is the working directory",
+                                 default=os.getcwd())
+
+            running.add_argument('-v', '--verbose', type=int, metavar='',
+                                 help='Verbose level, 1=error,2=warning, 3=message',
+                                 choices=[1, 2, 3], default=3)
+
+
+
+        else:
+
+            # output
+
+            alignment_options.add_argument('-n', '--nhits', type=int, metavar='',
+                                           help="Number of realignment attempts. Default: 10",
+                                           default=10)
+
+            alignment_options.add_argument('-p', '--cut_off', type=float, metavar='',
+                                           help="Probability cut-off for considering a soft-clipped as realigned: Default: 0.99",
+                                           default=0.99)
+
+            alignment_options.add_argument('-m', '--min_sc', type=float, metavar='',
+                                           help="Minimum soft-clipped length to attempt the realignment. Default: 8",
+                                           default=8)
+
+            alignment_options.add_argument('-g', '--gap_open', type=int, metavar='',
+                                           help="Gap open penalty in the position specific scoring matrix. Default: 5",
+                                           default=5)
+
+            alignment_options.add_argument('-e', '--gap_ext', type=int, metavar='',
+                                           help="Gap extension penalty in the position specific scoring matrix. Default: 1",
+                                           default=1)
+
+            alignment_options.add_argument('-q', '--mapq', type=int, metavar='',
+                                           help="Minimum mapping quality allowed in the supplementary alignments. Default: 20",
+                                           default=20)
+
+            alignment_options.add_argument('-d', '--edit_distance-fraction', type=float, metavar='',
+                                           help="Maximum edit distance fraction allowed in the first realignment. Default (0.05)",
+                                           default=0.05)
+
+            alignment_options.add_argument('-Q', '--split_quality', type=float, metavar='',
+                                           help="Minium split score to output an interval. Default (0.0)",
+                                           default=0.0)
+            alignment_options.add_argument('-R', '--remap_splits', help="Remap probabilistacally bwa-mem split reads",
+                                           action='store_true')
+
+            # insert size
+
+            i_size_estimate.add_argument('-iq', '--insert_mapq', type=int, metavar='',
+                                         help="Mapq cutoff for stimating the insert size distribution. Default 60",
+                                         default=60)
+
+            i_size_estimate.add_argument('-sd', '--std', type=int, metavar='',
+                                         help="Standard deviations of the insert size to extend the intervals. Default 5",
+                                         default=5)
+
+            i_size_estimate.add_argument('-s', '--sample_size', type=int, metavar='',
+                                         help="Number of concordant reads (R2F1) to use for estimating the insert size distribution. Default 100000",
+                                         default=100000)
+
+            # Interval options
+
+
+            interval.add_argument('-P', '--interval_probability', type=float, metavar='',
+                                  help="Skip edges of the graph with a probability below the threshold. Default: 0.01",
+                                  default=0.01)
+            interval.add_argument('-K', '--clustering_dist', type=int, metavar='',
+                                  help="Cluster reads that are K nucleotides appart in the same node. Default: 500",
+                                  default=500)
+            interval.add_argument('-D', '--only_discordants', help="Use only discordant reads to build the graph",
+                                  action='store_true')
+
+
+            # Running options
+
+            running.add_argument('-t', '--threads', type=int, metavar='',
+                                 help="Number of threads to use.Default 1",
+                                 default=1)
+
+            running.add_argument('-dir', '--directory', metavar='',
+                                 help="Working directory, default is the working directory",
+                                 default=os.getcwd())
+
+            running.add_argument('-v', '--verbose', type=int, metavar='',
+                                 help='Verbose level, 1=error,2=warning, 3=message',
+                                 choices=[1, 2, 3], default=3)
+
+            # find out which arguments are missing
+
+            parser.print_help()
+
+            time.sleep(0.01)
+            sys.stderr.write("\nInput does not match. Check that you provide the -i, -qbam and -fasta options"
+                             "\nExiting\n")
+            sys.exit(0)
+
+        if len(sys.argv[2:]) == 0:
+            parser.print_help()
+            time.sleep(0.01)
+            sys.stderr.write("\nNo arguments given to bam2bam. Exiting\n")
             sys.exit(0)
 
         return (parser)

@@ -230,14 +230,10 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
 
     if 'HD' in bam.header:
         if bam.header['HD']['SO'] == 'queryname':
-            print("Bam is sorted by queryname, sorting bam by position")
+            print("Bam is sorted by queryname, exiting")
 
             bam.close()
-            ps.sort("-@","%s" % cores,"-o", "coordinate_%s" % input_bam_name, "%s" % input_bam_name)
-
-            sorted_bam = ps.AlignmentFile("coordinate_%s" % input_bam_name)
-
-            ps.index("coordinate_%s" % input_bam_name)
+            sys.exit()
 
 
 
@@ -247,23 +243,20 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
 
             bam.close()
 
-            print("Bam is unsorted, sorting bam by position")
+            print("Bam is unsorted, exiting")
+            sys.exit()
 
-            ps.sort("-@","%s" % cores,"-o", "coordinate_%s" % input_bam_name, "%s" % input_bam_name)
-
-
-            sorted_bam = ps.AlignmentFile("coordinate_%s" % input_bam_name)
-
-            ps.index("coordinate_%s" % input_bam_name)
 
 
 
         elif bam.header['HD']['SO'] == 'coordinate':
 
             bam.close()
-            sorted_bam = ps.AlignmentFile("%s" % input_bam_name)
+            # this handles Circle-Map bam2bam
+            if input_bam_name != None:
+                    sorted_bam = ps.AlignmentFile("%s" % input_bam_name)
 
-            ps.index("%s" % input_bam_name)
+
 
 
 
@@ -937,7 +930,7 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
                     min_score = score
 
 
-                top_hits[hits] = (location,alignment['cigar'],score,alignment['editDistance'])
+                top_hits[hits] = (location,alignment['cigar'],score,alignment['editDistance'],"-")
 
         else:
             # the search was exaustive
@@ -971,7 +964,7 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
                 if score < min_score:
                     min_score = score
 
-                top_hits[hits] = (location,alignment['cigar'],score,alignment['editDistance'])
+                top_hits[hits] = (location,alignment['cigar'],score,alignment['editDistance'],"+")
 
         else:
 
@@ -1538,3 +1531,20 @@ def non_colinearity(read_start_cigar,read_end_cigar,aln_start,mate_interval_star
             return (True)
         else:
             return (False)
+
+@jit(nopython=True)
+def prob_to_phred(prob):
+    """Function that takes as input a probability and returns a phred-scaled probability. Rounded to the nearest decimal"""
+    if prob == 1.0:
+        prob = 0.999999999
+    return(int(np.around(-10*np.log10(1-prob))))
+
+def realignment_read_to_SA_string(realignment_dict,prob,chrom,soft_clip_start):
+    """Function that takes as input the realignment dict, the alignment posterior probability and the chromosome and
+    returns an SA string"""
+
+    sa_tag = chrom + "," + str(soft_clip_start) + "," + str(realignment_dict['alignments'][1][4]) + "," \
+             + realignment_dict['alignments'][1][1] + ","+ str(prob_to_phred(prob)) + "," + str(realignment_dict['alignments'][1][3]) + ";"
+    return(sa_tag)
+
+
