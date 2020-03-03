@@ -37,6 +37,7 @@ import random
 import re
 from numba import jit
 import math
+import datetime
 
 
 
@@ -230,7 +231,7 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
 
     if 'HD' in bam.header:
         if bam.header['HD']['SO'] == 'queryname':
-            print("Bam is sorted by queryname, exiting")
+            print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),"Bam is sorted by queryname, exiting")
 
             bam.close()
             sys.exit()
@@ -262,7 +263,7 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
 
         else:
             if verbose < 2:
-
+                print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"))
                 warnings.warn(
                     "WARNING: the bam file does not have an SO tag.\nCircle-Map cannot check if the bam file is sorted by coordinate.\n If the bam file is not sorted by coordinate the program will file")
                 print(
@@ -272,6 +273,7 @@ def bam_circ_sv_peaks(bam,input_bam_name,cores,verbose,pid,clusters):
     else:
 
         if verbose < 2:
+            print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"))
             warnings.warn(
                 "WARNING: the bam file does not have an HD tag.\nCircle-Map cannot check if the bam file is sorted by coordinate.\n If the bam file is not sorted by coordinate the program will file")
             print(
@@ -1250,7 +1252,7 @@ def merge_final_output(bam,results,begin,splits,dir,fraction,pid):
 
 
 
-    print("Writting final output to disk")
+    print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),"Writting final output to disk")
 
 
     unparsed_pd = unparsed_bed.to_dataframe(
@@ -1286,15 +1288,15 @@ def merge_final_output(bam,results,begin,splits,dir,fraction,pid):
     os.chdir("%s" % dir)
 
 
-    print("Finished!")
+    print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),"Finished!")
 
     end = time.time()
 
     total_time = (end - begin) / 60
 
 
-    print("\nCircle-Map realign finished indentifying circles in %s \n" % total_time)
-    print("\nCircle-Map has identified %s circles\n" % len(filtered_output))
+    print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),"Circle-Map Realign finished indentifying circles in %s \n" % total_time)
+    print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),"Circle-Map has identified %s circles\n" % len(filtered_output))
 
 
 
@@ -1320,9 +1322,9 @@ def start_realign(circle_bam,output,threads,verbose,pid,clusters):
 
     begin = time.time()
 
-    print("\nRunning Circle-Map realign\n")
+    print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),"Realigning reads using Circle-Map\n")
 
-    print("Clustering structural variant reads\n")
+    print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),"Clustering structural variant reads\n")
 
 
     eccdna_bam = ps.AlignmentFile("%s" % circle_bam, "rb")
@@ -1336,7 +1338,7 @@ def start_realign(circle_bam,output,threads,verbose,pid,clusters):
 
 
     # split to cores
-    print("\nSplitting coverage file to cores\n")
+    print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),"Splitting clusters to to processors\n")
     os.chdir("temp_files_%s" % pid)
     sp.call("touch %s" % os.path.basename(output), shell=True)
     os.chdir("../")
@@ -1361,12 +1363,12 @@ def mutate(genome,pid,indel,snp,java_mem):
     """Function that takes as input the path of the genome,the indel ans substitution rate, and it will create a sinthetic
     genome introducing random mutations on the fasta sequence and providing a vcf"""
 
-    print("Introducing mutations in the fasta genome")
+    print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),"Introducing mutations in the fasta genome")
     print("\t Indel rate: %s" % indel)
     print("\t Substitution rate: %s" % snp)
     sp.call("mutate.sh %s in=%s out=temp_files_%s/mutated.fa subrate=%s indelrate=%s" % (java_mem,genome,pid,snp,indel),shell=True)
 
-    print("Simulating reads")
+    print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),"Simulating reads")
 
     return(None)
 
@@ -1387,7 +1389,7 @@ def check_size_and_write(results,only_discortants,output,lock,directory,fraction
 
         partial_bed = iteration_merge(only_discortants, results,fraction)
 
-        print("Writting %s circular intervals to disk" % len(partial_bed))
+        print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),"Writting %s circular intervals to disk" % len(partial_bed))
         write_to_disk(partial_bed,output,lock,directory,pid)
 
         return(True)

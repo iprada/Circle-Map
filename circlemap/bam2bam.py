@@ -31,6 +31,8 @@ from circlemap.utils import *
 import pandas as pd
 import traceback
 import multiprocessing as mp
+import warnings
+import datetime
 
 
 
@@ -108,6 +110,14 @@ class bam2bam:
                 print("Error on the writer process. Shutting down")
                 print(e)
                 sys.exit()
+
+    def beta_version_warning(self):
+        """Warn the user that this is experimental"""
+        print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S: You are using a beta version feature"))
+        warnings.warn("The bam2bam feature on Circle-Map is experimental. The development of this feature is active, but"
+                      " have in mind that it might produce unintended results. Check https://github.com/iprada/Circle-Map"
+                      "for the development status.")
+
 
 
 

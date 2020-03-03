@@ -234,6 +234,8 @@ Commands:
                                      self.args.only_discordants,
                                      self.args.split_quality, metrics,manager)
 
+                object.beta_version_warning()
+
 
                 pool = mp.Pool(processes=self.args.threads)
                 # create writer process
