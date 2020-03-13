@@ -41,6 +41,7 @@ import subprocess as sp
 import glob
 from tqdm import *
 from circlemap.__version__ import __version__ as cm_version
+import datetime
 
 class circle_map:
 
@@ -166,10 +167,19 @@ Commands:
 
                 pool = mp.Pool(processes=self.args.threads)
 
+
                 #progress bar
                 with tqdm(total=len(splitted)) as pbar:
                     for i,exits in tqdm(enumerate(pool.imap_unordered(object.realign, splitted))):
                         pbar.update()
+                        #kill if process returns 1,1
+                        if exits == [1,1]:
+                            pool.close()
+                            pool.terminate()
+                            pbar.close()
+                            print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),
+                                  "An error happenend during execution. Exiting")
+                            sys.exit()
 
                 pbar.close()
                 pool.close()
@@ -247,6 +257,14 @@ Commands:
                 with tqdm(total=len(splitted)) as pbar:
                     for i,exits in tqdm(enumerate(pool.imap_unordered(object.realign,splitted))):
                         pbar.update()
+                        # kill if process returns 1,1
+                        if exits == [1, 1]:
+                            pool.close()
+                            pool.terminate()
+                            pbar.close()
+                            print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:"),
+                                  "An error happenend during execution. Exiting")
+                            sys.exit()
 
                 pbar.close()
                 pool.close()

@@ -95,6 +95,8 @@ class bam2bam:
 
     def listener_writer(self,bam):
 
+        f = open('test.sam',"w")
+
         while True:
             try:
                 # Read from the queue and do nothing
@@ -102,10 +104,13 @@ class bam2bam:
 
 
                 if read == "DONE":
+                   f.close()
                    break
                 else:
                     pysam_read = ps.AlignedSegment.fromstring(read,bam.header)
+                    f.write(read + "\n")
                     bam.write(pysam_read)
+
             except BaseException as e:
                 print("Error on the writer process. Shutting down")
                 print(e)
@@ -169,7 +174,7 @@ class bam2bam:
 
 
 
-                    if len(candidate_mates) > 0:
+                    if len(candidate_mates) > 0 or candidate_mates != None:
 
 
                         realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p,
@@ -319,17 +324,13 @@ class bam2bam:
 
 
                 except BaseException as e:
+                    traceback.print_exc(file=sys.stdout)
+                    warnings.warn(
+                        "Failed on interval %s due to the error %s" % (
+                            str(interval), str(e)))
+                    return([1,1])
 
 
-                    if self.verbose < 2:
-                        print(interval)
-                        traceback.print_exc(file=sys.stdout)
-                        warnings.warn(
-                            "Failed on interval %s due to the error %s" % (
-                                str(interval), str(e)))
-
-                    else:
-                        pass
 
 
             ecc_dna.close()
@@ -338,7 +339,7 @@ class bam2bam:
         except:
             print("Failed on cluster:")
             print(traceback.print_exc(file=sys.stdout))
-            return([0,0])
+            return([1,1])
 
         genome_fa.close()
         ecc_dna.close()

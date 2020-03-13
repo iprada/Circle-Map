@@ -191,7 +191,7 @@ class realignment:
 
 
 
-                    if len(candidate_mates) > 0:
+                    if len(candidate_mates) > 0 or candidate_mates != None:
 
 
                         realignment_interval_extended = get_realignment_intervals(candidate_mates,extension,self.interval_p,
@@ -200,7 +200,6 @@ class realignment:
 
                         if realignment_interval_extended is None:
                             continue
-
 
 
                         iteration_results = []
@@ -386,16 +385,11 @@ class realignment:
 
                 except BaseException as e:
 
-
-                    if self.verbose < 2:
-                        print(interval)
-                        traceback.print_exc(file=sys.stdout)
-                        warnings.warn(
-                            "Failed on interval %s due to the error %s" % (
-                                str(interval), str(e)))
-
-                    else:
-                        pass
+                    traceback.print_exc(file=sys.stdout)
+                    warnings.warn(
+                        "Failed on interval %s due to the error %s" % (
+                            str(interval), str(e)))
+                    return([1,1])
 
 
             ecc_dna.close()
@@ -413,7 +407,7 @@ class realignment:
         except:
             print("Failed on cluster:")
             print(traceback.print_exc(file=sys.stdout))
-            return([0,0])
+            return([1,1])
 
         sorted_bam.close()
         genome_fa.close()

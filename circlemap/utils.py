@@ -517,9 +517,7 @@ def get_mate_intervals(sorted_bam,interval,mapq_cutoff,verbose,only_discordants)
 
     except BaseException as e:
 
-        if verbose < 2:
-
-            warnings.warn(
+        warnings.warn(
                 "WARNING: Could not get mate interval priors for the interval %s due to the following error %s \n Skipping interval" % (str(interval),str(e)))
 
 
@@ -639,7 +637,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
         extended = []
 
 
-
+        
 
         #if argmax is turn on interval_p is 0
         if interval_p_cutoff == 0:
@@ -648,6 +646,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
             candidate_mates =  candidate_mates.loc[candidate_mates['probability'] == candidate_mates['probability'].max()]
 
             for item,row in candidate_mates.iterrows():
+
                 if ('LR' in orientation) or ('L' and 'R' in orientation):
 
 
@@ -685,7 +684,8 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
 
                 #small pseudocount to denominator to avoid div by zero
 
-                if interval['probability']/(sum+0.00000001) >= interval_p_cutoff:
+
+                if interval['probability'] >= interval_p_cutoff:
 
                     if ('LR' in orientation) or ('L' and 'R' in orientation):
 
@@ -722,9 +722,8 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
 
     except BaseException as e:
 
-        if verbose < 2:
 
-            warnings.warn(
+        warnings.warn(
                 "WARNING: Could not compute the probability for the mate interval priors %s due to the following error %s \n Skipping intervals" % (
                 str(bed_prior), str(e)))
 
@@ -1467,7 +1466,7 @@ def assign_discordants(split_bed,discordant_bed,insert_mean,insert_std):
     """Function that takes as input the the discordant reads supporting an interval and assigns them to the
     interval if they are close by (using the insert size estimate)"""
 
-    max_dist = (insert_mean / 2) + (3 * insert_std)
+    max_dist = (insert_mean) + (5 * insert_std)
 
     splits = pd.DataFrame.from_records(split_bed, columns=['chrom', 'start', 'end', 'read', 'iteration',
                                                            'score']).sort_values(['chrom', 'start', 'end'])

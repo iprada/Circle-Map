@@ -172,6 +172,7 @@ class readExtractor:
 
                                                         # gets its on mapq since mate is unmapped
                                                         if read1.mapq >= self.mapq_cutoff:
+
                                                             read1.tags += [('MQ', read1.mapq)]
                                                             circle_sv_reads.write(read1)
 
@@ -185,6 +186,7 @@ class readExtractor:
 
                                                     # gets its on mapq since mate is unmapped
                                                     if read2.mapq >= self.mapq_cutoff:
+
                                                         read2.tags += [('MQ', read2.mapq)]
                                                         circle_sv_reads.write(read2)
 
@@ -197,7 +199,7 @@ class readExtractor:
                                                     # gets its on mapq since mate is unmapped
                                                     if read2.mapq >= self.mapq_cutoff:
                                                         read2.tags += [('MQ', read2.mapq)]
-                                                        circle_sv_reads.write(read1)
+                                                        circle_sv_reads.write(read2)
 
                                                 else:
 
@@ -338,6 +340,7 @@ class readExtractor:
                                     if self.no_hard_clipped == False:
 
                                         if read1.mapq >= self.mapq_cutoff:
+
                                             read1.tags += [('MQ', read2.mapq)]
                                             circle_sv_reads.write(read1)
 
@@ -346,25 +349,26 @@ class readExtractor:
                                         pass
 
 
-                            if is_soft_clipped(read2) == True:
+                                if is_soft_clipped(read2) == True:
 
 
-                                if self.no_soft_clipped == False:
+                                    if self.no_soft_clipped == False:
 
-                                    if read2.mapq >= self.mapq_cutoff:
+                                        if read2.mapq >= self.mapq_cutoff:
 
-                                        read2.tags += [('MQ', read1.mapq)]
-                                        circle_sv_reads.write(read2)
+                                            read2.tags += [('MQ', read1.mapq)]
+                                            circle_sv_reads.write(read2)
 
 
-                                else:
-                                    pass
+                                    else:
+                                        pass
                     else:
                         if read1.is_unmapped == False:
                             if is_soft_clipped(read1) == True:
                                 if self.no_soft_clipped == False:
 
                                     if read1.mapq >= self.mapq_cutoff:
+
                                         read1.tags += [('MQ', read2.mapq)]
                                         circle_sv_reads.write(read1)
 
@@ -380,6 +384,7 @@ class readExtractor:
 
                                         #gets its on mapq since mate is unmapped
                                         if read1.mapq >= self.mapq_cutoff:
+
                                             read1.tags += [('MQ', read1.mapq)]
                                             circle_sv_reads.write(read1)
 
@@ -393,6 +398,7 @@ class readExtractor:
 
                                     #gets its on mapq since mate is unmapped
                                     if read2.mapq >= self.mapq_cutoff:
+
                                         read2.tags += [('MQ', read2.mapq)]
                                         circle_sv_reads.write(read2)
 
@@ -405,7 +411,7 @@ class readExtractor:
                                     # gets its on mapq since mate is unmapped
                                     if read2.mapq >= self.mapq_cutoff:
                                         read2.tags += [('MQ', read2.mapq)]
-                                        circle_sv_reads.write(read1)
+                                        circle_sv_reads.write(read2)
 
                                 else:
 
