@@ -105,7 +105,6 @@ class readExtractor:
         #counter for processed reads
         processed_reads = 0
 
-
         for read in raw_bam:
 
             if self.verbose >=3:
@@ -124,24 +123,28 @@ class readExtractor:
                     # both reads in memory
                     read2 = read
 
-
                     #both reads need to be mapped
                     if read1.is_unmapped == False and read2.is_unmapped == False:
 
 
                         if read2.is_reverse and read1.is_reverse == False:
 
+
                             # read2 leftmost mapping position smaller than read1 leftmost mapping position
                             if read2.reference_start < read1.reference_start:
+
 
                                 #aligned to the same chromosome
                                 if read1.reference_id == read2.reference_id:
 
+
                                     if read1.mapq >= self.mapq_cutoff and read2.mapq >= self.mapq_cutoff:
+
 
                                         #is discordant extraction turn off?
 
                                         if self.no_discordants == False:
+
                                             #add mate mapping quality info
                                             read1.tags += [('MQ',read2.mapq)]
                                             read2.tags += [('MQ', read1.mapq)]
@@ -149,275 +152,59 @@ class readExtractor:
                                             circle_sv_reads.write(read1)
                                             circle_sv_reads.write(read2)
                                         else:
+
                                             pass
                                     else:
+
                                         #extract soft-clipped if the mapq is high enough
-                                        if read1.mapq >= self.mapq_cutoff:
-                                            if is_soft_clipped(read1) == True:
-                                                if self.no_soft_clipped == False:
+                                        write_clipped_read(circle_sv_reads, read1, read2, self.no_soft_clipped,
+                                                           self.no_hard_clipped, self.mapq_cutoff)
 
-                                                    if read1.mapq >= self.mapq_cutoff:
-                                                        read1.tags += [('MQ', read2.mapq)]
-                                                        circle_sv_reads.write(read1)
+                                        write_clipped_read(circle_sv_reads, read2, read1, self.no_soft_clipped,
+                                                           self.no_hard_clipped, self.mapq_cutoff)
 
-                                                else:
-
-                                                    pass
-
-                                            else:
-
-                                                if is_hard_clipped(read1) == True:
-
-                                                    if self.no_hard_clipped == False:
-
-                                                        # gets its on mapq since mate is unmapped
-                                                        if read1.mapq >= self.mapq_cutoff:
-
-                                                            read1.tags += [('MQ', read1.mapq)]
-                                                            circle_sv_reads.write(read1)
-
-                                                    else:
-
-                                                        pass
-                                        if read2.mapq >= self.mapq_cutoff:
-                                            if is_soft_clipped(read2) == True:
-
-                                                if self.no_soft_clipped == False:
-
-                                                    # gets its on mapq since mate is unmapped
-                                                    if read2.mapq >= self.mapq_cutoff:
-
-                                                        read2.tags += [('MQ', read2.mapq)]
-                                                        circle_sv_reads.write(read2)
-
-                                                else:
-                                                    pass
-                                            if is_hard_clipped(read2) == True:
-
-                                                if self.no_hard_clipped == False:
-
-                                                    # gets its on mapq since mate is unmapped
-                                                    if read2.mapq >= self.mapq_cutoff:
-                                                        read2.tags += [('MQ', read2.mapq)]
-                                                        circle_sv_reads.write(read2)
-
-                                                else:
-
-                                                    pass
 
 
                                 else:
-                                    if is_soft_clipped(read1) == True:
 
-                                        if self.no_soft_clipped == False:
+                                    write_clipped_read(circle_sv_reads, read1, read2, self.no_soft_clipped,
+                                                       self.no_hard_clipped, self.mapq_cutoff)
 
-                                            if read1.mapq >= self.mapq_cutoff:
-                                                read1.tags += [('MQ', read2.mapq)]
-                                                circle_sv_reads.write(read1)
+                                    write_clipped_read(circle_sv_reads, read2, read1, self.no_soft_clipped,
+                                                       self.no_hard_clipped, self.mapq_cutoff)
 
-                                        else:
-                                            pass
-
-                                    else:
-
-                                        if is_hard_clipped(read1) == True:
-
-                                            if self.no_hard_clipped == False:
-
-                                                if read1.mapq >= self.mapq_cutoff:
-                                                    read1.tags += [('MQ', read2.mapq)]
-                                                    circle_sv_reads.write(read1)
-                                            else:
-                                                pass
-
-                                    if is_soft_clipped(read2) == True:
-
-                                        if self.no_soft_clipped == False:
-
-                                            if read2.mapq >= self.mapq_cutoff:
-                                                read2.tags += [('MQ', read1.mapq)]
-                                                circle_sv_reads.write(read2)
-
-                                        else:
-                                            pass
-
-                                    else:
-
-                                        if is_hard_clipped(read2) == True:
-
-                                            if self.no_hard_clipped == False:
-
-                                                if read2.mapq >= self.mapq_cutoff:
-                                                    read2.tags += [('MQ', read1.mapq)]
-                                                    circle_sv_reads.write(read2)
-
-                                            else:
-
-                                                pass
 
                             else:
+
                                 #if the leftmost mapping condition is not met check if they are soft-clipped
-                                if is_soft_clipped(read1) == True:
+                                write_clipped_read(circle_sv_reads, read1, read2, self.no_soft_clipped,
+                                                   self.no_hard_clipped, self.mapq_cutoff)
 
-
-                                    if self.no_soft_clipped == False:
-
-                                        if read1.mapq >= self.mapq_cutoff:
-
-                                            read1.tags += [('MQ', read2.mapq)]
-                                            circle_sv_reads.write(read1)
-
-                                    else:
-                                        pass
-
-                                else:
-
-                                    if is_hard_clipped(read1) == True:
-
-
-                                        if self.no_hard_clipped == False:
-
-                                            if read1.mapq >= self.mapq_cutoff:
-
-                                                read1.tags += [('MQ', read2.mapq)]
-                                                circle_sv_reads.write(read1)
-                                        else:
-                                            pass
-
-
-                                if is_soft_clipped(read2) == True:
-
-                                    if self.no_soft_clipped == False:
-
-                                        if read2.mapq >= self.mapq_cutoff:
-
-                                            read2.tags += [('MQ', read1.mapq)]
-                                            circle_sv_reads.write(read2)
-
-                                    else:
-                                        pass
-
-                                else:
-
-
-                                    if is_hard_clipped(read2) == True:
-
-
-                                        if self.no_hard_clipped == False:
-
-                                            if read2.mapq >= self.mapq_cutoff:
-
-                                                read2.tags += [('MQ', read1.mapq)]
-                                                circle_sv_reads.write(read2)
-
-                                        else:
-
-                                            pass
+                                write_clipped_read(circle_sv_reads, read2, read1, self.no_soft_clipped,
+                                           self.no_hard_clipped, self.mapq_cutoff)
 
 
                         else:
+
                             #check soft-clipped if R2F1 orientation is not True
-                            if is_soft_clipped(read1) == True:
+
+                                write_clipped_read(circle_sv_reads, read1, read2, self.no_soft_clipped,
+                                                   self.no_hard_clipped, self.mapq_cutoff)
+
+                                write_clipped_read(circle_sv_reads, read2, read1, self.no_soft_clipped,
+                                           self.no_hard_clipped, self.mapq_cutoff)
 
 
-                                if self.no_soft_clipped == False:
-
-                                    if read1.mapq  >= self.mapq_cutoff:
-
-                                        read1.tags += [('MQ', read2.mapq)]
-                                        circle_sv_reads.write(read1)
-
-                                else:
-
-                                    pass
-
-                            else:
-
-                                if is_hard_clipped(read1) == True:
-
-
-
-                                    if self.no_hard_clipped == False:
-
-                                        if read1.mapq >= self.mapq_cutoff:
-
-                                            read1.tags += [('MQ', read2.mapq)]
-                                            circle_sv_reads.write(read1)
-
-                                    else:
-
-                                        pass
-
-
-                                if is_soft_clipped(read2) == True:
-
-
-                                    if self.no_soft_clipped == False:
-
-                                        if read2.mapq >= self.mapq_cutoff:
-
-                                            read2.tags += [('MQ', read1.mapq)]
-                                            circle_sv_reads.write(read2)
-
-
-                                    else:
-                                        pass
                     else:
+
+                        #check read 1 and read two for independent unmaps
                         if read1.is_unmapped == False:
-                            if is_soft_clipped(read1) == True:
-                                if self.no_soft_clipped == False:
+                            write_clipped_read(circle_sv_reads, read1,read2, self.no_soft_clipped,
+                                               self.no_hard_clipped, self.mapq_cutoff, own_mapq=True)
 
-                                    if read1.mapq >= self.mapq_cutoff:
-
-                                        read1.tags += [('MQ', read2.mapq)]
-                                        circle_sv_reads.write(read1)
-
-                                else:
-
-                                    pass
-
-                            else:
-
-                                if is_hard_clipped(read1) == True:
-
-                                    if self.no_hard_clipped == False:
-
-                                        #gets its on mapq since mate is unmapped
-                                        if read1.mapq >= self.mapq_cutoff:
-
-                                            read1.tags += [('MQ', read1.mapq)]
-                                            circle_sv_reads.write(read1)
-
-                                    else:
-
-                                        pass
                         if read2.is_unmapped == False:
-                            if is_soft_clipped(read2) == True:
-
-                                if self.no_soft_clipped == False:
-
-                                    #gets its on mapq since mate is unmapped
-                                    if read2.mapq >= self.mapq_cutoff:
-
-                                        read2.tags += [('MQ', read2.mapq)]
-                                        circle_sv_reads.write(read2)
-
-                                else:
-                                    pass
-                            if is_hard_clipped(read2) == True:
-
-                                if self.no_hard_clipped == False:
-
-                                    # gets its on mapq since mate is unmapped
-                                    if read2.mapq >= self.mapq_cutoff:
-                                        read2.tags += [('MQ', read2.mapq)]
-                                        circle_sv_reads.write(read2)
-
-                                else:
-
-                                    pass
-
-
+                            write_clipped_read(circle_sv_reads, read2, read1, self.no_soft_clipped,
+                                               self.no_hard_clipped, self.mapq_cutoff, own_mapq=True)
 
                 else:
                     # reads are not queryname sorted and cannot be processed in paired mode

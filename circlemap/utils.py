@@ -1548,4 +1548,53 @@ def realignment_read_to_SA_string(realignment_dict,prob,chrom,soft_clip_start):
              + realignment_dict['alignments'][1][1] + ","+ str(prob_to_phred(prob)) + "," + str(realignment_dict['alignments'][1][3]) + ";"
     return(sa_tag)
 
+def write_clipped_read(bam,read,mate,no_soft_clipped,no_hard_clipped,mapq_cutoff,own_mapq=False):
+    """Function that takes as input a bam file and a read and writes the read to the bam file"""
+    # If mate is unmapped, own mapq is set to true and the read will get its own mapq
+    if read.has_tag('MQ'):
+        if is_soft_clipped(read) == True:
+
+            if no_soft_clipped == False:
+
+                # gets its on mapq since mate is unmapped
+                if read.mapq >= mapq_cutoff:
+                    bam.write(read)
+
+            else:
+                pass
+        else:
+            if is_hard_clipped(read) == True:
+                if no_hard_clipped == False:
+                        bam.write(read)
+
+    else:
+
+        if is_soft_clipped(read) == True:
+
+            if no_soft_clipped == False:
+
+                # gets its on mapq since mate is unmapped
+                if read.mapq >= mapq_cutoff:
+                    if own_mapq == True:
+                        read.tags += [('MQ', read.mapq)]
+                    else:
+                        read.tags += [('MQ', mate.mapq)]
+
+                    bam.write(read)
+
+            else:
+                pass
+        else:
+            if is_hard_clipped(read) == True:
+                if no_hard_clipped == False:
+                    if read.mapq >= mapq_cutoff:
+                        if own_mapq == True:
+                            read.tags += [('MQ', read.mapq)]
+                        else:
+                            read.tags += [('MQ', mate.mapq)]
+
+                        bam.write(read)
+
+        return(None)
+
 
