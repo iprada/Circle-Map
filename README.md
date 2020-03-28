@@ -5,7 +5,7 @@
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/circle-map/badges/latest_release_date.svg)](https://anaconda.org/bioconda/circle-map)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/circle-map/badges/license.svg)](https://github.com/iprada/Circle-Map/blob/master/LICENSE)
 
-Circle-Map is an easy to install, python package that implements all the steps required to detect extrachromosomal DNA circles. The package  contains easy to run algorithms for accurately detect circular DNA formed from mappable and non mappable regions of a genome.
+Circle-Map is an easy to install, python package that implements all the steps required to detect extrachromosomal DNA circles. The package  contains easy to run algorithms to accurately detect circular DNA formed from mappable and non mappable regions of a genome.
 
     
 ## Why should I use Circle-Map?
