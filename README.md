@@ -63,7 +63,7 @@ If you use Circle-Map Realign, please cite:
 
 If you use Circle-Map Repeats please cite:
 
-* Prada-Luengo, I., Møller, H.D., Henriksen, R.A., Gao, Q., Larsen, C..E, Alizadeh, S., Maretty, L., Houseley, J. & Regenberg, B., Replicative aging is associated with loss of genetic heterogeneity from extrachromosomal circular DNA in Saccharomyces cerevisiae, Nucleic Acids Research gkaa545, doi:10.1093/nar/gkaa545
+* Prada-Luengo, I., Møller, H.D., Henriksen, R.A., Gao, Q., Larsen, C..E, Alizadeh, S., Maretty, L., Houseley, J. & Regenberg, B., Replicative aging is associated with loss of genetic heterogeneity from extrachromosomal circular DNA in Saccharomyces cerevisiae. Nucleic Acids Research gkaa545, doi:10.1093/nar/gkaa545
 
 ## License
 
