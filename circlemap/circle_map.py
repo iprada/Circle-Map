@@ -269,7 +269,8 @@ Commands:
                 pbar.close()
                 pool.close()
                 pool.join()
-                object.queue.put("DONE")
+                object.kill()
+                writer_p.terminate()
                 writer_p.join()
 
                 circle_sv_reads.close()

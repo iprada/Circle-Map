@@ -93,35 +93,44 @@ class bam2bam:
         self.write_round = manager.Value('i', 0)
 
 
+
+
+
+
+
     def listener_writer(self,bam):
 
         f = open('test.sam',"w")
 
+        header = bam.header
+
         while True:
-            try:
-                # Read from the queue and do nothing
-                read = self.queue.get()
+
+            # Read from the queue and do nothing
+            read = self.queue.get()
 
 
-                if read == "DONE":
-                   f.close()
-                   break
-                else:
-                    pysam_read = ps.AlignedSegment.fromstring(read,bam.header)
-                    f.write(read + "\n")
-                    bam.write(pysam_read)
+            if read == "DONE":
+               f.close()
+               print("breaking")
+               bam.close()
+               break
+            else:
 
-            except BaseException as e:
-                print("Error on the writer process. Shutting down")
-                print(e)
-                sys.exit()
+                pysam_read = ps.AlignedSegment.fromstring(read,bam.header)
+                f.write(read + "\n")
+                bam.write(pysam_read)
+
+    def kill(self):
+        print("KILLING")
+        self.queue.put("DONE")
 
     def beta_version_warning(self):
         """Warn the user that this is experimental"""
         print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S: You are using a beta version feature"))
         warnings.warn("The bam2bam feature on Circle-Map is experimental. The development of this feature is active, but"
                       " have in mind that it might produce unintended results. Check https://github.com/iprada/Circle-Map"
-                      "for the development status.")
+                      " for the development status.")
 
 
 
@@ -286,7 +295,7 @@ class bam2bam:
                                                                                                   soft_clip_start)
 
 
-                                                                    read.tags += [('SA', sa_tag)]
+                                                                    #read.tags += [('SA', sa_tag)]
 
                                                                     self.queue.put(read.to_string())
 
