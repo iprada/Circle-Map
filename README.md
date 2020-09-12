@@ -5,7 +5,7 @@
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/circle-map/badges/latest_release_date.svg)](https://anaconda.org/bioconda/circle-map)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/circle-map/badges/license.svg)](https://github.com/iprada/Circle-Map/blob/master/LICENSE)
 
-Circle-Map is an easy to install, python package that implements all the steps required to detect extrachromosomal DNA circles. The package  contains easy to run algorithms for accurately detect circular DNA formed from mappable and non mappable regions of a genome.
+Circle-Map is an easy to install, python package that implements all the steps required to detect extrachromosomal DNA circles. The package  contains easy to run algorithms to accurately detect circular DNA formed from mappable and non mappable regions of a genome.
 
     
 ## Why should I use Circle-Map?
@@ -40,6 +40,8 @@ Installation using **conda**:
 Now you are ready to get started detecting circular DNA. We have created a [Circle-Map wiki](https://github.com/iprada/Circle-Map/wiki) that explains step by step how you can go from your raw sequencing reads to interpretable results. In the wiki, you can try and learn using Circle-Map with the following tutorials:
 
    * [Tutorial: identification of mappable circular DNA using Circle Map Realign](https://github.com/iprada/Circle-Map/wiki/Tutorial:-Identification-of-circular-DNA-using-Circle-Map-Realign)  
+   
+   * [Tutorial: identification of repetitive circular DNA using Circle Map Repeats](https://github.com/iprada/Circle-Map/wiki/Tutorial:-Identification-of-repetitive-circular-DNA-using-Circle-Map-Repeats)  
 
    
 Once you have detected circular DNA in your samples you will probably be interested at looking at the output files. To help you understanding the output, we have created a page explaining what is the information provided by Circle-Map in every column of its output. You can find the information in the following link:
@@ -55,7 +57,13 @@ The best place for getting help, feedback,report bugs or request new features is
 
 ## Citing
 
-Prada-Luengo, I., Krogh, A., Maretty, L. & Regenberg,B. Sensitive detection of circular DNAs at single-nucleotide resolution using guided realignment of partially aligned reads. BMC Bioinformatics 20, 663 (2019) doi:10.1186/s12859-019-3160-3
+If you use Circle-Map Realign, please cite:
+
+* Prada-Luengo, I., Krogh, A., Maretty, L. & Regenberg,B. Sensitive detection of circular DNAs at single-nucleotide resolution using guided realignment of partially aligned reads. BMC Bioinformatics 20, 663 (2019) doi:10.1186/s12859-019-3160-3
+
+If you use Circle-Map Repeats please cite:
+
+* Prada-Luengo, I., Møller, H.D., Henriksen, R.A., Gao, Q., Larsen, C..E, Alizadeh, S., Maretty, L., Houseley, J. & Regenberg, B., Replicative aging is associated with loss of genetic heterogeneity from extrachromosomal circular DNA in Saccharomyces cerevisiae. Nucleic Acids Research gkaa545, doi:10.1093/nar/gkaa545
 
 ## License
 
