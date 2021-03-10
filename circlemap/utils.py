@@ -1107,9 +1107,13 @@ def realignment_probability(hit_dict,interval_length):
     best_hit = hit_dict['alignments'][1][2]
 
     #this might be included on the denominator
-
-    posterior = 2**best_hit/(np.sum((2**value[2]) for key,value in hit_dict['alignments'].items()))
-
+    try:
+        posterior = 2**best_hit/(np.sum((2**value[2]) for key,value in hit_dict['alignments'].items()))
+    except ZeroDivisionError as e:
+        print(e)
+        warnings.warn("ZeroDivisionError caught while computing the realignment posterior probability."
+                      "Setting posterior probability to 0")
+        posterior = 0
     return(posterior)
 
 
