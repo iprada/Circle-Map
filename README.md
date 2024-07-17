@@ -1,4 +1,6 @@
-# Welcome to Circle-Map official repository!
+# This is NOT the Circle-Map official repository! 
+# I fixed some detail bugs of Circle-Map in this gld_debug branch, enjoy this.
+
 [![PyPI](https://img.shields.io/pypi/v/Circle-Map.svg)](https://pypi.python.org/pypi/Circle-Map)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/circle-map/badges/version.svg)](https://anaconda.org/bioconda/circle-map)
 [![Bioconda Downloads](https://anaconda.org/bioconda/circle-map/badges/downloads.svg)](https://anaconda.org/bioconda/circle-map)
@@ -7,7 +9,7 @@
 
 Circle-Map is an easy to install, python package that implements all the steps required to detect extrachromosomal DNA circles. The package  contains easy to run algorithms to accurately detect circular DNA formed from mappable and non mappable regions of a genome.
 
-    
+
 ## Why should I use Circle-Map?
 
 Circle-Map takes as input an alignment of reads to a reference genome (e.g. a *BWA-MEM* generated *BAM* file) and like other methods, it will use those alignments to detect cases were the read has been split into two segments (e.g. split reads) to detect genomic rearrangements supporting a circular DNA structure.

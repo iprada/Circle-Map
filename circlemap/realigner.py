@@ -172,7 +172,7 @@ class realignment:
 
             for index,interval in peaks_pd.iterrows():
 
-
+                iteration += 1
 
                 if check_size_and_write(results,only_discordants,self.output,self.lock,self.directory,self.overlap_fraction,self.pid) == True:
                     results = []
@@ -207,14 +207,13 @@ class realignment:
                         disorcordants_per_it = 0
                         for index,mate_interval in realignment_interval_extended.iterrows():
 
-                            iteration += 1
+
 
 
 
                             #sample realignment intervals
-                            #fasta file fetch is 1 based that why I do +1
 
-                            plus_coding_interval = genome_fa.fetch(str(mate_interval['chrom']),int(int(mate_interval['start'])+1),int(int(mate_interval['end'])+1)).upper()
+                            plus_coding_interval = genome_fa.fetch(str(mate_interval['chrom']),int(int(mate_interval['start'])),int(int(mate_interval['end']))).upper()
                             interval_length = len(plus_coding_interval)
                             minus_coding_interval = str(Seq(plus_coding_interval).complement())
 
@@ -282,10 +281,10 @@ class realignment:
                                         else:
                                             #sc length
                                             sc_len = len(get_longest_soft_clipped_bases(read)['seq'])
+                                            if non_colinearity(int(read.cigar[0][0]),int(read.cigar[-1][0]),
+                                                               int(read.cigar[0][1]),int(read.cigar[-1][1]),
+                                                               int(read.pos),int(mate_interval.start),int(mate_interval.end)) == True:
 
-
-                                            if non_colinearity(int(read.cigar[0][0]),int(read.cigar[-1][0]),int(read.pos),
-                                                               int(mate_interval.start),int(mate_interval.end)) == True:
 
 
                                                 if sc_len >= self.min_sc_length:
@@ -324,7 +323,7 @@ class realignment:
 
                                                                 iteration_results.append([interval['chrom'], read.reference_start, soft_clip_end+1, read.qname,iteration,float(round(score,2))])
 
-                                                            elif read.reference_start + int(mate_interval['start']) + int(
+                                                            elif read.reference_start > int(mate_interval['start']) + int(
                                                                     realignment_dict['alignments'][1][0][0]):
 
                                                                 iteration_results.append([interval['chrom'], soft_clip_start, read_end, read.qname,iteration,float(round(score,2))])
@@ -346,23 +345,25 @@ class realignment:
                                 else:
                                     #discordant reads
                                     #R2F1 oriented when iterating trough R2
-                                    if read.is_reverse == True and read.mate_is_reverse == False:
-                                        if read.is_read2:
-                                            if read.reference_start < read.next_reference_start:
-                                                # discordant read
-                                                disorcordants_per_it +=1
-                                                iteration_discordants.append([interval['chrom'],read.reference_start,read.next_reference_start + read.infer_query_length(),read.qname])
+                                    if read.mapq >= self.mapq_cutoff:
+                                        if read.is_reverse == True and read.mate_is_reverse == False:
+                                            if read.is_read2:
+                                                if read.reference_id == read.next_reference_id:
+                                                    if read.reference_start < read.next_reference_start:
+                                                        # discordant read
+                                                        disorcordants_per_it +=1
+                                                        iteration_discordants.append([interval['chrom'],read.reference_start,read.next_reference_start + read.infer_query_length(),read.qname])
 
 
 
 
-                                    #R2F1 when iterating trough F1
-                                    elif read.is_reverse == False and read.mate_is_reverse ==  True:
-                                        if read.is_read2 == False:
-                                            if read.next_reference_start < read.reference_start:
-                                                disorcordants_per_it +=1
-                                                iteration_discordants.append([interval['chrom'], read.next_reference_start,read.reference_start+read.infer_query_length(),                                                                              read.qname])
-
+                                        #R2F1 when iterating trough F1
+                                        elif read.is_reverse == False and read.mate_is_reverse ==  True:
+                                            if read.is_read2 == False:
+                                                if read.reference_id == read.next_reference_id:
+                                                    if read.next_reference_start < read.reference_start:
+                                                        disorcordants_per_it +=1
+                                                        iteration_discordants.append([interval['chrom'], read.next_reference_start,read.reference_start+read.infer_query_length(),                                                                              read.qname])
 
                         #second pass to add discordant read info
                         if len(iteration_results) > 0:
@@ -370,16 +371,16 @@ class realignment:
 
                             results = results + assign_discordants(iteration_results,iteration_discordants,insert_metrics[0],insert_metrics[1])
 
-
                         elif len(iteration_discordants) > 0:
-                                discordant_bed = pd.DataFrame.from_records(iteration_discordants,columns=['chrom','start','end','read']).sort_values(['chrom','start','end'])
 
-                                discordant_bed = discordant_bed.groupby(merge_bed(discordant_bed)).agg(
-                                    {'chrom': 'first', 'start': 'first', 'end': 'last', 'read': 'count'})
+                            discordant_bed = pd.DataFrame.from_records(iteration_discordants,columns=['chrom','start','end','read']).sort_values(['chrom','start','end'])
+
+                            discordant_bed = discordant_bed.groupby(merge_bed(discordant_bed)).agg(
+                                    {'chrom': 'first', 'start': 'first', 'end': 'max', 'read': 'nunique'})
 
 
-                                for index,disc_interval in discordant_bed.iterrows():
-                                    only_discordants.append([disc_interval['chrom'],disc_interval['start'],disc_interval['end'],disc_interval['read'],0])
+                            for index,disc_interval in discordant_bed.iterrows():
+                                only_discordants.append([disc_interval['chrom'],disc_interval['start'],disc_interval['end'],disc_interval['read'],0])
 
 
 

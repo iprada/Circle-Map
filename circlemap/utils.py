@@ -607,7 +607,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
             candidate_mates_dataframe = candidate_mates_dataframe.sort_values(by=['chrom', 'start','end'],ascending=[True,True,True])
             candidate_mates_dataframe['probability'] = candidate_mates_dataframe.probability.astype(float)
 
-            candidate_mates = candidate_mates_dataframe.groupby((candidate_mates_dataframe.end.shift()-candidate_mates_dataframe.start).lt(0).cumsum()).agg({'chrom':'first','start':'first','end':'last','probability':'sum'})
+            candidate_mates = candidate_mates_dataframe.groupby((candidate_mates_dataframe.end.shift()-candidate_mates_dataframe.start).lt(0).cumsum()).agg({'chrom':'first','start':'first','end':'max','probability':'sum'})
 
             sum = np.sum(float(x[3]) for index, x in candidate_mates.iterrows())
             candidate_mates['probability'] = candidate_mates['probability'] / sum
@@ -621,7 +621,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
             candidate_mates_dataframe['probability'] = candidate_mates_dataframe.probability.astype(float)
 
 
-            candidate_mates  = candidate_mates_dataframe.groupby((candidate_mates_dataframe.end.shift()-candidate_mates_dataframe.start).lt(0).cumsum()).agg({'chrom':'first','start':'first','end':'last','probability':'sum'})
+            candidate_mates  = candidate_mates_dataframe.groupby((candidate_mates_dataframe.end.shift()-candidate_mates_dataframe.start).lt(0).cumsum()).agg({'chrom':'first','start':'first','end':'max','probability':'sum'})
 
 
             sum = np.sum(float(x[3]) for index,x in candidate_mates.iterrows())
@@ -647,7 +647,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
 
             for item,row in candidate_mates.iterrows():
 
-                if ('LR' in orientation) or ('L' and 'R' in orientation):
+                if ('LR' in orientation) or (('L' in orientation) and ('R' in orientation)):
 
 
                     start = row['start'] - interval_extension
@@ -675,8 +675,12 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
                     end = row['end'] + interval_extension
 
                     extended.append([row['chrom'], row['start'], int(round(end)),float(row['probability'])])
-
-                return (pd.DataFrame.from_records(extended, columns=['chrom', 'start', 'end','probability']))
+                ret_data = pd.DataFrame.from_records(extended, columns=['chrom', 'start', 'end','probability'])
+                ret_data['start'] = ret_data.start.astype(int)
+                ret_data['end'] = ret_data.end.astype(int)
+                ret_data = ret_data.sort_values(by=['chrom', 'start','end'],ascending=[True,True,True])
+                ret_data = ret_data.groupby((ret_data.end.shift()-ret_data.start).lt(0).cumsum()).agg({'chrom':'first','start':'first','end':'max','probability':'first'})
+                return (ret_data)
 
         else:
 
@@ -687,7 +691,7 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
 
                 if interval['probability'] >= interval_p_cutoff:
 
-                    if ('LR' in orientation) or ('L' and 'R' in orientation):
+                    if ('LR' in orientation) or (('L' in orientation) and ('R' in orientation)):
 
 
                         start = interval['start'] - interval_extension
@@ -716,9 +720,12 @@ def get_realignment_intervals(bed_prior,interval_extension,interval_p_cutoff,ver
 
                         extended.append([interval['chrom'], interval['start'], int(round(end)),float(interval['probability'])])
 
-
-            return(pd.DataFrame.from_records(extended,columns=['chrom','start','end','probability']).sort_values(by=['probability'],ascending=[False]))
-
+            ret_data = pd.DataFrame.from_records(extended, columns=['chrom', 'start', 'end','probability'])
+            ret_data = ret_data.sort_values(by=['chrom', 'start','end'],ascending=[True,True,True])
+            ret_data['start'] = ret_data.start.astype(int)
+            ret_data['end'] = ret_data.end.astype(int)
+            ret_data = ret_data.groupby((ret_data.end.shift()-ret_data.start).lt(0).cumsum()).agg({'chrom':'first','start':'first','end':'max','probability':'first'})
+            return (ret_data)
 
     except BaseException as e:
 
@@ -889,8 +896,8 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
     #get soft-clipped read
     soft_clipped_read = get_longest_soft_clipped_bases(read)
 
-    #encoding of DNA and operations A,T,C,G,=,X,DI. THis is done for Numba
-    nuc_and_ops =  np.array([1,2,3,4,5,6,7])
+    #encoding of DNA and operations A,T,C,G,=,X,D,I. THis is done for Numba
+    nuc_and_ops =  np.array([1,2,3,4,5,6,7,8])
     encoded_nucs = number_encoding(soft_clipped_read['seq'])
 
     hits = 0
@@ -905,7 +912,7 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
 
         while hits < n_hits and min_score >= -10:
 
-            alignment = edlib.align(soft_clipped_read['seq'], minus_strand, mode='HW', task='path')
+            alignment = edlib.align(soft_clipped_read['seq'], plus_strand , mode='HW', task='path')
             if hits ==0:
                 if alignment['editDistance'] > max_edit:
                     return(None)
@@ -919,13 +926,13 @@ def realign(read,n_hits,plus_strand,minus_strand,plus_base_freqs,minus_base_freq
                 mask_bases = 'X' * ( location[1] - location[0])
 
 
-                minus_strand = minus_strand[:location[0]] + mask_bases + minus_strand[location[1]:]
+                plus_strand = plus_strand[:location[0]] + mask_bases + plus_strand[location[1]:]
 
                 hits += 1
 
 
                 score = pssm(phred_to_prob(np.array(soft_clipped_read['qual'],dtype=np.float64)), encoded_nucs,
-                             edlib_cigar_to_iterable(alignment['cigar']),minus_base_freqs,gap_open,gap_extend,nuc_and_ops,verbose)
+                             edlib_cigar_to_iterable(alignment['cigar']),plus_base_freqs,gap_open,gap_extend,nuc_and_ops,verbose)
 
                 if score < min_score:
                     min_score = score
@@ -986,13 +993,15 @@ def edlib_cigar_to_iterable(edlib_cigar):
     operations = []
 
     for i in re.findall(r'\d+[IDX=]',edlib_cigar):
-        length.append(int(i[0]))
-        if i[1] == '=':
+        length.append(int(i[:-1]))
+        if i[-1] == '=':
             operations.append(5)
-        elif i[1] == 'X':
+        elif i[-1] == 'X':
             operations.append(6)
-        elif i[1] == 'I' or 'D':
+        elif i[-1] == 'D':
             operations.append(7)
+        elif i[-1] == 'I':
+            operations.append(8)
 
 
     return(np.array(length),np.array(operations))
@@ -1091,10 +1100,12 @@ def pssm(seq_prob,seq_nucl,iterable_cigar,base_freqs,gap_open,gap_extend,nuc_and
             seq_pos += operation_length
 
 
-        elif operation == nuc_and_ops[6]:
+        elif operation == nuc_and_ops[6] or operation == nuc_and_ops[7]:
 
             #affine gap scoring model
             indel_penalty += gap_open + gap_extend*(operation_length-1)
+            if operation == nuc_and_ops[7]: # insertion cost query
+                seq_pos += operation_length
 
 
     return(np.sum(seq_prob)-indel_penalty)
@@ -1282,8 +1293,8 @@ def merge_final_output(bam,results,begin,splits,dir,fraction,pid):
     for interval in unfiltered_output:
 
         if (int(interval[4])+int(interval[3])) >= splits:
-            if int(interval[1]) != 0:
-                interval[1] = int(interval[1])+1
+            #if int(interval[1]) != 0:
+            #    interval[1] = int(interval[1])+1
             filtered.append(interval)
 
     filtered_output = bt.BedTool(filtered)
@@ -1491,10 +1502,12 @@ def assign_discordants(split_bed,discordant_bed,insert_mean,insert_std):
             start_filt = chrom_filt[
                 (chrom_filt['start'] > row['start']) & ((chrom_filt['start'] - row['start']) < max_dist)]
             end_filt = start_filt[(start_filt['end'] < row['end']) & ((row['end'] - start_filt['end']) < max_dist)]
-
-            assigned_splits.append(
-                [row['chrom'], row['start'], row['end'], row['read'], row['iteration'], float(row['score']), len(end_filt)])
-
+            if len(end_filt)>1:
+                assigned_splits.append(
+                    [row['chrom'], row['start'], row['end'], row['read'], row['iteration'], float(row['score']), len(np.unique(end_filt['read']))])
+            else:
+                assigned_splits.append(
+                    [row['chrom'], row['start'], row['end'], row['read'], row['iteration'], float(row['score']), len(end_filt)])
         return (assigned_splits)
 
     else:
@@ -1510,14 +1523,15 @@ def adaptative_myers_k(sc_len,edit_frac):
     """Calculate the edit distance allowed as a function of the read length"""
     return(float(sc_len*edit_frac))
 @jit(nopython=True)
-def non_colinearity(read_start_cigar,read_end_cigar,aln_start,mate_interval_start,mate_interval_end):
+def non_colinearity(read_start_cigar,read_end_cigar,read_start_cigar_l,read_end_cigar_l,
+                    aln_start,mate_interval_start,mate_interval_end):
     """Input a read and the mate interval in the graph. The function checks whether the alignment would be linear (splicing)
     or colinear. Will return false, in order to not attemp realignment. This is mainly thought for skipping deletions and
     RNA splicing"""
 
 
     #check left soft-clipped
-    if read_start_cigar == 4:
+    if (read_start_cigar == 4 and read_end_cigar != 4 )or (read_start_cigar == 4 and read_end_cigar ==4 and (read_start_cigar_l>read_end_cigar_l)):
         #graph needs to be upstream or looping to itself
         if int(mate_interval_start) > aln_start:
             return (True)
@@ -1527,7 +1541,7 @@ def non_colinearity(read_start_cigar,read_end_cigar,aln_start,mate_interval_star
         else:
             return (False)
     #check right softclipped
-    if read_end_cigar == 4:
+    if (read_end_cigar == 4  and read_start_cigar != 4 ) or (read_start_cigar == 4 and read_end_cigar ==4 and read_start_cigar_l<read_end_cigar_l):
     # graph needs to be downstream or looping to itself
         if int(mate_interval_end) < aln_start:
             return (True)
@@ -1536,6 +1550,7 @@ def non_colinearity(read_start_cigar,read_end_cigar,aln_start,mate_interval_star
             return (True)
         else:
             return (False)
+    return (False)
 
 @jit(nopython=True)
 def prob_to_phred(prob):
